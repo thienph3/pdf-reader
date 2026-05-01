@@ -708,9 +708,11 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 panAxis: _isHorizontalScroll ? PanAxis.horizontal : PanAxis.free,
                 scrollByMouseWheel: _isHorizontalScroll ? 1.0 : 0.2,
                 onPageChanged: (page) {
-                  if (page != null) _onPageChanged(page - 1);
-                  // Snap to page center when horizontal
-                  if (_isHorizontalScroll && page != null) {
+                  if (page == null) return;
+                  final zeroIndexed = page - 1;
+                  if (zeroIndexed == _currentPage) return; // no change, skip
+                  _onPageChanged(zeroIndexed);
+                  if (_isHorizontalScroll) {
                     _viewerController.goToPage(pageNumber: page);
                   }
                 },

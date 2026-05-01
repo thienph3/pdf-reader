@@ -1,19 +1,17 @@
 import 'dart:convert';
+import 'highlight.dart';
 
-/// Book format types.
 enum BookFormat { paper, ebook, both }
 
-/// A bookmark on a specific page with optional note.
 class Bookmark {
   final int page;
   final String note;
   final DateTime createdAt;
 
-  const Bookmark({
-    required this.page,
-    this.note = '',
-    required this.createdAt,
-  });
+  const Bookmark({required this.page, this.note = '', required this.createdAt});
+
+  Bookmark copyWith({String? note}) =>
+      Bookmark(page: page, note: note ?? this.note, createdAt: createdAt);
 
   Map<String, dynamic> toMap() => {
         'page': page,
@@ -40,6 +38,8 @@ class Book {
   final int totalPages;
   final int readingSeconds;
   final List<Bookmark> bookmarks;
+  final List<Highlight> highlights;
+  final DateTime? lastOpenedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -55,6 +55,8 @@ class Book {
     this.totalPages = 0,
     this.readingSeconds = 0,
     this.bookmarks = const [],
+    this.highlights = const [],
+    this.lastOpenedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -84,6 +86,8 @@ class Book {
     int? totalPages,
     int? readingSeconds,
     List<Bookmark>? bookmarks,
+    List<Highlight>? highlights,
+    DateTime? Function()? lastOpenedAt,
     DateTime? updatedAt,
   }) {
     return Book(
@@ -98,6 +102,9 @@ class Book {
       totalPages: totalPages ?? this.totalPages,
       readingSeconds: readingSeconds ?? this.readingSeconds,
       bookmarks: bookmarks ?? this.bookmarks,
+      highlights: highlights ?? this.highlights,
+      lastOpenedAt:
+          lastOpenedAt != null ? lastOpenedAt() : this.lastOpenedAt,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -115,6 +122,8 @@ class Book {
         'totalPages': totalPages,
         'readingSeconds': readingSeconds,
         'bookmarks': bookmarks.map((b) => b.toMap()).toList(),
+        'highlights': highlights.map((h) => h.toMap()).toList(),
+        'lastOpenedAt': lastOpenedAt?.toIso8601String(),
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
       };
@@ -134,11 +143,17 @@ class Book {
                 ?.map((b) => Bookmark.fromMap(b as Map))
                 .toList() ??
             [],
+        highlights: (map['highlights'] as List?)
+                ?.map((h) => Highlight.fromMap(h as Map))
+                .toList() ??
+            [],
+        lastOpenedAt: map['lastOpenedAt'] != null
+            ? DateTime.parse(map['lastOpenedAt'] as String)
+            : null,
         createdAt: DateTime.parse(map['createdAt'] as String),
         updatedAt: DateTime.parse(map['updatedAt'] as String),
       );
 
-  /// JSON string for export/import.
   String toJson() => jsonEncode(toMap());
   factory Book.fromJson(String json) =>
       Book.fromMap(jsonDecode(json) as Map<String, dynamic>);

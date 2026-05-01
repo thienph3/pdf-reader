@@ -35,6 +35,22 @@ class SettingsScreen extends StatelessWidget {
             ),
             onTap: () => _showLocalePicker(context, s),
           ),
+          const Divider(height: 1),
+
+          // Reading goals
+          ListTile(
+            leading: const Icon(Icons.timer_outlined),
+            title: Text(s.dailyGoal),
+            subtitle: Text(s.minutesPerDay(settingsService.dailyGoalMinutes)),
+            onTap: () => _showDailyGoalPicker(context, s),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.calendar_month_outlined),
+            title: Text(s.monthlyGoal),
+            subtitle: Text(s.booksPerMonth(settingsService.monthlyGoalBooks)),
+            onTap: () => _showMonthlyGoalPicker(context, s),
+          ),
         ],
       ),
     );
@@ -114,6 +130,62 @@ class SettingsScreen extends StatelessWidget {
             ),
           Text(label),
         ],
+      ),
+    );
+  }
+
+  void _showDailyGoalPicker(BuildContext context, AppStrings s) {
+    final options = [10, 15, 20, 30, 45, 60, 90, 120];
+    showDialog(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(s.dailyGoal),
+        children: options
+            .map((m) => SimpleDialogOption(
+                  onPressed: () {
+                    settingsService.setDailyGoalMinutes(m);
+                    Navigator.pop(ctx);
+                  },
+                  child: Row(
+                    children: [
+                      if (settingsService.dailyGoalMinutes == m)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: Icon(Icons.check, size: 18),
+                        ),
+                      Text(s.minutesPerDay(m)),
+                    ],
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  void _showMonthlyGoalPicker(BuildContext context, AppStrings s) {
+    final options = [1, 2, 3, 4, 5, 8, 10, 12];
+    showDialog(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(s.monthlyGoal),
+        children: options
+            .map((n) => SimpleDialogOption(
+                  onPressed: () {
+                    settingsService.setMonthlyGoalBooks(n);
+                    Navigator.pop(ctx);
+                  },
+                  child: Row(
+                    children: [
+                      if (settingsService.monthlyGoalBooks == n)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: Icon(Icons.check, size: 18),
+                        ),
+                      Text(s.booksPerMonth(n)),
+                    ],
+                  ),
+                ))
+            .toList(),
       ),
     );
   }

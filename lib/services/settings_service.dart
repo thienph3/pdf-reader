@@ -45,4 +45,20 @@ class SettingsService extends ChangeNotifier {
     await _box.put('locale', locale.languageCode);
     notifyListeners();
   }
+
+  // --- Reading Goals ---
+
+  int get dailyGoalMinutes => _box.get('dailyGoalMinutes', defaultValue: 30) as int;
+
+  Future<void> setDailyGoalMinutes(int minutes) async {
+    await _box.put('dailyGoalMinutes', minutes);
+    notifyListeners();
+  }
+
+  int get monthlyGoalBooks => _box.get('monthlyGoalBooks', defaultValue: 2) as int;
+
+  Future<void> setMonthlyGoalBooks(int books) async {
+    await _box.put('monthlyGoalBooks', books);
+    notifyListeners();
+  }
 }

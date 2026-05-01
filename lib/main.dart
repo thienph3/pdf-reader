@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_strings.dart';
 import 'services/book_service.dart';
 import 'services/category_service.dart';
+import 'services/reading_log_service.dart';
 import 'services/settings_service.dart';
 import 'services/thumbnail_service.dart';
 import 'screens/splash_screen.dart';
@@ -15,11 +16,14 @@ void main() async {
   await categoryService.init();
   final settingsService = SettingsService();
   await settingsService.init();
+  final readingLogService = ReadingLogService();
+  await readingLogService.init();
   final thumbnailService = ThumbnailService();
   runApp(PdfReaderApp(
     bookService: bookService,
     categoryService: categoryService,
     settingsService: settingsService,
+    readingLogService: readingLogService,
     thumbnailService: thumbnailService,
   ));
 }
@@ -51,10 +55,20 @@ class ThumbnailServiceScope extends InheritedWidget {
   bool updateShouldNotify(ThumbnailServiceScope oldWidget) => thumbnailService != oldWidget.thumbnailService;
 }
 
+class ReadingLogServiceScope extends InheritedWidget {
+  final ReadingLogService readingLogService;
+  const ReadingLogServiceScope({super.key, required this.readingLogService, required super.child});
+  static ReadingLogService of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ReadingLogServiceScope>()!.readingLogService;
+  @override
+  bool updateShouldNotify(ReadingLogServiceScope oldWidget) => readingLogService != oldWidget.readingLogService;
+}
+
 class PdfReaderApp extends StatefulWidget {
   final BookService bookService;
   final CategoryService categoryService;
   final SettingsService settingsService;
+  final ReadingLogService readingLogService;
   final ThumbnailService thumbnailService;
 
   const PdfReaderApp({
@@ -62,6 +76,7 @@ class PdfReaderApp extends StatefulWidget {
     required this.bookService,
     required this.categoryService,
     required this.settingsService,
+    required this.readingLogService,
     required this.thumbnailService,
   });
 
@@ -94,7 +109,9 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
         categoryService: widget.categoryService,
         child: ThumbnailServiceScope(
           thumbnailService: widget.thumbnailService,
-          child: SettingsScope(
+          child: ReadingLogServiceScope(
+            readingLogService: widget.readingLogService,
+            child: SettingsScope(
             settingsService: settings,
             child: MaterialApp(
               title: 'PDF Reader',
@@ -120,6 +137,7 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
               ],
               home: const SplashScreen(),
             ),
+          ),
           ),
         ),
       ),

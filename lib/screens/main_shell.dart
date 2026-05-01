@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
+import '../main.dart';
 import 'book_list_screen.dart';
 import 'category_screen.dart';
+import 'stats_screen.dart';
 import 'settings_screen.dart';
-import '../main.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -25,6 +26,7 @@ class _MainShellState extends State<MainShell> {
         children: [
           const BookListScreen(),
           const CategoryScreen(),
+          const StatsScreen(),
           SettingsScreen(settingsService: SettingsScope.of(context)),
         ],
       ),
@@ -41,6 +43,11 @@ class _MainShellState extends State<MainShell> {
             icon: const Icon(Icons.folder_outlined),
             selectedIcon: const Icon(Icons.folder),
             label: s.categories,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.bar_chart_outlined),
+            selectedIcon: const Icon(Icons.bar_chart),
+            label: s.statistics,
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),

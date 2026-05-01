@@ -108,6 +108,48 @@ class AppStrings {
   String get fileNotFound => _isVi ? 'File không tồn tại' : 'File not found';
   String get fileInvalidMessage => _isVi ? 'Đường dẫn ebook không hợp lệ. Chọn lại file?' : 'Ebook path is invalid. Pick a new file?';
   String get repick => _isVi ? 'Chọn lại' : 'Pick again';
+
+  // Recently opened
+  String get recentlyOpened => _isVi ? 'Đọc gần đây' : 'Recently opened';
+  String get continueReading => _isVi ? 'Tiếp tục đọc' : 'Continue reading';
+
+  // Page notes
+  String get addNote => _isVi ? 'Thêm ghi chú' : 'Add note';
+  String get editNote => _isVi ? 'Sửa ghi chú' : 'Edit note';
+  String get noteHint => _isVi ? 'Ghi chú cho trang này...' : 'Note for this page...';
+
+  // Reading goals
+  String get readingGoals => _isVi ? 'Mục tiêu đọc' : 'Reading goals';
+  String get dailyGoal => _isVi ? 'Mục tiêu hàng ngày' : 'Daily goal';
+  String get monthlyGoal => _isVi ? 'Mục tiêu hàng tháng' : 'Monthly goal';
+  String minutesPerDay(int n) => _isVi ? '$n phút/ngày' : '$n min/day';
+  String booksPerMonth(int n) => _isVi ? '$n sách/tháng' : '$n books/month';
+  String get todayReading => _isVi ? 'Hôm nay' : 'Today';
+  String get thisMonth => _isVi ? 'Tháng này' : 'This month';
+
+  // Stats
+  String get statistics => _isVi ? 'Thống kê' : 'Statistics';
+  String get totalReadingTime => _isVi ? 'Tổng thời gian đọc' : 'Total reading time';
+  String get booksRead => _isVi ? 'Sách đã đọc' : 'Books read';
+  String get avgPerDay => _isVi ? 'Trung bình/ngày' : 'Avg/day';
+
+  // TOC
+  String get tableOfContents => _isVi ? 'Mục lục' : 'Table of contents';
+  String get noToc => _isVi ? 'File PDF không có mục lục' : 'This PDF has no table of contents';
+
+  // Text search
+  String get searchInPdf => _isVi ? 'Tìm trong PDF' : 'Search in PDF';
+  String get searchHintPdf => _isVi ? 'Nhập từ khoá...' : 'Enter keyword...';
+  String noSearchResults(String q) => _isVi ? 'Không tìm thấy "$q"' : 'No results for "$q"';
+
+  // Highlights
+  String get highlight => _isVi ? 'Đánh dấu' : 'Highlight';
+  String get highlights => _isVi ? 'Đánh dấu' : 'Highlights';
+  String get addHighlight => _isVi ? 'Đánh dấu văn bản' : 'Highlight text';
+  String get removeHighlight => _isVi ? 'Bỏ đánh dấu' : 'Remove highlight';
+  String get highlightNote => _isVi ? 'Ghi chú cho đánh dấu...' : 'Note for highlight...';
+  String get noHighlights => _isVi ? 'Chưa có đánh dấu nào' : 'No highlights yet';
+  String get selectTextToHighlight => _isVi ? 'Chọn văn bản để đánh dấu' : 'Select text to highlight';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

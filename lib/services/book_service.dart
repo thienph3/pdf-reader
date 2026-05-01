@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/book.dart';
+import '../models/highlight.dart';
 
 const _boxName = 'books';
 const _uuid = Uuid();
@@ -72,6 +73,7 @@ class BookService {
       totalPages: totalPages ?? book.totalPages,
       readingSeconds:
           addSeconds != null ? book.readingSeconds + addSeconds : null,
+      lastOpenedAt: () => DateTime.now(),
       updatedAt: DateTime.now(),
     );
     await _box.put(updated.id, updated.toMap());
@@ -112,6 +114,77 @@ class BookService {
     final book = getById(bookId);
     return book?.bookmarks.any((b) => b.page == page) ?? false;
   }
+
+  Future<Book> updateBookmarkNote(String bookId, int page, String note) async {
+    final book = getById(bookId);
+    if (book == null) throw StateError('Book not found: $bookId');
+    final updated = book.copyWith(
+      bookmarks: book.bookmarks
+          .map((b) => b.page == page ? b.copyWith(note: note) : b)
+          .toList(),
+      updatedAt: DateTime.now(),
+    );
+    await _box.put(updated.id, updated.toMap());
+    _invalidateCache();
+    return updated;
+  }
+
+  /// Returns books sorted by lastOpenedAt desc, limited to [limit].
+  List<Book> getRecentlyOpened({int limit = 5}) {
+    final recent = getAll()
+        .where((b) => b.lastOpenedAt != null && b.canRead)
+        .toList()
+      ..sort((a, b) => b.lastOpenedAt!.compareTo(a.lastOpenedAt!));
+    return recent.take(limit).toList();
+  }
+
+  // --- Highlights ---
+
+  Future<Book> addHighlight(String bookId, Highlight highlight) async {
+    final book = getById(bookId);
+    if (book == null) throw StateError('Book not found: $bookId');
+    final updated = book.copyWith(
+      highlights: [...book.highlights, highlight],
+      updatedAt: DateTime.now(),
+    );
+    await _box.put(updated.id, updated.toMap());
+    _invalidateCache();
+    return updated;
+  }
+
+  Future<Book> removeHighlight(String bookId, String highlightId) async {
+    final book = getById(bookId);
+    if (book == null) throw StateError('Book not found: $bookId');
+    final updated = book.copyWith(
+      highlights: book.highlights.where((h) => h.id != highlightId).toList(),
+      updatedAt: DateTime.now(),
+    );
+    await _box.put(updated.id, updated.toMap());
+    _invalidateCache();
+    return updated;
+  }
+
+  Future<Book> updateHighlightNote(
+      String bookId, String highlightId, String note) async {
+    final book = getById(bookId);
+    if (book == null) throw StateError('Book not found: $bookId');
+    final updated = book.copyWith(
+      highlights: book.highlights
+          .map((h) => h.id == highlightId ? h.copyWith(note: note) : h)
+          .toList(),
+      updatedAt: DateTime.now(),
+    );
+    await _box.put(updated.id, updated.toMap());
+    _invalidateCache();
+    return updated;
+  }
+
+  List<Highlight> getHighlightsForPage(String bookId, int page) {
+    final book = getById(bookId);
+    if (book == null) return [];
+    return book.highlights.where((h) => h.page == page).toList();
+  }
+
 
   // --- Export / Import ---
 

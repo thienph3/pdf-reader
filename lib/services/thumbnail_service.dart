@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pdfx/pdfx.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 /// Generates, caches (memory + disk), and serves PDF thumbnail images.
 /// Uses book ID as cache key to avoid collisions from file_picker temp paths.
@@ -48,35 +48,62 @@ class ThumbnailService {
         }
       }
 
-      // 3. Render from PDF
+      // 3. Render from PDF using pdfrx
       if (!await File(filePath).exists()) return null;
 
       final doc = await PdfDocument.openFile(filePath);
-      final page = await doc.getPage(1);
+      if (doc.pages.isEmpty) return null;
+
+      final page = doc.pages[0];
       final height = width * page.height / page.width;
 
-      final img = await page.render(
-        width: width,
-        height: height,
-        format: PdfPageImageFormat.png,
-        quality: 85,
+      final rendered = await page.render(
+        fullWidth: width,
+        fullHeight: height,
       );
-      await page.close();
-      await doc.close();
 
-      if (img == null || img.bytes.isEmpty) return null;
+      if (rendered == null) return null;
+
+      final pixels = rendered.pixels;
+      final pngBytes = await _encodePng(
+        pixels,
+        rendered.width,
+        rendered.height,
+      );
+
+      if (pngBytes == null) return null;
 
       // Save to disk cache
-      await cacheFile.writeAsBytes(img.bytes);
+      await cacheFile.writeAsBytes(pngBytes);
 
       // Decode to ui.Image
-      final image = await _decodeImage(img.bytes);
+      final image = await _decodeImage(pngBytes);
       if (image != null) {
         _memCache[cacheKey] = image;
       }
       return image;
     } catch (e) {
       debugPrint('ThumbnailService error for $bookId: $e');
+      return null;
+    }
+  }
+
+  /// Encode raw RGBA pixels to PNG via ui.Image.
+  Future<Uint8List?> _encodePng(
+      Uint8List pixels, int width, int height) async {
+    try {
+      final codec = await ui.instantiateImageCodecFromBuffer(
+        await ui.ImmutableBuffer.fromUint8List(pixels),
+        targetWidth: width,
+        targetHeight: height,
+      );
+      final frame = await codec.getNextFrame();
+      final byteData =
+          await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      codec.dispose();
+      frame.image.dispose();
+      return byteData?.buffer.asUint8List();
+    } catch (_) {
       return null;
     }
   }
@@ -92,7 +119,6 @@ class ThumbnailService {
     }
   }
 
-  /// Remove cached thumbnails for a specific book.
   void evict(String bookId) {
     _memCache.removeWhere((key, img) {
       if (key.startsWith(bookId)) {

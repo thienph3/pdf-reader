@@ -223,11 +223,9 @@ class _BookListScreenState extends State<BookListScreen> {
         children: [
           _buildCategoryFilter(),
           Expanded(
-            child: filtered.isEmpty
+            child: filtered.isEmpty && _books.isEmpty
                 ? _buildEmptyState()
-                : _isGridView
-                    ? _buildGrid(filtered)
-                    : _buildList(filtered),
+                : _buildContent(filtered),
           ),
         ],
       ),
@@ -285,6 +283,107 @@ class _BookListScreenState extends State<BookListScreen> {
               )),
         ],
       ),
+    );
+  }
+
+  Widget _buildContent(List<Book> filtered) {
+    if (filtered.isEmpty) return _buildEmptyState();
+
+    final recentBooks = _bookService.getRecentlyOpened(limit: 5);
+    final showRecent = recentBooks.isNotEmpty &&
+        _searchCtrl.text.isEmpty &&
+        _filterCategoryId == null;
+
+    if (!showRecent) {
+      return _isGridView ? _buildGrid(filtered) : _buildList(filtered);
+    }
+
+    // Show recently opened + all books
+    final s = AppStrings.of(context);
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(s.recentlyOpened,
+                style: Theme.of(context).textTheme.titleSmall),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 160,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: recentBooks.length,
+              itemBuilder: (_, i) {
+                final book = recentBooks[i];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SizedBox(
+                    width: 100,
+                    child: BookCard(
+                      book: book,
+                      onTap: () => _openBook(book),
+                      onEdit: () => _editBook(book),
+                      onDelete: () => _confirmDeleteBook(book),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text(s.all,
+                style: Theme.of(context).textTheme.titleSmall),
+          ),
+        ),
+        if (_isGridView)
+          SliverPadding(
+            padding: const EdgeInsets.all(12).copyWith(bottom: 80),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.58,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (_, i) {
+                  final book = filtered[i];
+                  return BookCard(
+                    book: book,
+                    onTap: () =>
+                        book.canRead ? _openBook(book) : _editBook(book),
+                    onEdit: () => _editBook(book),
+                    onDelete: () => _confirmDeleteBook(book),
+                  );
+                },
+                childCount: filtered.length,
+              ),
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, i) {
+                final book = filtered[i];
+                return BookListTile(
+                  book: book,
+                  onTap: () =>
+                      book.canRead ? _openBook(book) : _editBook(book),
+                  onEdit: () => _editBook(book),
+                  onDelete: () => _confirmDeleteBook(book),
+                );
+              },
+              childCount: filtered.length,
+            ),
+          ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+      ],
     );
   }
 

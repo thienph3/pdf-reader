@@ -6,9 +6,10 @@ class ThumbnailService {
   final Map<String, ui.Image> _cache = {};
 
   /// Returns a thumbnail for the first page of the PDF at [filePath].
-  /// Cached by file path.
-  Future<ui.Image?> getThumbnail(String filePath, {double width = 80}) async {
-    if (_cache.containsKey(filePath)) return _cache[filePath];
+  /// [width] controls render resolution. Cached by filePath + width.
+  Future<ui.Image?> getThumbnail(String filePath, {double width = 200}) async {
+    final key = '$filePath@$width';
+    if (_cache.containsKey(key)) return _cache[key];
 
     try {
       final doc = await PdfDocument.openFile(filePath);
@@ -19,7 +20,7 @@ class ThumbnailService {
         width: width,
         height: height,
         format: PdfPageImageFormat.png,
-        quality: 80,
+        quality: 85,
       );
       await page.close();
       await doc.close();
@@ -30,7 +31,7 @@ class ThumbnailService {
       final frame = await codec.getNextFrame();
       codec.dispose();
 
-      _cache[filePath] = frame.image;
+      _cache[key] = frame.image;
       return frame.image;
     } catch (_) {
       return null;
@@ -38,7 +39,13 @@ class ThumbnailService {
   }
 
   void evict(String filePath) {
-    _cache.remove(filePath)?.dispose();
+    _cache.removeWhere((key, img) {
+      if (key.startsWith(filePath)) {
+        img.dispose();
+        return true;
+      }
+      return false;
+    });
   }
 
   void clear() {

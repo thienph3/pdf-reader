@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'services/book_service.dart';
 import 'services/thumbnail_service.dart';
-import 'screens/book_list_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,7 +83,7 @@ class PdfReaderApp extends StatelessWidget {
             brightness: Brightness.dark,
             useMaterial3: true,
           ),
-          home: const BookListScreen(),
+          home: const SplashScreen(),
         ),
       ),
     );

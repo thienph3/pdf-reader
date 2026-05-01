@@ -86,17 +86,24 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   PdfTextSearcher? _textSearcher;
 
   // Store screen-space rects of highlights for tap detection
+  // These are populated during _paintHighlights and used for hit testing
   final Map<String, Rect> _highlightScreenRects = {};
 
   /// Hit test: returns the Highlight if tap position hits one.
+  /// Uses a simpler approach: check current page highlights against
+  /// their PDF-coordinate bounds, converted via page layout.
   Highlight? _hitTestHighlight(Offset tapPosition) {
     if (widget.bookId == null || _bookService == null) return null;
-    final book = _bookService!.getById(widget.bookId!);
-    if (book == null) return null;
 
-    for (final h in book.highlights) {
+    // Get highlights for current page
+    final highlights =
+        _bookService!.getHighlightsForPage(widget.bookId!, _currentPage);
+    if (highlights.isEmpty) return null;
+
+    // Check stored screen rects (populated by paint callback)
+    for (final h in highlights) {
       final rect = _highlightScreenRects[h.id];
-      if (rect != null && rect.inflate(8).contains(tapPosition)) {
+      if (rect != null && rect.inflate(12).contains(tapPosition)) {
         return h;
       }
     }
@@ -516,23 +523,24 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
           scrollController: scrollCtrl,
           onTap: (highlight) {
             Navigator.pop(ctx);
-            _viewerController.goToPage(pageNumber: highlight.page + 1);
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) _showHighlightInfo(highlight);
+            });
           },
           onDelete: (highlight) {
             _bookService!.removeHighlight(widget.bookId!, highlight.id);
             Navigator.pop(ctx);
+            setState(() {});
           },
           onEditNote: (highlight) {
             Navigator.pop(ctx);
-            _editHighlightNote(highlight);
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) _showHighlightInfo(highlight);
+            });
           },
         ),
       ),
     );
-  }
-
-  void _editHighlightNote(Highlight highlight) {
-    _showHighlightInfo(highlight);
   }
 
   void _showHighlightInfo(Highlight highlight) {
@@ -742,11 +750,10 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                       final hit = _hitTestHighlight(details.localPosition);
                       if (hit != null) {
                         _showHighlightInfo(hit);
-                      } else {
-                        handleLinkTap(details.localPosition);
                       }
+                      // Always forward to handle links
+                      handleLinkTap(details.localPosition);
                     },
-                    child: SizedBox(width: size.width, height: size.height),
                   ),
                 ],
                 onTextSelectionChange: (selections) {

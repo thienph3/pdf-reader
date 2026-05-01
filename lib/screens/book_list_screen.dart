@@ -418,15 +418,28 @@ class _BookCard extends StatefulWidget {
 
 class _BookCardState extends State<_BookCard> {
   ui.Image? _thumbnail;
-  bool _thumbnailLoaded = false;
+  String? _loadedBookId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_thumbnailLoaded) {
-      _thumbnailLoaded = true;
-      _loadThumbnail();
+    _loadThumbnailIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(_BookCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.book.id != widget.book.id ||
+        oldWidget.book.filePath != widget.book.filePath) {
+      _loadThumbnailIfNeeded();
     }
+  }
+
+  void _loadThumbnailIfNeeded() {
+    if (_loadedBookId == widget.book.id) return;
+    _loadedBookId = widget.book.id;
+    _thumbnail = null;
+    _loadThumbnail();
   }
 
   Future<void> _loadThumbnail() async {
@@ -437,7 +450,9 @@ class _BookCardState extends State<_BookCard> {
       filePath: widget.book.filePath!,
       width: 300,
     );
-    if (mounted && img != null) setState(() => _thumbnail = img);
+    if (mounted && widget.book.id == _loadedBookId && img != null) {
+      setState(() => _thumbnail = img);
+    }
   }
 
   @override
@@ -579,15 +594,28 @@ class _BookListTile extends StatefulWidget {
 
 class _BookListTileState extends State<_BookListTile> {
   ui.Image? _thumbnail;
-  bool _thumbnailLoaded = false;
+  String? _loadedBookId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_thumbnailLoaded) {
-      _thumbnailLoaded = true;
-      _loadThumbnail();
+    _loadThumbnailIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(_BookListTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.book.id != widget.book.id ||
+        oldWidget.book.filePath != widget.book.filePath) {
+      _loadThumbnailIfNeeded();
     }
+  }
+
+  void _loadThumbnailIfNeeded() {
+    if (_loadedBookId == widget.book.id) return;
+    _loadedBookId = widget.book.id;
+    _thumbnail = null;
+    _loadThumbnail();
   }
 
   Future<void> _loadThumbnail() async {
@@ -598,7 +626,9 @@ class _BookListTileState extends State<_BookListTile> {
       filePath: widget.book.filePath!,
       width: 80,
     );
-    if (mounted && img != null) setState(() => _thumbnail = img);
+    if (mounted && widget.book.id == _loadedBookId && img != null) {
+      setState(() => _thumbnail = img);
+    }
   }
 
   String get _formatLabel {

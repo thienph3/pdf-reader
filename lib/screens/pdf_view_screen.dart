@@ -1,9 +1,8 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:pdfx/pdfx.dart';
 import '../models/book.dart';
 import '../services/book_service.dart';
-import '../services/pdf_render_service.dart';
 import '../main.dart';
 
 class PdfViewScreen extends StatefulWidget {
@@ -24,11 +23,8 @@ class PdfViewScreen extends StatefulWidget {
   State<PdfViewScreen> createState() => _PdfViewScreenState();
 }
 
-class _PdfViewScreenState extends State<PdfViewScreen>
-    with SingleTickerProviderStateMixin {
-  final PdfRenderService _renderService = PdfRenderService();
-  late final PageController _pageController;
-
+class _PdfViewScreenState extends State<PdfViewScreen> {
+  PdfControllerPinch? _pdfController;
   BookService? _bookService;
 
   int _totalPages = 0;
@@ -44,22 +40,10 @@ class _PdfViewScreenState extends State<PdfViewScreen>
   int _sessionSeconds = 0;
   Timer? _readingTimer;
 
-  late final AnimationController _loadingDoneController;
-  late final Animation<double> _bodyFade;
-
   @override
   void initState() {
     super.initState();
     _currentPage = widget.initialPage;
-    _pageController = PageController(initialPage: widget.initialPage);
-    _loadingDoneController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _bodyFade = CurvedAnimation(
-      parent: _loadingDoneController,
-      curve: Curves.easeIn,
-    );
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _sessionSeconds++;
     });
@@ -84,35 +68,42 @@ class _PdfViewScreenState extends State<PdfViewScreen>
 
   Future<void> _openDocument() async {
     try {
-      final count = await _renderService.open(widget.filePath);
+      final document = await PdfDocument.openFile(widget.filePath);
       if (!mounted) return;
+
+      final count = document.pagesCount;
+      final initialPage = widget.initialPage.clamp(0, count - 1);
+
+      _pdfController = PdfControllerPinch(
+        document: Future.value(document),
+        initialPage: initialPage + 1, // pdfx is 1-indexed
+      );
+
       setState(() {
         _totalPages = count;
+        _currentPage = initialPage;
         _isLoading = false;
-        if (_currentPage >= count) _currentPage = 0;
       });
-      // Save totalPages on first open
+
       if (widget.bookId != null && _bookService != null) {
         _bookService!.saveProgress(widget.bookId!, _currentPage,
             totalPages: count);
       }
-      _loadingDoneController.forward();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
-      _loadingDoneController.forward();
     }
   }
 
   void _onPageChanged(int page) {
-    setState(() => _currentPage = page);
+    // pdfx reports 1-indexed pages
+    final zeroIndexed = page - 1;
+    setState(() => _currentPage = zeroIndexed);
     _updateBookmarkState();
     _debouncedSaveProgress();
-    final viewport = MediaQuery.of(context).size;
-    _renderService.preloadAround(page, viewport: viewport);
   }
 
   void _debouncedSaveProgress() {
@@ -158,7 +149,7 @@ class _PdfViewScreenState extends State<PdfViewScreen>
         currentPage: _currentPage,
         onTap: (page) {
           Navigator.pop(ctx);
-          _pageController.jumpToPage(page);
+          _pdfController?.jumpToPage(page + 1); // 1-indexed
         },
         onDelete: (page) {
           _bookService!.removeBookmark(widget.bookId!, page);
@@ -176,16 +167,14 @@ class _PdfViewScreenState extends State<PdfViewScreen>
     _readingTimer?.cancel();
     _saveProgress();
     if (mounted) Navigator.pop(context);
-    _renderService.close();
   }
 
   @override
   void dispose() {
     _saveDebounce?.cancel();
     _readingTimer?.cancel();
-    _loadingDoneController.dispose();
-    if (!_closed) _renderService.close();
-    _pageController.dispose();
+    if (!_closed) _saveProgress();
+    _pdfController?.dispose();
     super.dispose();
   }
 
@@ -253,30 +242,17 @@ class _PdfViewScreenState extends State<PdfViewScreen>
     }
 
     if (_error != null) {
-      return FadeTransition(
-        opacity: _bodyFade,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Lỗi: $_error', textAlign: TextAlign.center),
-          ),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text('Lỗi: $_error', textAlign: TextAlign.center),
         ),
       );
     }
 
-    return FadeTransition(
-      opacity: _bodyFade,
-      child: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        itemCount: _totalPages,
-        onPageChanged: _onPageChanged,
-        itemBuilder: (context, index) => _PdfPageWidget(
-          key: ValueKey(index),
-          renderService: _renderService,
-          pageIndex: index,
-        ),
-      ),
+    return PdfViewPinch(
+      controller: _pdfController!,
+      onPageChanged: _onPageChanged,
     );
   }
 }
@@ -297,7 +273,8 @@ class _BookmarkSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sorted = List.of(bookmarks)..sort((a, b) => a.page.compareTo(b.page));
+    final sorted = List.of(bookmarks)
+      ..sort((a, b) => a.page.compareTo(b.page));
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -332,167 +309,6 @@ class _BookmarkSheet extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Renders a single PDF page with progressive loading.
-class _PdfPageWidget extends StatefulWidget {
-  final PdfRenderService renderService;
-  final int pageIndex;
-
-  const _PdfPageWidget({
-    super.key,
-    required this.renderService,
-    required this.pageIndex,
-  });
-
-  @override
-  State<_PdfPageWidget> createState() => _PdfPageWidgetState();
-}
-
-class _PdfPageWidgetState extends State<_PdfPageWidget>
-    with SingleTickerProviderStateMixin {
-  ui.Image? _previewImage;
-  ui.Image? _fullImage;
-  bool _cancelled = false;
-
-  late final AnimationController _fadeController;
-  late final Animation<double> _fadeIn;
-
-  @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _fadeIn = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeIn,
-    );
-    _renderProgressive();
-  }
-
-  @override
-  void dispose() {
-    _cancelled = true;
-    _fadeController.dispose();
-    super.dispose();
-  }
-
-  bool _isCancelled() => _cancelled;
-
-  Future<void> _renderProgressive() async {
-    final preview = await widget.renderService.renderPage(
-      widget.pageIndex,
-      quality: 1.0,
-      viewport: _viewportSize,
-      isCancelled: _isCancelled,
-    );
-    if (_cancelled) return;
-    if (preview != null) {
-      setState(() => _previewImage = preview.image);
-      _fadeController.forward();
-    }
-
-    final full = await widget.renderService.renderPage(
-      widget.pageIndex,
-      quality: 2.0,
-      viewport: _viewportSize,
-      isCancelled: _isCancelled,
-    );
-    if (_cancelled) return;
-    setState(() => _fullImage = full?.image);
-  }
-
-  Size? get _viewportSize {
-    final mq = MediaQuery.maybeOf(context);
-    return mq?.size;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeIn,
-      child: _buildContent(),
-    );
-  }
-
-  Widget _buildContent() {
-    if (_previewImage == null && _fullImage == null) {
-      return _buildShimmer();
-    }
-
-    final displayImage = _fullImage ?? _previewImage;
-    final quality =
-        _fullImage != null ? FilterQuality.high : FilterQuality.low;
-
-    return InteractiveViewer(
-      minScale: 1.0,
-      maxScale: 4.0,
-      child: Center(
-        child: RawImage(
-          image: displayImage,
-          fit: BoxFit.contain,
-          filterQuality: quality,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmer() {
-    return Center(
-      child: _PulseAnimation(
-        child: Container(
-          margin: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Center(
-            child: Icon(Icons.description_outlined, size: 48),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PulseAnimation extends StatefulWidget {
-  final Widget child;
-  const _PulseAnimation({required this.child});
-
-  @override
-  State<_PulseAnimation> createState() => _PulseAnimationState();
-}
-
-class _PulseAnimationState extends State<_PulseAnimation>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: Tween(begin: 0.3, end: 1.0).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-      ),
-      child: widget.child,
     );
   }
 }

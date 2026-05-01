@@ -3,10 +3,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 
 /// Generates, caches (memory + disk), and serves PDF thumbnail images.
+/// Uses book ID as cache key to avoid collisions from file_picker temp paths.
 class ThumbnailService {
   final Map<String, ui.Image> _memCache = {};
   String? _cacheDir;
@@ -22,30 +21,29 @@ class ThumbnailService {
     return _cacheDir!;
   }
 
-  /// Stable hash of file path for disk cache filename.
-  String _cacheKey(String filePath, double width) {
-    final hash = md5.convert(utf8.encode(filePath)).toString();
-    return '${hash}_${width.toInt()}';
-  }
-
   /// Returns a thumbnail for the first page of the PDF.
+  /// [bookId] is used as cache key (unique per book).
   /// Checks: memory cache → disk cache → render from PDF.
-  Future<ui.Image?> getThumbnail(String filePath, {double width = 200}) async {
-    final memKey = '$filePath@$width';
+  Future<ui.Image?> getThumbnail({
+    required String bookId,
+    required String filePath,
+    double width = 200,
+  }) async {
+    final cacheKey = '${bookId}_${width.toInt()}';
 
     // 1. Memory cache
-    if (_memCache.containsKey(memKey)) return _memCache[memKey];
+    if (_memCache.containsKey(cacheKey)) return _memCache[cacheKey];
 
     // 2. Disk cache
     try {
       final dir = await _getCacheDir();
-      final cacheFile = File('$dir/${_cacheKey(filePath, width)}.png');
+      final cacheFile = File('$dir/$cacheKey.png');
 
       if (await cacheFile.exists()) {
         final bytes = await cacheFile.readAsBytes();
         final image = await _decodeImage(bytes);
         if (image != null) {
-          _memCache[memKey] = image;
+          _memCache[cacheKey] = image;
           return image;
         }
       }
@@ -74,11 +72,11 @@ class ThumbnailService {
       // Decode to ui.Image
       final image = await _decodeImage(img.bytes);
       if (image != null) {
-        _memCache[memKey] = image;
+        _memCache[cacheKey] = image;
       }
       return image;
     } catch (e) {
-      debugPrint('ThumbnailService error for $filePath: $e');
+      debugPrint('ThumbnailService error for $bookId: $e');
       return null;
     }
   }
@@ -94,21 +92,18 @@ class ThumbnailService {
     }
   }
 
-  /// Remove cached thumbnails for a specific file.
-  void evict(String filePath) {
+  /// Remove cached thumbnails for a specific book.
+  void evict(String bookId) {
     _memCache.removeWhere((key, img) {
-      if (key.startsWith(filePath)) {
+      if (key.startsWith(bookId)) {
         img.dispose();
         return true;
       }
       return false;
     });
-    // Disk cleanup is best-effort
     _getCacheDir().then((dir) {
       for (final w in [80, 200, 300]) {
-        File('$dir/${_cacheKey(filePath, w.toDouble())}.png')
-            .delete()
-            .catchError((_) => File(''));
+        File('$dir/${bookId}_$w.png').delete().catchError((_) => File(''));
       }
     });
   }

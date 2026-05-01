@@ -145,13 +145,15 @@ class _BookFormScreenState extends State<BookFormScreen> {
     // Evict old thumbnail if file changed
     final origPath = _origFilePath;
     if (_isEditing && origPath != null && origPath != path) {
-      thumbSvc.evict(origPath);
+      thumbSvc.evict(widget.book!.id);
     }
 
-    // Pre-render thumbnail if ebook with file path
-    if (path != null && path.isNotEmpty) {
-      thumbSvc.getThumbnail(path, width: 300);
+    // Pre-render thumbnail for existing books when file changes
+    if (_isEditing && path != null && path.isNotEmpty) {
+      thumbSvc.getThumbnail(
+          bookId: widget.book!.id, filePath: path, width: 300);
     }
+    // New books: thumbnail will be lazy-loaded when card renders
 
     if (mounted) Navigator.pop(context, true);
   }

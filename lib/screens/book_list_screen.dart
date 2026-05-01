@@ -432,7 +432,11 @@ class _BookCardState extends State<_BookCard> {
   Future<void> _loadThumbnail() async {
     if (!widget.book.canRead || widget.book.filePath == null) return;
     final svc = ThumbnailServiceScope.of(context);
-    final img = await svc.getThumbnail(widget.book.filePath!, width: 300);
+    final img = await svc.getThumbnail(
+      bookId: widget.book.id,
+      filePath: widget.book.filePath!,
+      width: 300,
+    );
     if (mounted && img != null) setState(() => _thumbnail = img);
   }
 
@@ -589,7 +593,11 @@ class _BookListTileState extends State<_BookListTile> {
   Future<void> _loadThumbnail() async {
     if (!widget.book.canRead || widget.book.filePath == null) return;
     final svc = ThumbnailServiceScope.of(context);
-    final img = await svc.getThumbnail(widget.book.filePath!, width: 80);
+    final img = await svc.getThumbnail(
+      bookId: widget.book.id,
+      filePath: widget.book.filePath!,
+      width: 80,
+    );
     if (mounted && img != null) setState(() => _thumbnail = img);
   }
 

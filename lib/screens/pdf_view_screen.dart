@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:uuid/uuid.dart';
-import '../models/book.dart';
 import '../models/highlight.dart';
 import '../services/book_service.dart';
 import '../services/reading_log_service.dart';
 import '../main.dart';
 import '../l10n/app_strings.dart';
+import 'widgets/bookmark_sheet.dart';
+import 'widgets/highlight_sheet.dart';
+import 'widgets/highlight_info_sheet.dart';
+import 'widgets/search_results_bar.dart';
 
 const _uuid = Uuid();
 
@@ -49,6 +53,24 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
 
   final TextEditingController _searchCtrl = TextEditingController();
   PdfTextSearcher? _textSearcher;
+
+  // Store screen-space rects of highlights for tap detection
+  final Map<String, Rect> _highlightScreenRects = {};
+
+  /// Hit test: returns the Highlight if tap position hits one.
+  Highlight? _hitTestHighlight(Offset tapPosition) {
+    if (widget.bookId == null || _bookService == null) return null;
+    final book = _bookService!.getById(widget.bookId!);
+    if (book == null) return null;
+
+    for (final h in book.highlights) {
+      final rect = _highlightScreenRects[h.id];
+      if (rect != null && rect.inflate(8).contains(tapPosition)) {
+        return h;
+      }
+    }
+    return null;
+  }
   List<PdfTextRanges>? _pendingSelection;
 
   @override
@@ -174,7 +196,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         maxChildSize: 0.8,
         minChildSize: 0.3,
         expand: false,
-        builder: (_, scrollCtrl) => _BookmarkSheet(
+        builder: (_, scrollCtrl) => BookmarkSheet(
           bookmarks: book.bookmarks,
           currentPage: _currentPage,
           scrollController: scrollCtrl,
@@ -324,19 +346,103 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     );
   }
 
+  static const _highlightColors = [
+    0x80FFEB3B, // yellow
+    0x8066BB6A, // green
+    0x8042A5F5, // blue
+    0x80EF5350, // red
+    0x80AB47BC, // purple
+    0x80FF7043, // orange
+  ];
+
   void _highlightSelection() {
+    if (_pendingSelection == null || _pendingSelection!.isEmpty) return;
+    final s = AppStrings.of(context);
+    final noteCtrl = TextEditingController();
+    int selectedColor = _highlightColors[0];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+              16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(s.addHighlight,
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                children: _highlightColors.map((color) {
+                  final isSelected = selectedColor == color;
+                  return GestureDetector(
+                    onTap: () => setSheetState(() => selectedColor = color),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Color(color),
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: Theme.of(ctx).colorScheme.onSurface,
+                                width: 3)
+                            : null,
+                      ),
+                      child: isSelected
+                          ? const Icon(Icons.check,
+                              color: Colors.white, size: 16)
+                          : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: noteCtrl,
+                decoration: InputDecoration(
+                  hintText: s.highlightNote,
+                  border: const OutlineInputBorder(),
+                  isDense: true,
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _doHighlight(selectedColor, noteCtrl.text.trim());
+                  },
+                  child: Text(s.save),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _doHighlight(int colorValue, String note) {
     if (_pendingSelection == null || _pendingSelection!.isEmpty) return;
     final sel = _pendingSelection!.first;
     final text = sel.text;
-    final page = sel.pageNumber - 1; // 0-indexed
+    final page = sel.pageNumber - 1;
     final startIndex = sel.ranges.isNotEmpty ? sel.ranges.first.start : 0;
     final endIndex = sel.ranges.isNotEmpty ? sel.ranges.last.end : 0;
-    _addHighlightFromSelection(text, page, startIndex, endIndex);
+    _addHighlightFromSelection(text, page, startIndex, endIndex, colorValue, note);
     _pendingSelection = null;
     setState(() {});
   }
 
-  void _addHighlightFromSelection(String text, int page, int startIndex, int endIndex) {
+  void _addHighlightFromSelection(
+      String text, int page, int startIndex, int endIndex, int colorValue, String note) {
     if (widget.bookId == null || _bookService == null) return;
     final highlight = Highlight(
       id: _uuid.v4(),
@@ -344,6 +450,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       startIndex: startIndex,
       endIndex: endIndex,
       text: text,
+      colorValue: colorValue,
+      note: note,
       createdAt: DateTime.now(),
     );
     _bookService!.addHighlight(widget.bookId!, highlight);
@@ -371,7 +479,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         maxChildSize: 0.8,
         minChildSize: 0.3,
         expand: false,
-        builder: (_, scrollCtrl) => _HighlightSheet(
+        builder: (_, scrollCtrl) => HighlightSheet(
           highlights: book.highlights,
           currentPage: _currentPage,
           scrollController: scrollCtrl,
@@ -393,6 +501,28 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   }
 
   void _editHighlightNote(Highlight highlight) {
+    _showHighlightInfo(highlight);
+  }
+
+  void _showHighlightInfo(Highlight highlight) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => HighlightInfoSheet(
+        highlight: highlight,
+        onEditNote: () {
+          Navigator.pop(ctx);
+          _editHighlightNoteDialog(highlight);
+        },
+        onDelete: () {
+          _bookService!.removeHighlight(widget.bookId!, highlight.id);
+          Navigator.pop(ctx);
+          setState(() {});
+        },
+      ),
+    );
+  }
+
+  void _editHighlightNoteDialog(Highlight highlight) {
     final s = AppStrings.of(context);
     final ctrl = TextEditingController(text: highlight.note);
     showDialog(
@@ -422,6 +552,105 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         ],
       ),
     );
+  }
+
+  // Cache loaded page text for highlight rendering
+  final Map<int, PdfPageText> _pageTextCache = {};
+
+  Future<PdfPageText?> _getPageText(int pageNumber) async {
+    if (_pageTextCache.containsKey(pageNumber)) return _pageTextCache[pageNumber];
+    if (_pdfDocument == null || pageNumber < 1 || pageNumber > _totalPages) return null;
+    try {
+      final text = await _pdfDocument!.pages[pageNumber - 1].loadText();
+      _pageTextCache[pageNumber] = text;
+      return text;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _paintHighlights(ui.Canvas canvas, Rect pageRect, PdfPage page) {
+    if (widget.bookId == null || _bookService == null) return;
+    final pageIndex = page.pageNumber - 1;
+    final highlights = _bookService!.getHighlightsForPage(widget.bookId!, pageIndex);
+
+    // Clear rects for this page's highlights
+    for (final h in highlights) {
+      _highlightScreenRects.remove(h.id);
+    }
+
+    if (highlights.isEmpty) return;
+
+    final pageText = _pageTextCache[page.pageNumber];
+    if (pageText == null) {
+      _getPageText(page.pageNumber).then((_) {
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+
+    for (final h in highlights) {
+      final paint = ui.Paint()..color = Color(h.colorValue);
+      Rect? combinedRect;
+
+      for (final fragment in pageText.fragments) {
+        final fragStart = fragment.index;
+        final fragEnd = fragment.index + fragment.length;
+
+        if (fragEnd <= h.startIndex || fragStart >= h.endIndex) continue;
+
+        final overlapStart = (h.startIndex - fragStart).clamp(0, fragment.length);
+        final overlapEnd = (h.endIndex - fragStart).clamp(0, fragment.length);
+
+        if (overlapStart >= overlapEnd) continue;
+
+        for (int ci = overlapStart; ci < overlapEnd && ci < fragment.charRects.length; ci++) {
+          final charRect = fragment.charRects[ci];
+          final rect = Rect.fromLTRB(
+            pageRect.left + charRect.left / page.width * pageRect.width,
+            pageRect.top + (1 - charRect.top / page.height) * pageRect.height,
+            pageRect.left + charRect.right / page.width * pageRect.width,
+            pageRect.top + (1 - charRect.bottom / page.height) * pageRect.height,
+          );
+          canvas.drawRect(rect, paint);
+          combinedRect = combinedRect?.expandToInclude(rect) ?? rect;
+        }
+      }
+
+      // Store screen rect for tap detection
+      if (combinedRect != null) {
+        _highlightScreenRects[h.id] = combinedRect;
+      }
+    }
+  }
+
+  void _paintSearchMatches(ui.Canvas canvas, Rect pageRect, PdfPage page) {
+    if (_textSearcher == null || !_isSearching) return;
+    final matches = _textSearcher!.matches;
+    if (matches.isEmpty) return;
+
+    final currentIdx = _textSearcher!.currentIndex;
+
+    for (int mi = 0; mi < matches.length; mi++) {
+      final match = matches[mi];
+      if (match.pageNumber != page.pageNumber) continue;
+
+      final isCurrent = mi == currentIdx;
+      final paint = ui.Paint()
+        ..color = isCurrent
+            ? const Color(0xAAFF9800) // orange for current match
+            : const Color(0x55FFEB3B); // light yellow for others
+
+      // Use bounds from the match directly
+      final b = match.bounds;
+      final rect = Rect.fromLTRB(
+        pageRect.left + b.left / page.width * pageRect.width,
+        pageRect.top + (1 - b.top / page.height) * pageRect.height,
+        pageRect.left + b.right / page.width * pageRect.width,
+        pageRect.top + (1 - b.bottom / page.height) * pageRect.height,
+      );
+      canvas.drawRect(rect, paint);
+    }
   }
 
   void _closeAndPop() {
@@ -466,39 +695,69 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 child: const Icon(Icons.highlight),
               )
             : null,
-        body: PdfViewer.file(
-          widget.filePath,
-          controller: _viewerController,
-          params: PdfViewerParams(
-            enableTextSelection: true,
-            onTextSelectionChange: (selections) {
-              if (selections.isNotEmpty) {
-                _pendingSelection = selections;
-              } else {
-                _pendingSelection = null;
-              }
-              setState(() {});
-            },
-            onViewerReady: (document, controller) {
-              _pdfDocument = document;
-              _textSearcher = PdfTextSearcher(_viewerController);
-              setState(() {
-                _totalPages = document.pages.length;
-                if (_currentPage >= _totalPages) _currentPage = 0;
+        body: Stack(
+          children: [
+            PdfViewer.file(
+              widget.filePath,
+              controller: _viewerController,
+              params: PdfViewerParams(
+                enableTextSelection: true,
+                pagePaintCallbacks: [_paintHighlights, _paintSearchMatches],
+                viewerOverlayBuilder: (context, size, handleLinkTap) => [
+                  GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTapUp: (details) {
+                      final hit = _hitTestHighlight(details.localPosition);
+                      if (hit != null) {
+                        _showHighlightInfo(hit);
+                      } else {
+                        handleLinkTap(details.localPosition);
+                      }
+                    },
+                    child: SizedBox(width: size.width, height: size.height),
+                  ),
+                ],
+                onTextSelectionChange: (selections) {
+                  if (selections.isNotEmpty) {
+                    _pendingSelection = selections;
+                  } else {
+                    _pendingSelection = null;
+                  }
+                  setState(() {});
+                },
+                onViewerReady: (document, controller) {
+                  _pdfDocument = document;
+                  _textSearcher = PdfTextSearcher(_viewerController);
+              _textSearcher!.addListener(() {
+                if (mounted) setState(() {}); // repaint search highlights
               });
-              if (widget.bookId != null && _bookService != null) {
-                _bookService!.saveProgress(widget.bookId!, _currentPage,
-                    totalPages: _totalPages);
-              }
-              if (widget.initialPage > 0 &&
-                  widget.initialPage < _totalPages) {
-                controller.goToPage(pageNumber: widget.initialPage + 1);
-              }
-            },
-            onPageChanged: (page) {
-              if (page != null) _onPageChanged(page - 1);
-            },
-          ),
+                  setState(() {
+                    _totalPages = document.pages.length;
+                    if (_currentPage >= _totalPages) _currentPage = 0;
+                  });
+                  if (widget.bookId != null && _bookService != null) {
+                    _bookService!.saveProgress(widget.bookId!, _currentPage,
+                        totalPages: _totalPages);
+                  }
+                  if (widget.initialPage > 0 &&
+                      widget.initialPage < _totalPages) {
+                    controller.goToPage(pageNumber: widget.initialPage + 1);
+                  }
+                },
+                onPageChanged: (page) {
+                  if (page != null) _onPageChanged(page - 1);
+                },
+              ),
+            ),
+            // Search results overlay
+            if (_isSearching && _textSearcher != null)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: SearchResultsBar(textSearcher: _textSearcher!),
+              ),
+          ],
         ),
       ),
     );
@@ -574,168 +833,40 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         onSubmitted: _doSearch,
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.navigate_before),
-          onPressed: () => _textSearcher?.goToPrevMatch(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.navigate_next),
-          onPressed: () => _textSearcher?.goToNextMatch(),
-        ),
-      ],
-    );
-  }
-}
-
-/// Bookmark list with notes, edit, delete.
-class _BookmarkSheet extends StatelessWidget {
-  final List<Bookmark> bookmarks;
-  final int currentPage;
-  final ScrollController scrollController;
-  final void Function(int page) onTap;
-  final void Function(int page) onDelete;
-  final void Function(int page) onEditNote;
-
-  const _BookmarkSheet({
-    required this.bookmarks,
-    required this.currentPage,
-    required this.scrollController,
-    required this.onTap,
-    required this.onDelete,
-    required this.onEditNote,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = AppStrings.of(context);
-    final sorted = List.of(bookmarks)
-      ..sort((a, b) => a.page.compareTo(b.page));
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(s.bookmarkList,
-              style: Theme.of(context).textTheme.titleMedium),
-        ),
-        Expanded(
-          child: ListView.builder(
-            controller: scrollController,
-            itemCount: sorted.length,
-            itemBuilder: (_, i) {
-              final bm = sorted[i];
-              final isCurrent = bm.page == currentPage;
-              return ListTile(
-                leading: Icon(
-                  Icons.bookmark,
-                  color: isCurrent
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-                title: Text(s.page(bm.page + 1)),
-                subtitle: bm.note.isNotEmpty
-                    ? Text(bm.note,
-                        maxLines: 2, overflow: TextOverflow.ellipsis)
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_note, size: 20),
-                      onPressed: () => onEditNote(bm.page),
+        if (_textSearcher != null)
+          ListenableBuilder(
+            listenable: _textSearcher!,
+            builder: (_, __) {
+              final matches = _textSearcher!.matches;
+              final currentIdx = _textSearcher!.currentIndex;
+              final hasMatches = matches.isNotEmpty && currentIdx != null;
+              final isFirst = !hasMatches || currentIdx <= 0;
+              final isLast = !hasMatches || currentIdx >= matches.length - 1;
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasMatches)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Text(
+                        '${currentIdx + 1}/${matches.length}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20),
-                      onPressed: () => onDelete(bm.page),
-                    ),
-                  ],
-                ),
-                onTap: () => onTap(bm.page),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-
-/// Highlights list bottom sheet.
-class _HighlightSheet extends StatelessWidget {
-  final List<Highlight> highlights;
-  final int currentPage;
-  final ScrollController scrollController;
-  final void Function(Highlight) onTap;
-  final void Function(Highlight) onDelete;
-  final void Function(Highlight) onEditNote;
-
-  const _HighlightSheet({
-    required this.highlights,
-    required this.currentPage,
-    required this.scrollController,
-    required this.onTap,
-    required this.onDelete,
-    required this.onEditNote,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final s = AppStrings.of(context);
-    final sorted = List.of(highlights)
-      ..sort((a, b) => a.page != b.page
-          ? a.page.compareTo(b.page)
-          : a.startIndex.compareTo(b.startIndex));
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(s.highlights,
-              style: Theme.of(context).textTheme.titleMedium),
-        ),
-        Expanded(
-          child: ListView.builder(
-            controller: scrollController,
-            itemCount: sorted.length,
-            itemBuilder: (_, i) {
-              final h = sorted[i];
-              return ListTile(
-                leading: Container(
-                  width: 4,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Color(h.colorValue),
-                    borderRadius: BorderRadius.circular(2),
+                  IconButton(
+                    icon: const Icon(Icons.navigate_before),
+                    onPressed:
+                        hasMatches && !isFirst ? () => _textSearcher!.goToPrevMatch() : null,
                   ),
-                ),
-                title: Text(
-                  '"${h.text}"',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                subtitle: Text(
-                  '${s.page(h.page + 1)}${h.note.isNotEmpty ? ' · ${h.note}' : ''}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_note, size: 20),
-                      onPressed: () => onEditNote(h),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20),
-                      onPressed: () => onDelete(h),
-                    ),
-                  ],
-                ),
-                onTap: () => onTap(h),
+                  IconButton(
+                    icon: const Icon(Icons.navigate_next),
+                    onPressed:
+                        hasMatches && !isLast ? () => _textSearcher!.goToNextMatch() : null,
+                  ),
+                ],
               );
             },
           ),
-        ),
       ],
     );
   }

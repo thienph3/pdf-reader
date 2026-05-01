@@ -10,6 +10,7 @@ import 'book_form_screen.dart';
 import 'pdf_view_screen.dart';
 import 'widgets/book_card.dart';
 import 'widgets/book_list_tile.dart';
+import 'widgets/recent_book_item.dart';
 
 enum SortMode { updatedDesc, titleAsc, createdDesc }
 
@@ -311,7 +312,7 @@ class _BookListScreenState extends State<BookListScreen> {
         ),
         SliverToBoxAdapter(
           child: SizedBox(
-            height: 160,
+            height: 140,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -319,15 +320,10 @@ class _BookListScreenState extends State<BookListScreen> {
               itemBuilder: (_, i) {
                 final book = recentBooks[i];
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: SizedBox(
-                    width: 100,
-                    child: BookCard(
-                      book: book,
-                      onTap: () => _openBook(book),
-                      onEdit: () => _editBook(book),
-                      onDelete: () => _confirmDeleteBook(book),
-                    ),
+                  padding: const EdgeInsets.only(right: 10),
+                  child: RecentBookItem(
+                    book: book,
+                    onTap: () => _openBook(book),
                   ),
                 );
               },

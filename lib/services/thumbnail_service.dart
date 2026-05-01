@@ -5,7 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 /// Generates, caches (memory + disk), and serves PDF thumbnail images.
-/// Uses book ID as cache key to avoid collisions from file_picker temp paths.
 class ThumbnailService {
   final Map<String, ui.Image> _memCache = {};
   String? _cacheDir;
@@ -21,9 +20,6 @@ class ThumbnailService {
     return _cacheDir!;
   }
 
-  /// Returns a thumbnail for the first page of the PDF.
-  /// [bookId] is used as cache key (unique per book).
-  /// Checks: memory cache → disk cache → render from PDF.
   Future<ui.Image?> getThumbnail({
     required String bookId,
     required String filePath,
@@ -34,8 +30,8 @@ class ThumbnailService {
     // 1. Memory cache
     if (_memCache.containsKey(cacheKey)) return _memCache[cacheKey];
 
-    // 2. Disk cache
     try {
+      // 2. Disk cache
       final dir = await _getCacheDir();
       final cacheFile = File('$dir/$cacheKey.png');
 
@@ -48,7 +44,7 @@ class ThumbnailService {
         }
       }
 
-      // 3. Render from PDF using pdfrx
+      // 3. Render from PDF
       if (!await File(filePath).exists()) return null;
 
       final doc = await PdfDocument.openFile(filePath);
@@ -64,46 +60,19 @@ class ThumbnailService {
 
       if (rendered == null) return null;
 
-      final pixels = rendered.pixels;
-      final pngBytes = await _encodePng(
-        pixels,
-        rendered.width,
-        rendered.height,
-      );
+      // Use createImage() to get ui.Image directly from render result
+      final image = await rendered.createImage();
 
-      if (pngBytes == null) return null;
-
-      // Save to disk cache
-      await cacheFile.writeAsBytes(pngBytes);
-
-      // Decode to ui.Image
-      final image = await _decodeImage(pngBytes);
-      if (image != null) {
-        _memCache[cacheKey] = image;
+      // Save PNG to disk cache for next launch
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData != null) {
+        await cacheFile.writeAsBytes(byteData.buffer.asUint8List());
       }
+
+      _memCache[cacheKey] = image;
       return image;
     } catch (e) {
       debugPrint('ThumbnailService error for $bookId: $e');
-      return null;
-    }
-  }
-
-  /// Encode raw RGBA pixels to PNG via ui.Image.
-  Future<Uint8List?> _encodePng(
-      Uint8List pixels, int width, int height) async {
-    try {
-      final codec = await ui.instantiateImageCodecFromBuffer(
-        await ui.ImmutableBuffer.fromUint8List(pixels),
-        targetWidth: width,
-        targetHeight: height,
-      );
-      final frame = await codec.getNextFrame();
-      final byteData =
-          await frame.image.toByteData(format: ui.ImageByteFormat.png);
-      codec.dispose();
-      frame.image.dispose();
-      return byteData?.buffer.asUint8List();
-    } catch (_) {
       return null;
     }
   }

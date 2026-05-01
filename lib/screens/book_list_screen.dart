@@ -418,11 +418,15 @@ class _BookCard extends StatefulWidget {
 
 class _BookCardState extends State<_BookCard> {
   ui.Image? _thumbnail;
+  bool _thumbnailLoaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadThumbnail();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_thumbnailLoaded) {
+      _thumbnailLoaded = true;
+      _loadThumbnail();
+    }
   }
 
   Future<void> _loadThumbnail() async {
@@ -571,11 +575,15 @@ class _BookListTile extends StatefulWidget {
 
 class _BookListTileState extends State<_BookListTile> {
   ui.Image? _thumbnail;
+  bool _thumbnailLoaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadThumbnail();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_thumbnailLoaded) {
+      _thumbnailLoaded = true;
+      _loadThumbnail();
+    }
   }
 
   Future<void> _loadThumbnail() async {

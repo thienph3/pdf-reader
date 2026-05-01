@@ -120,6 +120,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final svc = BookServiceScope.of(context);
+    final thumbSvc = ThumbnailServiceScope.of(context);
     final path = _showFilePicker ? _filePath : null;
 
     if (_isEditing) {
@@ -139,6 +140,17 @@ class _BookFormScreenState extends State<BookFormScreen> {
         filePath: path,
         notes: _notesCtrl.text.trim(),
       );
+    }
+
+    // Evict old thumbnail if file changed
+    final origPath = _origFilePath;
+    if (_isEditing && origPath != null && origPath != path) {
+      thumbSvc.evict(origPath);
+    }
+
+    // Pre-render thumbnail if ebook with file path
+    if (path != null && path.isNotEmpty) {
+      thumbSvc.getThumbnail(path, width: 300);
     }
 
     if (mounted) Navigator.pop(context, true);

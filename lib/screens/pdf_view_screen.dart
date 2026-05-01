@@ -40,6 +40,37 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
 
   PdfDocument? _pdfDocument;
 
+  bool get _isHorizontalScroll {
+    try {
+      return SettingsScope.of(context).isHorizontalScroll;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static PdfPageLayout _horizontalLayout(
+      List<PdfPage> pages, PdfViewerParams params) {
+    final margin = params.margin;
+    final height = pages.fold<double>(
+            0.0, (prev, page) => prev > page.height ? prev : page.height) +
+        margin * 2;
+    final pageLayouts = <Rect>[];
+    double x = margin;
+    for (final page in pages) {
+      pageLayouts.add(
+        Rect.fromLTWH(
+          x,
+          (height - page.height) / 2,
+          page.width,
+          page.height,
+        ),
+      );
+      x += page.width + margin;
+    }
+    return PdfPageLayout(
+        pageLayouts: pageLayouts, documentSize: Size(x, height));
+  }
+
   int _totalPages = 0;
   int _currentPage = 0;
   bool _isBookmarked = false;
@@ -702,6 +733,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
               controller: _viewerController,
               params: PdfViewerParams(
                 enableTextSelection: true,
+                layoutPages: _isHorizontalScroll ? _horizontalLayout : null,
                 pagePaintCallbacks: [_paintHighlights, _paintSearchMatches],
                 viewerOverlayBuilder: (context, size, handleLinkTap) => [
                   GestureDetector(

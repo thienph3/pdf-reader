@@ -61,4 +61,14 @@ class SettingsService extends ChangeNotifier {
     await _box.put('monthlyGoalBooks', books);
     notifyListeners();
   }
+
+  // --- PDF Scroll Direction ---
+
+  bool get isHorizontalScroll =>
+      _box.get('scrollHorizontal', defaultValue: false) as bool;
+
+  Future<void> setHorizontalScroll(bool horizontal) async {
+    await _box.put('scrollHorizontal', horizontal);
+    notifyListeners();
+  }
 }

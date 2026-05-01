@@ -99,6 +99,9 @@ class AppStrings {
   String get language => _isVi ? 'Ngôn ngữ' : 'Language';
   String get langVi => 'Tiếng Việt';
   String get langEn => 'English';
+  String get scrollDirection => _isVi ? 'Hướng cuộn PDF' : 'PDF scroll direction';
+  String get scrollVertical => _isVi ? 'Cuộn dọc' : 'Vertical';
+  String get scrollHorizontal => _isVi ? 'Cuộn ngang' : 'Horizontal';
 
   // Delete confirm
   String get deleteBook => _isVi ? 'Xoá sách' : 'Delete book';

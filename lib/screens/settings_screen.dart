@@ -37,6 +37,20 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
+          // Scroll direction
+          ListTile(
+            leading: const Icon(Icons.swap_vert),
+            title: Text(s.scrollDirection),
+            subtitle: Text(settingsService.isHorizontalScroll
+                ? s.scrollHorizontal
+                : s.scrollVertical),
+            onTap: () {
+              settingsService
+                  .setHorizontalScroll(!settingsService.isHorizontalScroll);
+            },
+          ),
+          const Divider(height: 1),
+
           // Reading goals
           ListTile(
             leading: const Icon(Icons.timer_outlined),

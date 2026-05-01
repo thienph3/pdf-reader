@@ -4,6 +4,7 @@ import 'package:pdfx/pdfx.dart';
 import '../models/book.dart';
 import '../services/book_service.dart';
 import '../main.dart';
+import '../l10n/app_strings.dart';
 
 class PdfViewScreen extends StatefulWidget {
   final String filePath;
@@ -137,8 +138,9 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     if (widget.bookId == null || _bookService == null) return;
     final book = _bookService!.getById(widget.bookId!);
     if (book == null || book.bookmarks.isEmpty) {
+      final s = AppStrings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chưa có bookmark nào')),
+        SnackBar(content: Text(s.noBookmarks)),
       );
       return;
     }
@@ -180,6 +182,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -198,12 +201,12 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 icon: Icon(
                   _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
                 ),
-                tooltip: _isBookmarked ? 'Bỏ bookmark' : 'Thêm bookmark',
+                tooltip: _isBookmarked ? s.removeBookmark : s.addBookmark,
                 onPressed: _toggleBookmark,
               ),
               IconButton(
                 icon: const Icon(Icons.bookmarks_outlined),
-                tooltip: 'Danh sách bookmark',
+                tooltip: s.bookmarkList,
                 onPressed: _showBookmarksList,
               ),
             ],
@@ -228,14 +231,15 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   }
 
   Widget _buildBody() {
+    final s = AppStrings.of(context);
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Đang mở file PDF...'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(s.openingPdf),
           ],
         ),
       );
@@ -245,7 +249,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('Lỗi: $_error', textAlign: TextAlign.center),
+          child: Text(s.error(_error!), textAlign: TextAlign.center),
         ),
       );
     }
@@ -273,6 +277,7 @@ class _BookmarkSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final sorted = List.of(bookmarks)
       ..sort((a, b) => a.page.compareTo(b.page));
     return Column(
@@ -280,7 +285,7 @@ class _BookmarkSheet extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('Bookmarks',
+          child: Text(s.bookmarkList,
               style: Theme.of(context).textTheme.titleMedium),
         ),
         Flexible(
@@ -297,7 +302,7 @@ class _BookmarkSheet extends StatelessWidget {
                       ? Theme.of(context).colorScheme.primary
                       : null,
                 ),
-                title: Text('Trang ${bm.page + 1}'),
+                title: Text(s.page(bm.page + 1)),
                 subtitle: bm.note.isNotEmpty ? Text(bm.note) : null,
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline, size: 20),

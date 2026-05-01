@@ -36,6 +36,7 @@ class BookService {
     String author = '',
     BookFormat format = BookFormat.paper,
     String? filePath,
+    String? categoryId,
     String notes = '',
   }) async {
     final now = DateTime.now();
@@ -45,6 +46,7 @@ class BookService {
       author: author,
       format: format,
       filePath: filePath,
+      categoryId: categoryId,
       notes: notes,
       createdAt: now,
       updatedAt: now,

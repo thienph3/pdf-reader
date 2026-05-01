@@ -34,10 +34,11 @@ class Book {
   final String author;
   final BookFormat format;
   final String? filePath;
+  final String? categoryId;
   final String notes;
   final int lastPage;
   final int totalPages;
-  final int readingSeconds; // cumulative reading time
+  final int readingSeconds;
   final List<Bookmark> bookmarks;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -48,6 +49,7 @@ class Book {
     this.author = '',
     this.format = BookFormat.paper,
     this.filePath,
+    this.categoryId,
     this.notes = '',
     this.lastPage = 0,
     this.totalPages = 0,
@@ -76,6 +78,7 @@ class Book {
     String? author,
     BookFormat? format,
     String? Function()? filePath,
+    String? Function()? categoryId,
     String? notes,
     int? lastPage,
     int? totalPages,
@@ -89,6 +92,7 @@ class Book {
       author: author ?? this.author,
       format: format ?? this.format,
       filePath: filePath != null ? filePath() : this.filePath,
+      categoryId: categoryId != null ? categoryId() : this.categoryId,
       notes: notes ?? this.notes,
       lastPage: lastPage ?? this.lastPage,
       totalPages: totalPages ?? this.totalPages,
@@ -105,6 +109,7 @@ class Book {
         'author': author,
         'format': format.index,
         'filePath': filePath,
+        'categoryId': categoryId,
         'notes': notes,
         'lastPage': lastPage,
         'totalPages': totalPages,
@@ -120,6 +125,7 @@ class Book {
         author: map['author'] as String? ?? '',
         format: BookFormat.values[map['format'] as int? ?? 0],
         filePath: map['filePath'] as String?,
+        categoryId: map['categoryId'] as String?,
         notes: map['notes'] as String? ?? '',
         lastPage: map['lastPage'] as int? ?? 0,
         totalPages: map['totalPages'] as int? ?? 0,

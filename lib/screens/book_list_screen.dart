@@ -1,35 +1,15 @@
-import 'dart:io' as io;
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import '../main.dart';
 import '../models/book.dart';
 import '../services/book_service.dart';
+import '../services/category_service.dart';
+import '../l10n/app_strings.dart';
+import 'shared_route.dart';
+import 'book_actions.dart';
 import 'book_form_screen.dart';
 import 'pdf_view_screen.dart';
-
-Route<T> buildPageRoute<T>(Widget page) {
-  return PageRouteBuilder<T>(
-    transitionDuration: const Duration(milliseconds: 400),
-    reverseTransitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, animation, __) => page,
-    transitionsBuilder: (_, animation, __, child) {
-      return FadeTransition(
-        opacity: animation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.05),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
-          child: child,
-        ),
-      );
-    },
-  );
-}
+import 'widgets/book_card.dart';
+import 'widgets/book_list_tile.dart';
 
 enum SortMode { updatedDesc, titleAsc, createdDesc }
 
@@ -46,10 +26,12 @@ class _BookListScreenState extends State<BookListScreen> {
   bool _initialized = false;
   bool _isGridView = true;
   SortMode _sortMode = SortMode.updatedDesc;
+  String? _filterCategoryId;
 
   final TextEditingController _searchCtrl = TextEditingController();
 
   BookService get _bookService => BookServiceScope.of(context);
+  CategoryService get _catService => CategoryServiceScope.of(context);
 
   @override
   void didChangeDependencies() {
@@ -70,6 +52,9 @@ class _BookListScreenState extends State<BookListScreen> {
 
   List<Book> get _filteredAndSorted {
     var result = _books;
+    if (_filterCategoryId != null) {
+      result = result.where((b) => b.categoryId == _filterCategoryId).toList();
+    }
     final q = _searchCtrl.text.toLowerCase();
     if (q.isNotEmpty) {
       result = result
@@ -105,15 +90,16 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   Future<void> _deleteBook(Book book) async {
+    final s = AppStrings.of(context);
     await _bookService.delete(book.id);
     _refresh();
     if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('"${book.title}" đã xoá'),
+        content: Text(s.bookDeleted(book.title)),
         action: SnackBarAction(
-          label: 'Hoàn tác',
+          label: s.undo,
           onPressed: () async {
             await _bookService.restore(book);
             _refresh();
@@ -124,18 +110,19 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   Future<void> _confirmDeleteBook(Book book) async {
+    final s = AppStrings.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xoá sách'),
-        content: Text('Bạn muốn xoá "${book.title}"?'),
+        title: Text(s.deleteBook),
+        content: Text(s.deleteBookConfirm(book.title)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Huỷ')),
+              child: Text(s.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Xoá')),
+              child: Text(s.delete)),
         ],
       ),
     );
@@ -144,7 +131,8 @@ class _BookListScreenState extends State<BookListScreen> {
 
   Future<void> _openBook(Book book) async {
     if (!book.canRead) return;
-    final file = await _validatePath(book);
+    final file = await validateBookPath(context, book, _bookService);
+    if (file != null) _refresh(); // path may have been updated
     if (file == null || !mounted) return;
     await Navigator.push(
       context,
@@ -158,64 +146,13 @@ class _BookListScreenState extends State<BookListScreen> {
     _refresh();
   }
 
-  Future<String?> _validatePath(Book book) async {
-    final path = book.filePath;
-    if (path != null && path.isNotEmpty) {
-      if (await io.File(path).exists()) return path;
-    }
-    if (!mounted) return null;
-    final shouldRepick = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('File không tồn tại'),
-        content: const Text('Đường dẫn ebook không hợp lệ. Chọn lại file?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Huỷ')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Chọn lại')),
-        ],
-      ),
-    );
-    if (shouldRepick != true || !mounted) return null;
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
-    if (result != null && result.files.single.path != null) {
-      final newPath = result.files.single.path!;
-      await _bookService.update(book.copyWith(filePath: () => newPath));
-      _refresh();
-      return newPath;
-    }
-    return null;
+  Future<void> _doExport() async {
+    await exportBooks(context, _bookService);
   }
 
-  Future<void> _exportBooks() async {
-    final path = await FilePicker.platform.saveFile(
-      dialogTitle: 'Xuất thư viện',
-      fileName: 'books_backup.json',
-    );
-    if (path == null) return;
-    await _bookService.exportToFile(path);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã xuất thư viện thành công')),
-    );
-  }
-
-  Future<void> _importBooks() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-    );
-    if (result == null || result.files.single.path == null) return;
-    final count = await _bookService.importFromFile(result.files.single.path!);
-    _refresh();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Đã nhập $count sách mới')),
-    );
+  Future<void> _doImport() async {
+    final count = await importBooks(context, _bookService);
+    if (count > 0) _refresh();
   }
 
   void _toggleSearch() {
@@ -227,6 +164,7 @@ class _BookListScreenState extends State<BookListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final filtered = _filteredAndSorted;
 
     return Scaffold(
@@ -235,13 +173,13 @@ class _BookListScreenState extends State<BookListScreen> {
             ? TextField(
                 controller: _searchCtrl,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Tìm theo tên hoặc tác giả...',
+                decoration: InputDecoration(
+                  hintText: s.searchHint,
                   border: InputBorder.none,
                 ),
                 onChanged: (_) => setState(() {}),
               )
-            : const Text('Thư viện sách'),
+            : Text(s.library),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
@@ -250,28 +188,28 @@ class _BookListScreenState extends State<BookListScreen> {
           if (!_isSearching) ...[
             IconButton(
               icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-              tooltip: _isGridView ? 'Xem danh sách' : 'Xem lưới',
+              tooltip: _isGridView ? s.listView : s.gridView,
               onPressed: () => setState(() => _isGridView = !_isGridView),
             ),
             PopupMenuButton<SortMode>(
               icon: const Icon(Icons.sort),
-              tooltip: 'Sắp xếp',
+              tooltip: s.sort,
               onSelected: (mode) => setState(() => _sortMode = mode),
               itemBuilder: (_) => [
-                _sortMenuItem(SortMode.updatedDesc, 'Mới cập nhật'),
-                _sortMenuItem(SortMode.titleAsc, 'Tên A-Z'),
-                _sortMenuItem(SortMode.createdDesc, 'Mới thêm'),
+                _sortMenuItem(SortMode.updatedDesc, s.sortUpdated),
+                _sortMenuItem(SortMode.titleAsc, s.sortTitle),
+                _sortMenuItem(SortMode.createdDesc, s.sortCreated),
               ],
             ),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (v) {
-                if (v == 'export') _exportBooks();
-                if (v == 'import') _importBooks();
+                if (v == 'export') _doExport();
+                if (v == 'import') _doImport();
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'export', child: Text('Xuất thư viện')),
-                PopupMenuItem(value: 'import', child: Text('Nhập thư viện')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'export', child: Text(s.exportLib)),
+                PopupMenuItem(value: 'import', child: Text(s.importLib)),
               ],
             ),
           ],
@@ -281,11 +219,18 @@ class _BookListScreenState extends State<BookListScreen> {
         onPressed: _addBook,
         child: const Icon(Icons.add),
       ),
-      body: filtered.isEmpty
-          ? _buildEmptyState()
-          : _isGridView
-              ? _buildGrid(filtered)
-              : _buildList(filtered),
+      body: Column(
+        children: [
+          _buildCategoryFilter(),
+          Expanded(
+            child: filtered.isEmpty
+                ? _buildEmptyState()
+                : _isGridView
+                    ? _buildGrid(filtered)
+                    : _buildList(filtered),
+          ),
+        ],
+      ),
     );
   }
 
@@ -305,38 +250,86 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final hasQuery = _searchCtrl.text.isNotEmpty;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+  Widget _buildCategoryFilter() {
+    final s = AppStrings.of(context);
+    final categories = _catService.getAll();
+    if (categories.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         children: [
-          Icon(
-            hasQuery ? Icons.search_off : Icons.library_books,
-            size: 64,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            hasQuery ? 'Không tìm thấy sách.' : 'Chưa có sách nào.',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          if (!hasQuery) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Bấm + để thêm sách mới',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(s.all),
+              selected: _filterCategoryId == null,
+              onSelected: (_) => setState(() => _filterCategoryId = null),
             ),
-          ],
+          ),
+          ...categories.map((cat) => Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  avatar: CircleAvatar(
+                    radius: 6,
+                    backgroundColor: Color(cat.colorValue),
+                  ),
+                  label: Text(cat.name),
+                  selected: _filterCategoryId == cat.id,
+                  onSelected: (_) => setState(
+                    () => _filterCategoryId =
+                        _filterCategoryId == cat.id ? null : cat.id,
+                  ),
+                ),
+              )),
         ],
       ),
     );
   }
 
-  // --- Grid View ---
+  Widget _buildEmptyState() {
+    final s = AppStrings.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasQuery = _searchCtrl.text.isNotEmpty;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              hasQuery ? Icons.search_off : Icons.auto_stories_outlined,
+              size: 80,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              hasQuery ? s.noResults : s.noBooks,
+              style: Theme.of(context).textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            if (!hasQuery) ...[
+              const SizedBox(height: 8),
+              Text(
+                s.addBookHint,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _addBook,
+                icon: const Icon(Icons.add),
+                label: Text(s.addBook),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildGrid(List<Book> books) {
     return GridView.builder(
@@ -350,7 +343,7 @@ class _BookListScreenState extends State<BookListScreen> {
       itemCount: books.length,
       itemBuilder: (context, index) {
         final book = books[index];
-        return _BookCard(
+        return BookCard(
           book: book,
           onTap: () => book.canRead ? _openBook(book) : _editBook(book),
           onEdit: () => _editBook(book),
@@ -359,8 +352,6 @@ class _BookListScreenState extends State<BookListScreen> {
       },
     );
   }
-
-  // --- List View ---
 
   Widget _buildList(List<Book> books) {
     return ListView.builder(
@@ -382,7 +373,7 @@ class _BookListScreenState extends State<BookListScreen> {
             _deleteBook(book);
             return false;
           },
-          child: _BookListTile(
+          child: BookListTile(
             book: book,
             onTap: () => book.canRead ? _openBook(book) : _editBook(book),
             onEdit: () => _editBook(book),
@@ -390,331 +381,6 @@ class _BookListScreenState extends State<BookListScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-
-// ============================================================
-// Book Card (Grid View) — shows cover thumbnail like a real book
-// ============================================================
-
-class _BookCard extends StatefulWidget {
-  final Book book;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _BookCard({
-    required this.book,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  State<_BookCard> createState() => _BookCardState();
-}
-
-class _BookCardState extends State<_BookCard> {
-  ui.Image? _thumbnail;
-  String? _loadedBookId;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadThumbnailIfNeeded();
-  }
-
-  @override
-  void didUpdateWidget(_BookCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.book.id != widget.book.id ||
-        oldWidget.book.filePath != widget.book.filePath) {
-      _loadThumbnailIfNeeded();
-    }
-  }
-
-  void _loadThumbnailIfNeeded() {
-    if (_loadedBookId == widget.book.id) return;
-    _loadedBookId = widget.book.id;
-    _thumbnail = null;
-    _loadThumbnail();
-  }
-
-  Future<void> _loadThumbnail() async {
-    if (!widget.book.canRead || widget.book.filePath == null) return;
-    final svc = ThumbnailServiceScope.of(context);
-    final img = await svc.getThumbnail(
-      bookId: widget.book.id,
-      filePath: widget.book.filePath!,
-      width: 300,
-    );
-    if (mounted && widget.book.id == _loadedBookId && img != null) {
-      setState(() => _thumbnail = img);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final book = widget.book;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 2,
-      child: InkWell(
-        onTap: widget.onTap,
-        onLongPress: () => _showMenu(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Cover image
-            Expanded(
-              child: _thumbnail != null
-                  ? RawImage(image: _thumbnail, fit: BoxFit.cover)
-                  : Container(
-                      color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                      child: Icon(
-                        _formatIcon(book.format),
-                        size: 48,
-                        color: colorScheme.onPrimaryContainer
-                            .withValues(alpha: 0.5),
-                      ),
-                    ),
-            ),
-            // Progress bar
-            if (book.canRead && book.totalPages > 0)
-              LinearProgressIndicator(
-                value: book.progressPercent,
-                minHeight: 3,
-              ),
-            // Info
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    style: Theme.of(context).textTheme.titleSmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (book.author.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      book.author,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  if (book.readingSeconds > 0) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      book.readingTimeFormatted,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Sửa'),
-              onTap: () {
-                Navigator.pop(ctx);
-                widget.onEdit();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Xoá'),
-              onTap: () {
-                Navigator.pop(ctx);
-                widget.onDelete();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static IconData _formatIcon(BookFormat format) {
-    switch (format) {
-      case BookFormat.paper:
-        return Icons.menu_book;
-      case BookFormat.ebook:
-        return Icons.tablet_android;
-      case BookFormat.both:
-        return Icons.library_books;
-    }
-  }
-}
-
-// ============================================================
-// Book List Tile (List View)
-// ============================================================
-
-class _BookListTile extends StatefulWidget {
-  final Book book;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _BookListTile({
-    required this.book,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  State<_BookListTile> createState() => _BookListTileState();
-}
-
-class _BookListTileState extends State<_BookListTile> {
-  ui.Image? _thumbnail;
-  String? _loadedBookId;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadThumbnailIfNeeded();
-  }
-
-  @override
-  void didUpdateWidget(_BookListTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.book.id != widget.book.id ||
-        oldWidget.book.filePath != widget.book.filePath) {
-      _loadThumbnailIfNeeded();
-    }
-  }
-
-  void _loadThumbnailIfNeeded() {
-    if (_loadedBookId == widget.book.id) return;
-    _loadedBookId = widget.book.id;
-    _thumbnail = null;
-    _loadThumbnail();
-  }
-
-  Future<void> _loadThumbnail() async {
-    if (!widget.book.canRead || widget.book.filePath == null) return;
-    final svc = ThumbnailServiceScope.of(context);
-    final img = await svc.getThumbnail(
-      bookId: widget.book.id,
-      filePath: widget.book.filePath!,
-      width: 80,
-    );
-    if (mounted && widget.book.id == _loadedBookId && img != null) {
-      setState(() => _thumbnail = img);
-    }
-  }
-
-  String get _formatLabel {
-    switch (widget.book.format) {
-      case BookFormat.paper:
-        return 'Sách giấy';
-      case BookFormat.ebook:
-        return 'Ebook';
-      case BookFormat.both:
-        return 'Giấy + Ebook';
-    }
-  }
-
-  IconData get _formatIcon {
-    switch (widget.book.format) {
-      case BookFormat.paper:
-        return Icons.menu_book;
-      case BookFormat.ebook:
-        return Icons.tablet_android;
-      case BookFormat.both:
-        return Icons.library_books;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final book = widget.book;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ListTile(
-      leading: SizedBox(
-        width: 40,
-        height: 56,
-        child: _thumbnail != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: RawImage(image: _thumbnail, fit: BoxFit.cover),
-              )
-            : CircleAvatar(
-                backgroundColor: colorScheme.primaryContainer,
-                child: Icon(_formatIcon, color: colorScheme.onPrimaryContainer),
-              ),
-      ),
-      title: Text(book.title),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            [
-              if (book.author.isNotEmpty) book.author,
-              _formatLabel,
-              if (book.readingSeconds > 0) book.readingTimeFormatted,
-            ].join(' · '),
-          ),
-          if (book.canRead && book.totalPages > 0) ...[
-            const SizedBox(height: 4),
-            LinearProgressIndicator(
-              value: book.progressPercent,
-              minHeight: 3,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ],
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (book.canRead)
-            IconButton(
-              icon: const Icon(Icons.chrome_reader_mode_outlined),
-              tooltip: 'Đọc sách',
-              onPressed: widget.onTap,
-            ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') widget.onEdit();
-              if (value == 'delete') widget.onDelete();
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('Sửa')),
-              PopupMenuItem(value: 'delete', child: Text('Xoá')),
-            ],
-          ),
-        ],
-      ),
-      onTap: widget.onTap,
     );
   }
 }

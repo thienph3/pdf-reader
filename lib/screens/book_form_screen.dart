@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../main.dart';
 import '../models/book.dart';
+import '../l10n/app_strings.dart';
 
 class BookFormScreen extends StatefulWidget {
   final Book? book;
@@ -19,23 +20,24 @@ class _BookFormScreenState extends State<BookFormScreen> {
   late final TextEditingController _notesCtrl;
   late BookFormat _format;
   String? _filePath;
+  String? _categoryId;
 
-  // Original values for dirty checking (#4)
   late final String _origTitle;
   late final String _origAuthor;
   late final String _origNotes;
   late final BookFormat _origFormat;
   late final String? _origFilePath;
+  late final String? _origCategoryId;
 
   bool get _isEditing => widget.book != null;
 
-  /// Compare current form state against original values.
   bool get _hasChanges {
     return _titleCtrl.text != _origTitle ||
         _authorCtrl.text != _origAuthor ||
         _notesCtrl.text != _origNotes ||
         _format != _origFormat ||
-        _filePath != _origFilePath;
+        _filePath != _origFilePath ||
+        _categoryId != _origCategoryId;
   }
 
   @override
@@ -47,12 +49,14 @@ class _BookFormScreenState extends State<BookFormScreen> {
     _notesCtrl = TextEditingController(text: b?.notes ?? '');
     _format = b?.format ?? BookFormat.ebook;
     _filePath = b?.filePath;
+    _categoryId = b?.categoryId;
 
     _origTitle = _titleCtrl.text;
     _origAuthor = _authorCtrl.text;
     _origNotes = _notesCtrl.text;
     _origFormat = _format;
     _origFilePath = _filePath;
+    _origCategoryId = _categoryId;
 
     // Trigger rebuild on text changes so PopScope.canPop re-evaluates
     _titleCtrl.addListener(_onFieldChanged);
@@ -96,19 +100,20 @@ class _BookFormScreenState extends State<BookFormScreen> {
 
   Future<bool> _onWillPop() async {
     if (!_hasChanges) return true;
+    final s = AppStrings.of(context);
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Huỷ thay đổi?'),
-        content: const Text('Bạn có thay đổi chưa lưu. Muốn huỷ bỏ?'),
+        title: Text(s.discardTitle),
+        content: Text(s.discardMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Tiếp tục sửa'),
+            child: Text(s.continueEditing),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Huỷ bỏ'),
+            child: Text(s.discard),
           ),
         ],
       ),
@@ -129,6 +134,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
         author: _authorCtrl.text.trim(),
         format: _format,
         filePath: () => path,
+        categoryId: () => _categoryId,
         notes: _notesCtrl.text.trim(),
       );
       await svc.update(updated);
@@ -138,6 +144,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
         author: _authorCtrl.text.trim(),
         format: _format,
         filePath: path,
+        categoryId: _categoryId,
         notes: _notesCtrl.text.trim(),
       );
     }
@@ -165,6 +172,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     return PopScope(
       canPop: !_hasChanges,
       onPopInvokedWithResult: (didPop, _) async {
@@ -176,7 +184,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isEditing ? 'Sửa sách' : 'Thêm sách'),
+          title: Text(_isEditing ? s.editBook : s.addBook),
         ),
         body: Form(
           key: _formKey,
@@ -185,24 +193,26 @@ class _BookFormScreenState extends State<BookFormScreen> {
             children: [
               TextFormField(
                 controller: _titleCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Tên sách *',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: s.bookTitle,
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (v) => v == null || v.trim().isEmpty
-                    ? 'Vui lòng nhập tên sách'
+                    ? s.bookTitleRequired
                     : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _authorCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Tác giả',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: s.author,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               _buildFormatSelector(),
+              const SizedBox(height: 16),
+              _buildCategoryPicker(),
               if (_showFilePicker) ...[
                 const SizedBox(height: 16),
                 _buildFilePicker(),
@@ -210,16 +220,16 @@ class _BookFormScreenState extends State<BookFormScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _notesCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Ghi chú',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: s.notes,
+                  border: const OutlineInputBorder(),
                 ),
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: _save,
-                child: Text(_isEditing ? 'Lưu thay đổi' : 'Thêm sách'),
+                child: Text(_isEditing ? s.saveChanges : s.addBook),
               ),
             ],
           ),
@@ -228,28 +238,71 @@ class _BookFormScreenState extends State<BookFormScreen> {
     );
   }
 
-  Widget _buildFormatSelector() {
+  Widget _buildCategoryPicker() {
+    final s = AppStrings.of(context);
+    final catService = CategoryServiceScope.of(context);
+    final categories = catService.getAll();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Loại sách', style: Theme.of(context).textTheme.titleSmall),
+        Text(s.category, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String?>(
+          initialValue: _categoryId,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          hint: Text(s.selectCategory),
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text(s.noCategory),
+            ),
+            ...categories.map((cat) => DropdownMenuItem<String?>(
+                  value: cat.id,
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 8,
+                        backgroundColor: Color(cat.colorValue),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(cat.name),
+                    ],
+                  ),
+                )),
+          ],
+          onChanged: (v) => setState(() => _categoryId = v),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormatSelector() {
+    final s = AppStrings.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(s.bookType, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         SegmentedButton<BookFormat>(
-          segments: const [
+          segments: [
             ButtonSegment(
               value: BookFormat.paper,
-              label: Text('Giấy'),
-              icon: Icon(Icons.menu_book),
+              label: Text(s.paper),
+              icon: const Icon(Icons.menu_book),
             ),
             ButtonSegment(
               value: BookFormat.ebook,
-              label: Text('Ebook'),
-              icon: Icon(Icons.tablet_android),
+              label: Text(s.ebook),
+              icon: const Icon(Icons.tablet_android),
             ),
             ButtonSegment(
               value: BookFormat.both,
-              label: Text('Cả hai'),
-              icon: Icon(Icons.library_books),
+              label: Text(s.both),
+              icon: const Icon(Icons.library_books),
             ),
           ],
           selected: {_format},
@@ -262,15 +315,16 @@ class _BookFormScreenState extends State<BookFormScreen> {
   }
 
   Widget _buildFilePicker() {
+    final s = AppStrings.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('File PDF', style: Theme.of(context).textTheme.titleSmall),
+        Text(s.pdfFile, style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _pickFile,
           icon: const Icon(Icons.attach_file),
-          label: Text(_filePath != null ? 'Đổi file' : 'Chọn file PDF'),
+          label: Text(_filePath != null ? s.changeFile : s.pickFile),
         ),
         if (_filePath != null)
           Padding(

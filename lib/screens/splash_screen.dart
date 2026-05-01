@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'book_list_screen.dart';
+import '../l10n/app_strings.dart';
+import 'main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     );
     _iconScale = CurvedAnimation(
       parent: _controller,
@@ -34,13 +35,14 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateToHome() async {
-    await Future.delayed(const Duration(milliseconds: 1800));
+    // Minimum 1.2s for branding, but don't block unnecessarily
+    await Future.delayed(const Duration(milliseconds: 1200));
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 500),
-        pageBuilder: (_, animation, __) => const BookListScreen(),
+        pageBuilder: (_, animation, __) => const MainShell(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -57,6 +59,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final s = AppStrings.of(context);
 
     return Scaffold(
       body: Center(
@@ -89,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
             FadeTransition(
               opacity: _textFade,
               child: Text(
-                'Thư viện sách của bạn',
+                s.splashSubtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

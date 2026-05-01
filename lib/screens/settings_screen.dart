@@ -13,7 +13,9 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(s.settings)),
-      body: ListView(
+      body: ListenableBuilder(
+        listenable: settingsService,
+        builder: (context, _) => ListView(
         children: [
           // Theme
           ListTile(
@@ -66,6 +68,7 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _showMonthlyGoalPicker(context, s),
           ),
         ],
+      ),
       ),
     );
   }

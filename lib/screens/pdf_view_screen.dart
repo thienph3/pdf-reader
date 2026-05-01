@@ -742,6 +742,15 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
               params: PdfViewerParams(
                 enableTextSelection: true,
                 layoutPages: _isHorizontalScroll ? _horizontalLayout : null,
+                panAxis: _isHorizontalScroll ? PanAxis.horizontal : PanAxis.free,
+                scrollByMouseWheel: _isHorizontalScroll ? 1.0 : 0.2,
+                onPageChanged: (page) {
+                  if (page != null) _onPageChanged(page - 1);
+                  // Snap to page center when horizontal
+                  if (_isHorizontalScroll && page != null) {
+                    _viewerController.goToPage(pageNumber: page);
+                  }
+                },
                 pagePaintCallbacks: [_paintHighlights, _paintSearchMatches],
                 viewerOverlayBuilder: (context, size, handleLinkTap) => [
                   GestureDetector(
@@ -751,9 +760,13 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                       if (hit != null) {
                         _showHighlightInfo(hit);
                       }
-                      // Always forward to handle links
                       handleLinkTap(details.localPosition);
                     },
+                    child: Container(
+                      width: size.width,
+                      height: size.height,
+                      color: const Color(0x220000FF), // DEBUG: blue tint
+                    ),
                   ),
                 ],
                 onTextSelectionChange: (selections) {
@@ -782,9 +795,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                       widget.initialPage < _totalPages) {
                     controller.goToPage(pageNumber: widget.initialPage + 1);
                   }
-                },
-                onPageChanged: (page) {
-                  if (page != null) _onPageChanged(page - 1);
                 },
               ),
             ),

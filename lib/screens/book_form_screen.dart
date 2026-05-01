@@ -45,7 +45,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
     _titleCtrl = TextEditingController(text: b?.title ?? '');
     _authorCtrl = TextEditingController(text: b?.author ?? '');
     _notesCtrl = TextEditingController(text: b?.notes ?? '');
-    _format = b?.format ?? BookFormat.paper;
+    _format = b?.format ?? BookFormat.ebook;
     _filePath = b?.filePath;
 
     _origTitle = _titleCtrl.text;
@@ -79,7 +79,18 @@ class _BookFormScreenState extends State<BookFormScreen> {
       allowedExtensions: ['pdf'],
     );
     if (result != null && result.files.single.path != null) {
-      setState(() => _filePath = result.files.single.path);
+      final name = result.files.single.name;
+      setState(() {
+        _filePath = result.files.single.path;
+        // Auto-fill title from filename if empty
+        if (_titleCtrl.text.trim().isEmpty) {
+          // Remove .pdf extension
+          final title = name.endsWith('.pdf')
+              ? name.substring(0, name.length - 4)
+              : name;
+          _titleCtrl.text = title;
+        }
+      });
     }
   }
 

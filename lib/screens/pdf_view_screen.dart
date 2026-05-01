@@ -85,30 +85,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   PdfTextSearcher? _textSearcher;
 
-  // Store screen-space rects of highlights for tap detection
-  // These are populated during _paintHighlights and used for hit testing
-  final Map<String, Rect> _highlightScreenRects = {};
-
-  /// Hit test: returns the Highlight if tap position hits one.
-  /// Uses a simpler approach: check current page highlights against
-  /// their PDF-coordinate bounds, converted via page layout.
-  Highlight? _hitTestHighlight(Offset tapPosition) {
-    if (widget.bookId == null || _bookService == null) return null;
-
-    // Get highlights for current page
-    final highlights =
-        _bookService!.getHighlightsForPage(widget.bookId!, _currentPage);
-    if (highlights.isEmpty) return null;
-
-    // Check stored screen rects (populated by paint callback)
-    for (final h in highlights) {
-      final rect = _highlightScreenRects[h.id];
-      if (rect != null && rect.inflate(12).contains(tapPosition)) {
-        return h;
-      }
-    }
-    return null;
-  }
   List<PdfTextRanges>? _pendingSelection;
 
   @override
@@ -612,12 +588,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     if (widget.bookId == null || _bookService == null) return;
     final pageIndex = page.pageNumber - 1;
     final highlights = _bookService!.getHighlightsForPage(widget.bookId!, pageIndex);
-
-    // Clear rects for this page's highlights
-    for (final h in highlights) {
-      _highlightScreenRects.remove(h.id);
-    }
-
     if (highlights.isEmpty) return;
 
     final pageText = _pageTextCache[page.pageNumber];
@@ -630,7 +600,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
 
     for (final h in highlights) {
       final paint = ui.Paint()..color = Color(h.colorValue);
-      Rect? combinedRect;
 
       for (final fragment in pageText.fragments) {
         final fragStart = fragment.index;
@@ -652,13 +621,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
             pageRect.top + (1 - charRect.bottom / page.height) * pageRect.height,
           );
           canvas.drawRect(rect, paint);
-          combinedRect = combinedRect?.expandToInclude(rect) ?? rect;
         }
-      }
-
-      // Store screen rect for tap detection
-      if (combinedRect != null) {
-        _highlightScreenRects[h.id] = combinedRect;
       }
     }
   }
@@ -752,23 +715,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                   }
                 },
                 pagePaintCallbacks: [_paintHighlights, _paintSearchMatches],
-                viewerOverlayBuilder: (context, size, handleLinkTap) => [
-                  GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTapUp: (details) {
-                      final hit = _hitTestHighlight(details.localPosition);
-                      if (hit != null) {
-                        _showHighlightInfo(hit);
-                      }
-                      handleLinkTap(details.localPosition);
-                    },
-                    child: Container(
-                      width: size.width,
-                      height: size.height,
-                      color: const Color(0x220000FF), // DEBUG: blue tint
-                    ),
-                  ),
-                ],
                 onTextSelectionChange: (selections) {
                   if (selections.isNotEmpty) {
                     _pendingSelection = selections;

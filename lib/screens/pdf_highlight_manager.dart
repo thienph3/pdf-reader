@@ -124,12 +124,15 @@ class PdfHighlightManager {
     String selectedText,
     VoidCallback? onSuccess,
   ) async {
-    if (bookId == null || bookService == null) return;
+    debugPrint('createHighlight: bookId=$bookId, bookService=$bookService');
+    if (bookId == null || bookService == null) {
+      debugPrint('createHighlight: ABORTED - bookId or bookService is null');
+      return;
+    }
     
-    // Create a new highlight
     final highlight = Highlight(
       id: _uuid.v4(),
-      page: range.pageNumber - 1, // Convert to 0-based index
+      page: range.pageNumber - 1,
       startIndex: range.start,
       endIndex: range.end,
       text: selectedText,
@@ -137,11 +140,14 @@ class PdfHighlightManager {
       createdAt: DateTime.now(),
     );
     
-    // Add highlight to book
+    debugPrint('createHighlight: adding highlight page=${highlight.page} start=${highlight.startIndex} end=${highlight.endIndex}');
+    
     try {
-      await bookService!.addHighlight(bookId!, highlight);
+      final updated = await bookService!.addHighlight(bookId!, highlight);
+      debugPrint('createHighlight: SUCCESS - book now has ${updated.highlights.length} highlights');
       onSuccess?.call();
     } catch (error) {
+      debugPrint('createHighlight: ERROR - $error');
       rethrow;
     }
   }

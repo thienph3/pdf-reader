@@ -21,23 +21,30 @@ class PdfTextSelectionManager {
     final delegate = params.textSelectionDelegate;
     return ContextMenuButtonItem(
       onPressed: () async {
+        debugPrint('Highlight button pressed');
         try {
           final ranges = await delegate.getSelectedTextRanges();
+          debugPrint('ranges: ${ranges.length}');
           if (ranges.isEmpty) {
             params.dismissContextMenu();
             return;
           }
           final range = ranges.first;
+          debugPrint('range: page=${range.pageNumber} start=${range.start} end=${range.end}');
           final selectedText = await delegate.getSelectedText();
+          debugPrint('selectedText: $selectedText');
+          debugPrint('highlightManager: $highlightManager, bookId: ${highlightManager?.bookId}');
           if (highlightManager != null) {
             await highlightManager!.createHighlightFromSelection(
               range,
               selectedText,
               onHighlightCreated,
             );
+            debugPrint('Highlight created successfully');
           }
-        } catch (e) {
+        } catch (e, st) {
           debugPrint('Create highlight error: $e');
+          debugPrint('Stack trace: $st');
         }
         params.dismissContextMenu();
       },

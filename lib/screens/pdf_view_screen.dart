@@ -109,36 +109,49 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
 
   // TTS batch reading state
   int _ttsBatchEndPage = 0;
-  static const _ttsBatchSize = 3; // Read 3 pages at a time
+  bool _ttsAutoAdvance = false;
+  static const _ttsBatchSize = 3;
 
   void _onTtsStateChanged() {
-    if (!mounted || !_showTts) return;
-    // When TTS finishes a batch, advance page and read next batch
+    if (!mounted || !_showTts || !_ttsAutoAdvance) return;
     if (_ttsService.isStopped && _ttsService.currentText == null) {
-      // Completed (not manually stopped)
       if (_ttsBatchEndPage < _totalPages) {
-        // Move to next batch
-        final nextPage = _ttsBatchEndPage; // 0-indexed
-        _viewerController.goToPage(pageNumber: nextPage + 1);
-        // Small delay to let page change settle, then read next batch
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted && _showTts) {
+        final nextPage = _ttsBatchEndPage;
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && _showTts && _ttsAutoAdvance) {
+            _viewerController.goToPage(pageNumber: nextPage + 1);
             _speakBatch(nextPage);
           }
         });
+      } else {
+        _ttsAutoAdvance = false;
       }
     }
   }
 
   /// Speak a batch of pages starting from startPage (0-indexed).
-  void _speakBatch(int startPage) {
+  Future<void> _speakBatch(int startPage) async {
     final endPage = (startPage + _ttsBatchSize).clamp(0, _totalPages);
     _ttsBatchEndPage = endPage;
+    _ttsAutoAdvance = true;
+
+    // Ensure text is loaded for all pages in batch
+    for (var i = startPage; i < endPage; i++) {
+      final pageNumber = i + 1;
+      if (_highlightManager.highlightTextCache.get(pageNumber) == null && _pdfDocument != null) {
+        if (pageNumber >= 1 && pageNumber <= _pdfDocument!.pages.length) {
+          try {
+            final page = _pdfDocument!.pages[pageNumber - 1];
+            final text = await page.loadStructuredText();
+            _highlightManager.highlightTextCache.put(pageNumber, text);
+          } catch (_) {}
+        }
+      }
+    }
 
     final buffer = StringBuffer();
     for (var i = startPage; i < endPage; i++) {
-      final pageNumber = i + 1;
-      final cached = _highlightManager.highlightTextCache.get(pageNumber);
+      final cached = _highlightManager.highlightTextCache.get(i + 1);
       final text = cached?.fullText;
       if (text != null && text.trim().isNotEmpty) {
         buffer.write(text);
@@ -149,8 +162,14 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     final combined = buffer.toString();
     if (combined.trim().isNotEmpty) {
       _ttsService.speak(combined);
-      // Estimate page advance timing
       _schedulePageAdvance(startPage, endPage, combined);
+    } else {
+      // No text in this batch, try next
+      if (endPage < _totalPages) {
+        _speakBatch(endPage);
+      } else {
+        _ttsAutoAdvance = false;
+      }
     }
   }
 
@@ -533,7 +552,10 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   void _toggleTts() {
     setState(() {
       _showTts = !_showTts;
-      if (!_showTts) _ttsService.stop();
+      if (!_showTts) {
+        _ttsService.stop();
+        _ttsAutoAdvance = false;
+      }
     });
   }
 

@@ -46,6 +46,22 @@
 - **✅ Import/export**: Nhập/xuất sách và dữ liệu
 - **✅ Thumbnail**: Hiển thị trang bìa PDF trên book card
 
+### 🔊 Text-to-Speech (TTS)
+- **✅ Offline TTS**: flutter_tts + native TTS engine (Google TTS trên Android)
+- **✅ Foreground service**: Tiếp tục đọc khi app ở background (flutter_foreground_task)
+- **✅ Batch reading**: Nối text 3 page liên tiếp, đọc liền không ngắt giữa câu
+- **✅ Auto page advance**: Tự chuyển page trên UI theo thời gian ước tính, tự load batch tiếp
+- **✅ Language auto-detect**: Rule-based detect Vietnamese, Chinese, Japanese, Korean, Thai, fallback English
+- **✅ Auto language switch**: Tự chuyển TTS language theo nội dung PDF
+- **✅ Text cleaning**: Nối dòng bị ngắt do PDF layout, giữ paragraph break
+- **✅ Speed control**: Slider điều chỉnh tốc độ đọc
+- **✅ Language picker**: Chọn ngôn ngữ TTS thủ công
+- **✅ Voice install check**: Kiểm tra voice đã cài chưa, hướng dẫn download
+- **✅ Settings TTS info**: Hiển thị trạng thái TTS + danh sách language packs (installed/not)
+- **✅ Open TTS Settings**: Mở Android TTS Settings để download voice (platform channel)
+- **✅ Auto refresh**: Tự cập nhật trạng thái installed khi quay lại app
+- **✅ Scanned PDF detection**: Hiện thông báo khi page không có text
+
 ### ⚙️ Cài đặt
 - **✅ Settings toggle UX**: Cycle/toggle thay vì dropdown
 - **✅ Theme**: System / Light / Dark (cycle)
@@ -56,9 +72,6 @@
 ---
 
 ## 🔧 CẦN HOÀN THIỆN (Ưu tiên cao)
-
-### Tính năng đọc nâng cao
-- **Text-to-speech (TTS)**: Đọc văn bản thành tiếng
 
 ### Annotation tools (mở rộng từ highlight)
 - Text annotation (ghi chú văn bản trực tiếp lên PDF)
@@ -101,6 +114,8 @@
 ## 📝 Ghi chú kỹ thuật
 
 - **pdfrx 2.2.24**: PDF rendering, text selection, scrollPhysics, onGeneralTap
+- **flutter_tts 4.2.x**: Offline TTS với native engine
+- **flutter_foreground_task 8.x**: Foreground service cho TTS background
 - **Hive**: Local storage cho books, highlights, bookmarks, settings
 - **Material Design 3**: Giao diện
 - **Hoàn toàn offline**: Không yêu cầu internet

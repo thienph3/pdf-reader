@@ -115,7 +115,7 @@ class PdfViewHighlightsUi {
                         border: Border.all(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
-                              : Colors.grey.shade300,
+                              : Theme.of(context).colorScheme.outlineVariant,
                           width: isSelected ? 3 : 1,
                         ),
                       ),

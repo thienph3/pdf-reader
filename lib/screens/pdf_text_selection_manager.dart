@@ -18,21 +18,28 @@ class PdfTextSelectionManager {
     BuildContext context,
     PdfViewerContextMenuBuilderParams params,
   ) {
+    debugPrint('buildContextMenu called: contextMenuFor=${params.contextMenuFor}');
+    
     // Only show for text selection
     if (params.contextMenuFor != PdfViewerPart.selectedText) {
+      debugPrint('buildContextMenu: not selectedText, returning null');
       return null;
     }
 
     // Check if we have a highlight manager
     if (highlightManager == null) {
+      debugPrint('buildContextMenu: highlightManager is null');
       return null;
     }
 
     // Get the text selection delegate
     final delegate = params.textSelectionDelegate;
     if (!delegate.hasSelectedText) {
+      debugPrint('buildContextMenu: no selected text');
       return null;
     }
+
+    debugPrint('buildContextMenu: building menu with selected text');
 
     // Build context menu items
     final items = <ContextMenuButtonItem>[

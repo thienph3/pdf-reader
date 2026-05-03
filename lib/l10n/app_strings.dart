@@ -188,6 +188,11 @@ class AppStrings {
       : 'Go to Settings → Accessibility → Spoken Content → Voices';
   String get searching => _isVi ? 'Đang tìm...' : 'Searching...';
   String get ocrProcessing => _isVi ? 'Đang nhận dạng văn bản...' : 'Recognizing text...';
+  String get ocrAlreadyDone => _isVi ? 'Tất cả trang đã được nhận dạng' : 'All pages already recognized';
+  String get ocrComplete => _isVi ? 'Nhận dạng văn bản hoàn tất' : 'Text recognition complete';
+  String ocrProgress(int done, int total) => _isVi ? 'OCR: $done/$total trang' : 'OCR: $done/$total pages';
+  String get switchToPdfView => _isVi ? 'Xem PDF' : 'PDF View';
+  String get switchToTextView => _isVi ? 'Xem văn bản' : 'Text View';
   String get noTextOnPage => _isVi ? 'Trang này không có văn bản (PDF scan?)' : 'No text found on this page (scanned PDF?)';
   String voiceNotInstalled(String lang) => _isVi ? 'Giọng đọc "$lang" chưa được cài.' : 'Voice for "$lang" not installed.';
   String get androidTtsHint => _isVi

@@ -17,6 +17,7 @@ class PdfViewDialogsManager {
   final VoidCallback onShowHighlightsList;
   final ValueChanged<int> onPageSelected;
   final VoidCallback? onTtsSpeedChanged;
+  final VoidCallback? onShowTextView;
 
   PdfViewDialogsManager({
     required this.highlightManager,
@@ -29,6 +30,7 @@ class PdfViewDialogsManager {
     required this.onShowHighlightsList,
     required this.onPageSelected,
     this.onTtsSpeedChanged,
+    this.onShowTextView,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -74,6 +76,15 @@ class PdfViewDialogsManager {
                 onTap: () {
                   Navigator.pop(ctx);
                   _showTtsSpeedPicker(context);
+                },
+              ),
+            if (pdfDocument != null)
+              ListTile(
+                leading: const Icon(Icons.text_snippet_outlined),
+                title: Text(s.switchToTextView),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onShowTextView?.call();
                 },
               ),
           ],

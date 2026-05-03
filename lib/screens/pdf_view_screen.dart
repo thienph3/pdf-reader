@@ -14,6 +14,8 @@ import 'pdf_view_ui_builder.dart';
 import 'pdf_view_dialogs_manager.dart';
 import 'pdf_view_highlights_ui.dart';
 import 'pdf_view_search_ui.dart';
+import 'pdf_tts_panel.dart';
+import '../services/tts_service.dart';
 
 class PdfViewScreen extends StatefulWidget {
   final String filePath;
@@ -55,6 +57,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   int _currentPage = 0;
   bool _closed = false;
   bool _isSearching = false;
+  bool _showTts = false;
+  final TtsService _ttsService = TtsService();
 
   Timer? _saveDebounce;
   int _sessionSeconds = 0;
@@ -98,6 +102,88 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _sessionSeconds++;
     });
+    
+    _ttsService.init();
+    _ttsService.addListener(_onTtsStateChanged);
+  }
+
+  // TTS batch reading state
+  int _ttsBatchEndPage = 0;
+  static const _ttsBatchSize = 3; // Read 3 pages at a time
+
+  void _onTtsStateChanged() {
+    if (!mounted || !_showTts) return;
+    // When TTS finishes a batch, advance page and read next batch
+    if (_ttsService.isStopped && _ttsService.currentText == null) {
+      // Completed (not manually stopped)
+      if (_ttsBatchEndPage < _totalPages) {
+        // Move to next batch
+        final nextPage = _ttsBatchEndPage; // 0-indexed
+        _viewerController.goToPage(pageNumber: nextPage + 1);
+        // Small delay to let page change settle, then read next batch
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted && _showTts) {
+            _speakBatch(nextPage);
+          }
+        });
+      }
+    }
+  }
+
+  /// Speak a batch of pages starting from startPage (0-indexed).
+  void _speakBatch(int startPage) {
+    final endPage = (startPage + _ttsBatchSize).clamp(0, _totalPages);
+    _ttsBatchEndPage = endPage;
+
+    final buffer = StringBuffer();
+    for (var i = startPage; i < endPage; i++) {
+      final pageNumber = i + 1;
+      final cached = _highlightManager.highlightTextCache.get(pageNumber);
+      final text = cached?.fullText;
+      if (text != null && text.trim().isNotEmpty) {
+        buffer.write(text);
+        buffer.write('\n');
+      }
+    }
+
+    final combined = buffer.toString();
+    if (combined.trim().isNotEmpty) {
+      _ttsService.speak(combined);
+      // Estimate page advance timing
+      _schedulePageAdvance(startPage, endPage, combined);
+    }
+  }
+
+  /// Schedule page changes during TTS reading based on text length per page.
+  void _schedulePageAdvance(int startPage, int endPage, String fullText) {
+    if (endPage - startPage <= 1) return;
+
+    // Calculate text length per page for timing
+    final pageLengths = <int>[];
+    for (var i = startPage; i < endPage; i++) {
+      final cached = _highlightManager.highlightTextCache.get(i + 1);
+      pageLengths.add(cached?.fullText.length ?? 0);
+    }
+
+    final totalLength = pageLengths.fold<int>(0, (a, b) => a + b);
+    if (totalLength == 0) return;
+
+    // Estimate total reading time based on speed
+    // At speed 0.5, roughly 150 words/min ≈ 750 chars/min
+    final charsPerSecond = (750 / 60) * (_ttsService.speed * 2);
+    final totalSeconds = totalLength / charsPerSecond;
+
+    var elapsed = 0.0;
+    for (var i = 0; i < pageLengths.length - 1; i++) {
+      elapsed += pageLengths[i] / totalLength * totalSeconds;
+      final targetPage = startPage + i + 1;
+      final delay = Duration(milliseconds: (elapsed * 1000).toInt());
+      Future.delayed(delay, () {
+        if (mounted && _ttsService.isPlaying && _showTts && targetPage < _totalPages) {
+          _viewerController.goToPage(pageNumber: targetPage + 1);
+        }
+      });
+    }
   }
 
   @override
@@ -149,6 +235,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onClose: _closeAndPop,
       onStartSearch: _startSearch,
       onShowReaderActions: _showReaderActions,
+      onToggleTts: _toggleTts,
       onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
     );
     
@@ -176,8 +263,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   void _onPageChanged(int page) {
     setState(() => _currentPage = page);
     _debouncedSaveProgress();
-    
-    // Preload text for surrounding pages to improve performance
     _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument);
   }
 
@@ -249,6 +334,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     _readingTimer?.cancel();
     _searchCtrl.dispose();
     _textSearcher?.dispose();
+    _ttsService.removeListener(_onTtsStateChanged);
+    _ttsService.dispose();
     if (!_closed) _saveProgress();
     super.dispose();
   }
@@ -264,6 +351,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onClose: _closeAndPop,
       onStartSearch: _startSearch,
       onShowReaderActions: _showReaderActions,
+      onToggleTts: _toggleTts,
       onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
     );
 
@@ -411,10 +499,42 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 right: 0,
                 child: SearchResultsBar(textSearcher: _textSearcher!),
               ),
+            // TTS panel
+            if (_showTts)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: PdfTtsPanel(
+                  ttsService: _ttsService,
+                  pageText: _getCurrentPageText(),
+                  onClose: _toggleTts,
+                  onPlay: _startTtsFromCurrentPage,
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  String? _getCurrentPageText() {
+    // Return single page text for display purposes
+    final pageNumber = _currentPage + 1;
+    final cached = _highlightManager.highlightTextCache.get(pageNumber);
+    return cached?.fullText;
+  }
+
+  /// Called from TTS panel Play button - starts batch reading.
+  void _startTtsFromCurrentPage() {
+    _speakBatch(_currentPage);
+  }
+
+  void _toggleTts() {
+    setState(() {
+      _showTts = !_showTts;
+      if (!_showTts) _ttsService.stop();
+    });
   }
 
   Highlight? _findTappedHighlight(PdfPageHitTestResult hit) {

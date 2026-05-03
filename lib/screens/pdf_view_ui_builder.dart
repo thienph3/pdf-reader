@@ -13,6 +13,7 @@ class PdfViewUiBuilder {
   final VoidCallback onClose;
   final VoidCallback onStartSearch;
   final VoidCallback onShowReaderActions;
+  final VoidCallback onToggleTts;
   final ValueChanged<int> onToggleBookmark;
 
   PdfViewUiBuilder({
@@ -23,6 +24,7 @@ class PdfViewUiBuilder {
     required this.onClose,
     required this.onStartSearch,
     required this.onShowReaderActions,
+    required this.onToggleTts,
     required this.onToggleBookmark,
   });
 
@@ -66,6 +68,11 @@ class PdfViewUiBuilder {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: onStartSearch,
+          ),
+          IconButton(
+            icon: const Icon(Icons.record_voice_over),
+            tooltip: 'Text-to-Speech',
+            onPressed: onToggleTts,
           ),
           IconButton(
             icon: const Icon(Icons.more_vert),

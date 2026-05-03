@@ -33,7 +33,17 @@ class _PdfOcrTextViewState extends State<PdfOcrTextView> {
     super.initState();
     _currentPage = widget.initialPage;
     _pageController = PageController(initialPage: _currentPage);
-    _loadPage(_currentPage);
+  }
+
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _loadPage(_currentPage);
+    }
   }
 
   @override

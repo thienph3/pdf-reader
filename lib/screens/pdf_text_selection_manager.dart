@@ -112,15 +112,13 @@ class PdfTextSelectionManager {
       return null;
     }
 
-    return Align(
-      alignment: Alignment.topLeft,
-      child: AdaptiveTextSelectionToolbar.buttonItems(
-        anchors: TextSelectionToolbarAnchors(
-          primaryAnchor: params.anchorA,
-          secondaryAnchor: params.anchorB,
-        ),
-        buttonItems: items,
+    debugPrint('buildContextMenu: returning toolbar with ${items.length} items');
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: TextSelectionToolbarAnchors(
+        primaryAnchor: params.anchorA,
+        secondaryAnchor: params.anchorB,
       ),
+      buttonItems: items,
     );
   }
 

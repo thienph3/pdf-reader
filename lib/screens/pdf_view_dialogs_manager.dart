@@ -16,6 +16,7 @@ class PdfViewDialogsManager {
   final VoidCallback onShowToc;
   final VoidCallback onShowHighlightsList;
   final ValueChanged<int> onPageSelected;
+  final VoidCallback? onTtsSpeedChanged;
 
   PdfViewDialogsManager({
     required this.highlightManager,
@@ -27,6 +28,7 @@ class PdfViewDialogsManager {
     required this.onShowToc,
     required this.onShowHighlightsList,
     required this.onPageSelected,
+    this.onTtsSpeedChanged,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -83,6 +85,7 @@ class PdfViewDialogsManager {
   void _showTtsSpeedPicker(BuildContext context) {
     final speeds = [0.25, 0.5, 0.75, 1.0];
     final labels = ['0.5x', '1x', '1.5x', '2x'];
+    final wasPlaying = ttsService!.isPlaying;
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -102,6 +105,10 @@ class PdfViewDialogsManager {
               onTap: () {
                 ttsService!.setSpeed(speeds[i]);
                 Navigator.pop(ctx);
+                if (wasPlaying) {
+                  ttsService!.stop();
+                  onTtsSpeedChanged?.call();
+                }
               },
             )),
           ],

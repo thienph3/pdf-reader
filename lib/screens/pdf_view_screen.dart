@@ -221,6 +221,9 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onShowToc: _showToc,
       onShowHighlightsList: _showHighlightsList,
       onPageSelected: (page) => _viewerController.goToPage(pageNumber: page + 1),
+      onTtsSpeedChanged: () {
+        if (_ttsActive) _speakCurrentPage();
+      },
     );
     
     _highlightsUi = PdfViewHighlightsUi(
@@ -346,6 +349,9 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onShowToc: _showToc,
       onShowHighlightsList: _showHighlightsList,
       onPageSelected: (page) => _viewerController.goToPage(pageNumber: page + 1),
+      onTtsSpeedChanged: () {
+        if (_ttsActive) _speakCurrentPage();
+      },
     );
 
     return PopScope(

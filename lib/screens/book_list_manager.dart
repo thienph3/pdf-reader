@@ -59,11 +59,33 @@ class BookListManager {
     // Filter by search query
     final query = searchController.text.toLowerCase();
     if (query.isNotEmpty) {
-      result = result
-          .where((b) =>
-              b.title.toLowerCase().contains(query) ||
-              b.author.toLowerCase().contains(query))
-          .toList();
+      // Check for special collection filters
+      if (query.startsWith('added:')) {
+        if (query == 'added:recent') {
+          // Recently added (within last 7 days)
+          final now = DateTime.now();
+          final weekAgo = now.subtract(const Duration(days: 7));
+          result = result.where((b) => b.createdAt.isAfter(weekAgo)).toList();
+        }
+      } else if (query.startsWith('status:')) {
+        if (query == 'status:unread') {
+          // Unread books (progress < 10%)
+          result = result.where((b) => b.progressPercent < 0.1).toList();
+        } else if (query == 'status:almost-finished') {
+          // Almost finished books (progress >= 70% and < 100%)
+          result = result.where((b) => b.progressPercent >= 0.7 && b.progressPercent < 1.0).toList();
+        } else if (query == 'status:frequently-read') {
+          // Frequently read books (reading time > 1 hour)
+          result = result.where((b) => b.readingSeconds > 3600).toList();
+        }
+      } else {
+        // Regular text search
+        result = result
+            .where((b) =>
+                b.title.toLowerCase().contains(query) ||
+                b.author.toLowerCase().contains(query))
+            .toList();
+      }
     }
     
     // Sort

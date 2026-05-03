@@ -126,11 +126,60 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   void _handleSmartCollectionTap(String title, int bookCount) {
-    _actionsManager.showSmartCollectionSnackbar(context, title, bookCount);
+    // Instead of just showing snackbar, filter books by collection
+    _filterBySmartCollection(title);
+  }
+
+  void _filterBySmartCollection(String collectionTitle) {
     setState(() {
       _searchCtrl.text = '';
       _listManager.setFilterCategoryId(null);
+      
+      // Set search query based on collection
+      switch (collectionTitle) {
+        case 'Recently Added':
+          // Filter by recently added (within last 7 days)
+          _searchCtrl.text = 'added:recent'; // Special marker for UI
+          break;
+        case 'Unread':
+          // Filter unread books (progress < 10%)
+          _searchCtrl.text = 'status:unread'; // Special marker for UI
+          break;
+        case 'Almost Finished':
+          // Filter almost finished books (progress >= 70% and < 100%)
+          _searchCtrl.text = 'status:almost-finished'; // Special marker for UI
+          break;
+        case 'Frequently Read':
+          // Filter frequently read books (reading time > 1 hour)
+          _searchCtrl.text = 'status:frequently-read'; // Special marker for UI
+          break;
+      }
     });
+  }
+
+  String _getDisplayTitle(AppStrings s) {
+    final query = _searchCtrl.text.toLowerCase();
+    
+    if (query == 'added:recent') {
+      return 'Recently Added';
+    } else if (query == 'status:unread') {
+      return 'Unread Books';
+    } else if (query == 'status:almost-finished') {
+      return 'Almost Finished';
+    } else if (query == 'status:frequently-read') {
+      return 'Frequently Read';
+    } else if (_listManager.getFilterCategoryId() != null) {
+      final catId = _listManager.getFilterCategoryId();
+      if (catId != null) {
+        final catService = CategoryServiceScope.of(context);
+        final cat = catService.getById(catId);
+        if (cat != null) {
+          return cat.name;
+        }
+      }
+    }
+    
+    return s.library;
   }
 
   @override
@@ -141,6 +190,9 @@ class _BookListScreenState extends State<BookListScreen> {
       _searchCtrl.text,
       _listManager.getFilterCategoryId(),
     );
+
+    // Get display title based on current filter
+    final displayTitle = _getDisplayTitle(s);
 
     return Scaffold(
       appBar: AppBar(
@@ -154,7 +206,7 @@ class _BookListScreenState extends State<BookListScreen> {
                 ),
                 onChanged: (_) => setState(() {}),
               )
-            : Text(s.library),
+            : Text(displayTitle),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),

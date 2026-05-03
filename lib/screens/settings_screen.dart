@@ -17,16 +17,20 @@ class SettingsScreen extends StatelessWidget {
         listenable: settingsService,
         builder: (context, _) => ListView(
         children: [
-          // Theme
+          // Theme - Cycle through 3 options
           ListTile(
             leading: const Icon(Icons.palette_outlined),
             title: Text(s.theme),
             subtitle: Text(_themeName(s, settingsService.themeMode)),
-            onTap: () => _showThemePicker(context, s),
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_forward_ios),
+              onPressed: () => _cycleTheme(),
+            ),
+            onTap: () => _cycleTheme(),
           ),
           const Divider(height: 1),
 
-          // Language
+          // Language - Toggle between 2 options
           ListTile(
             leading: const Icon(Icons.language),
             title: Text(s.language),
@@ -35,17 +39,25 @@ class SettingsScreen extends StatelessWidget {
                   ? s.langVi
                   : s.langEn,
             ),
-            onTap: () => _showLocalePicker(context, s),
+            trailing: Switch(
+              value: settingsService.locale.languageCode == 'en',
+              onChanged: (_) => _toggleLanguage(),
+            ),
+            onTap: () => _toggleLanguage(),
           ),
           const Divider(height: 1),
 
-          // Scroll direction
+          // Scroll direction - Already a toggle
           ListTile(
             leading: const Icon(Icons.swap_vert),
             title: Text(s.scrollDirection),
             subtitle: Text(settingsService.isHorizontalScroll
                 ? s.scrollHorizontal
                 : s.scrollVertical),
+            trailing: Switch(
+              value: settingsService.isHorizontalScroll,
+              onChanged: (value) => settingsService.setHorizontalScroll(value),
+            ),
             onTap: () {
               settingsService
                   .setHorizontalScroll(!settingsService.isHorizontalScroll);
@@ -53,19 +65,29 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // Reading goals
+          // Daily goal - Cycle through common options
           ListTile(
             leading: const Icon(Icons.timer_outlined),
             title: Text(s.dailyGoal),
             subtitle: Text(s.minutesPerDay(settingsService.dailyGoalMinutes)),
-            onTap: () => _showDailyGoalPicker(context, s),
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_forward_ios),
+              onPressed: () => _cycleDailyGoal(),
+            ),
+            onTap: () => _cycleDailyGoal(),
           ),
           const Divider(height: 1),
+
+          // Monthly goal - Cycle through common options
           ListTile(
             leading: const Icon(Icons.calendar_month_outlined),
             title: Text(s.monthlyGoal),
             subtitle: Text(s.booksPerMonth(settingsService.monthlyGoalBooks)),
-            onTap: () => _showMonthlyGoalPicker(context, s),
+            trailing: IconButton(
+              icon: const Icon(Icons.arrow_forward_ios),
+              onPressed: () => _cycleMonthlyGoal(),
+            ),
+            onTap: () => _cycleMonthlyGoal(),
           ),
         ],
       ),
@@ -84,126 +106,46 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  void _showThemePicker(BuildContext context, AppStrings s) {
-    showDialog(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(s.theme),
-        children: [
-          _themeOption(ctx, s.themeSystem, ThemeMode.system),
-          _themeOption(ctx, s.themeLight, ThemeMode.light),
-          _themeOption(ctx, s.themeDark, ThemeMode.dark),
-        ],
-      ),
-    );
+  void _cycleTheme() {
+    final current = settingsService.themeMode;
+    ThemeMode next;
+    
+    switch (current) {
+      case ThemeMode.system:
+        next = ThemeMode.light;
+        break;
+      case ThemeMode.light:
+        next = ThemeMode.dark;
+        break;
+      case ThemeMode.dark:
+        next = ThemeMode.system;
+        break;
+    }
+    
+    settingsService.setThemeMode(next);
   }
 
-  Widget _themeOption(BuildContext ctx, String label, ThemeMode mode) {
-    final isSelected = settingsService.themeMode == mode;
-    return SimpleDialogOption(
-      onPressed: () {
-        settingsService.setThemeMode(mode);
-        Navigator.pop(ctx);
-      },
-      child: Row(
-        children: [
-          if (isSelected)
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.check, size: 18),
-            ),
-          Text(label),
-        ],
-      ),
-    );
+  void _toggleLanguage() {
+    final current = settingsService.locale.languageCode;
+    final next = current == 'vi' ? const Locale('en') : const Locale('vi');
+    settingsService.setLocale(next);
   }
 
-  void _showLocalePicker(BuildContext context, AppStrings s) {
-    showDialog(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(s.language),
-        children: [
-          _localeOption(ctx, s.langVi, const Locale('vi')),
-          _localeOption(ctx, s.langEn, const Locale('en')),
-        ],
-      ),
-    );
-  }
-
-  Widget _localeOption(BuildContext ctx, String label, Locale locale) {
-    final isSelected = settingsService.locale.languageCode == locale.languageCode;
-    return SimpleDialogOption(
-      onPressed: () {
-        settingsService.setLocale(locale);
-        Navigator.pop(ctx);
-      },
-      child: Row(
-        children: [
-          if (isSelected)
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.check, size: 18),
-            ),
-          Text(label),
-        ],
-      ),
-    );
-  }
-
-  void _showDailyGoalPicker(BuildContext context, AppStrings s) {
+  void _cycleDailyGoal() {
     final options = [10, 15, 20, 30, 45, 60, 90, 120];
-    showDialog(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(s.dailyGoal),
-        children: options
-            .map((m) => SimpleDialogOption(
-                  onPressed: () {
-                    settingsService.setDailyGoalMinutes(m);
-                    Navigator.pop(ctx);
-                  },
-                  child: Row(
-                    children: [
-                      if (settingsService.dailyGoalMinutes == m)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 8),
-                          child: Icon(Icons.check, size: 18),
-                        ),
-                      Text(s.minutesPerDay(m)),
-                    ],
-                  ),
-                ))
-            .toList(),
-      ),
-    );
+    final current = settingsService.dailyGoalMinutes;
+    final currentIndex = options.indexOf(current);
+    final nextIndex = (currentIndex + 1) % options.length;
+    settingsService.setDailyGoalMinutes(options[nextIndex]);
   }
 
-  void _showMonthlyGoalPicker(BuildContext context, AppStrings s) {
+  void _cycleMonthlyGoal() {
     final options = [1, 2, 3, 4, 5, 8, 10, 12];
-    showDialog(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: Text(s.monthlyGoal),
-        children: options
-            .map((n) => SimpleDialogOption(
-                  onPressed: () {
-                    settingsService.setMonthlyGoalBooks(n);
-                    Navigator.pop(ctx);
-                  },
-                  child: Row(
-                    children: [
-                      if (settingsService.monthlyGoalBooks == n)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 8),
-                          child: Icon(Icons.check, size: 18),
-                        ),
-                      Text(s.booksPerMonth(n)),
-                    ],
-                  ),
-                ))
-            .toList(),
-      ),
-    );
+    final current = settingsService.monthlyGoalBooks;
+    final currentIndex = options.indexOf(current);
+    final nextIndex = (currentIndex + 1) % options.length;
+    settingsService.setMonthlyGoalBooks(options[nextIndex]);
   }
+
+
 }

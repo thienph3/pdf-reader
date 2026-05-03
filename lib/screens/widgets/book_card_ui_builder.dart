@@ -14,7 +14,6 @@ class BookCardUiBuilder {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Thumbnail / placeholder
         if (thumbnail != null)
           RawImage(
             image: thumbnail, 
@@ -35,25 +34,14 @@ class BookCardUiBuilder {
         else
           _buildPlaceholder(book, colorScheme, categoryColor),
 
-        // Category color dot (top-right)
+        // Category bookmark badge (top-right)
         if (categoryColor != null)
           Positioned(
-            top: 8,
+            top: 0,
             right: 8,
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: categoryColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 2,
-                  ),
-                ],
-              ),
+            child: CustomPaint(
+              size: const Size(16, 22),
+              painter: _BookmarkBadgePainter(color: categoryColor),
             ),
           ),
       ],
@@ -235,4 +223,32 @@ class BookCardUiBuilder {
         return Icons.library_books;
     }
   }
+}
+
+class _BookmarkBadgePainter extends CustomPainter {
+  final Color color;
+  const _BookmarkBadgePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final shadow = Paint()
+      ..color = Colors.black.withValues(alpha: 0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(size.width / 2, size.height * 0.7)
+      ..lineTo(0, size.height)
+      ..close();
+
+    canvas.drawPath(path.shift(const Offset(0.5, 0.5)), shadow);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_BookmarkBadgePainter oldDelegate) =>
+      color != oldDelegate.color;
 }

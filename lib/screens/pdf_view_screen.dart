@@ -103,7 +103,20 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         if (mounted) setState(() {});
       },
       onNightModeChanged: (nightMode) {
-        if (mounted) setState(() {});
+        if (mounted) {
+          final page = _currentPage;
+          setState(() {});
+          if (_horizontalScroll) {
+            // Delay lâu hơn vì viewer cần re-layout sau setState
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (!mounted || !_horizontalScroll) return;
+              _viewerController.goToPage(
+                pageNumber: page + 1,
+                duration: const Duration(milliseconds: 200),
+              );
+            });
+          }
+        }
       },
       onZoomControlsVisibilityChanged: (show) {
         if (mounted) setState(() {});

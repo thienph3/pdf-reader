@@ -106,6 +106,7 @@ class PdfViewUiBuilder {
       title: TextField(
         controller: searchController,
         autofocus: true,
+        textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: s.searchHintPdf,
           border: InputBorder.none,

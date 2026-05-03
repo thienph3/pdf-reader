@@ -102,22 +102,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onZoomChanged: (zoom) {
         if (mounted) setState(() {});
       },
-      onNightModeChanged: (nightMode) {
-        if (mounted) {
-          final page = _currentPage;
-          setState(() {});
-          if (_horizontalScroll) {
-            // Delay lâu hơn vì viewer cần re-layout sau setState
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (!mounted || !_horizontalScroll) return;
-              _viewerController.goToPage(
-                pageNumber: page + 1,
-                duration: const Duration(milliseconds: 200),
-              );
-            });
-          }
-        }
-      },
       onZoomControlsVisibilityChanged: (show) {
         if (mounted) setState(() {});
       },
@@ -186,8 +170,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onShowHighlightsList: _showHighlightsList,
       onPageSelected: (page) => _viewerController.goToPage(pageNumber: page + 1),
       onToggleZoomControls: _uiControls.toggleZoomControls,
-      onToggleNightMode: _uiControls.toggleNightMode,
-      nightMode: _uiControls.nightMode,
     );
     
     _highlightsUi = PdfViewHighlightsUi(
@@ -426,9 +408,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         ),
         body: Stack(
           children: [
-            Container(
-              color: _uiControls.nightMode ? Colors.black : null,
-              child: GestureDetector(
+            GestureDetector(
                 onScaleUpdate: (details) {
                   _uiControls.handleScaleUpdate(details.scale);
                 },
@@ -504,7 +484,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                   ),
                 ),
               ),
-            ),
             // Search results overlay
             if (_isSearching && _textSearcher != null)
               Positioned(

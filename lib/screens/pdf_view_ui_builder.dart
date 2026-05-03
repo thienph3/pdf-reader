@@ -71,11 +71,6 @@ class PdfViewUiBuilder {
             onPressed: onStartSearch,
           ),
           IconButton(
-            icon: Icon(uiControls.nightMode ? Icons.nightlight : Icons.nightlight_outlined),
-            onPressed: uiControls.toggleNightMode,
-            tooltip: uiControls.nightMode ? 'Switch to Day Mode' : 'Switch to Night Mode',
-          ),
-          IconButton(
             icon: const Icon(Icons.zoom_in),
             onPressed: uiControls.toggleZoomControls,
             tooltip: 'Zoom Controls',

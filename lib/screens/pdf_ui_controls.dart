@@ -5,17 +5,14 @@ import 'package:pdfrx/pdfrx.dart';
 class PdfUiControls {
   final PdfViewerController viewerController;
   final ValueChanged<double>? onZoomChanged;
-  final ValueChanged<bool>? onNightModeChanged;
   final ValueChanged<bool>? onZoomControlsVisibilityChanged;
 
   double zoomLevel = 1.0;
   bool showZoomControls = false;
-  bool nightMode = false;
 
   PdfUiControls({
     required this.viewerController,
     this.onZoomChanged,
-    this.onNightModeChanged,
     this.onZoomControlsVisibilityChanged,
   });
 
@@ -47,12 +44,6 @@ class PdfUiControls {
   void toggleZoomControls() {
     showZoomControls = !showZoomControls;
     onZoomControlsVisibilityChanged?.call(showZoomControls);
-  }
-
-  /// Toggles night mode.
-  void toggleNightMode() {
-    nightMode = !nightMode;
-    onNightModeChanged?.call(nightMode);
   }
 
   /// Builds zoom controls widget.

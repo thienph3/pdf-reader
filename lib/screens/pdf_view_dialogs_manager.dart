@@ -18,8 +18,6 @@ class PdfViewDialogsManager {
   final VoidCallback onShowHighlightsList;
   final ValueChanged<int> onPageSelected;
   final VoidCallback onToggleZoomControls;
-  final VoidCallback onToggleNightMode;
-  final bool nightMode;
 
   PdfViewDialogsManager({
     required this.highlightManager,
@@ -33,8 +31,6 @@ class PdfViewDialogsManager {
     required this.onShowHighlightsList,
     required this.onPageSelected,
     required this.onToggleZoomControls,
-    required this.onToggleNightMode,
-    required this.nightMode,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -106,16 +102,6 @@ class PdfViewDialogsManager {
               onTap: () {
                 Navigator.pop(ctx);
                 onToggleZoomControls();
-              },
-            ),
-            ListTile(
-              leading: Icon(nightMode 
-                  ? Icons.nightlight 
-                  : Icons.nightlight_outlined),
-              title: Text(nightMode ? 'Day Mode' : 'Night Mode'),
-              onTap: () {
-                Navigator.pop(ctx);
-                onToggleNightMode();
               },
             ),
           ],

@@ -5,6 +5,7 @@ import '../services/book_service.dart';
 import '../services/reading_log_service.dart';
 import '../main.dart';
 import '../models/highlight.dart';
+import '../utils/velocity_aware_scroll_physics.dart';
 import 'widgets/search_results_bar.dart';
 import 'pdf_highlight_manager.dart';
 import 'pdf_bookmark_manager.dart';
@@ -455,6 +456,15 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                       _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument);
                       
                     },
+                    // Add velocity-aware scroll physics for better scrolling experience
+                    scrollPhysics: AdaptiveScrollPhysics(
+                      isHorizontalScroll: _horizontalScroll,
+                      parent: VelocityAwareScrollPhysics(
+                        velocityMultiplier: 1.5,
+                        minFlingVelocity: _horizontalScroll ? 100.0 : 50.0,
+                        maxFlingVelocity: _horizontalScroll ? 10000.0 : 8000.0,
+                      ),
+                    ),
                   ),
                 ),
               ),

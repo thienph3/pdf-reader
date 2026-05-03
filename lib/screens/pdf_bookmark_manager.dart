@@ -35,69 +35,6 @@ class PdfBookmarkManager {
     onBookmarksUpdated?.call();
   }
 
-  /// Adds or updates a note for a bookmark.
-  Future<void> addOrUpdateBookmarkNote(
-    BuildContext context,
-    int page,
-    String note,
-  ) async {
-    if (bookId == null || bookService == null) return;
-    
-    // First ensure the page is bookmarked
-    if (!isBookmarked(page)) {
-      bookService!.addBookmark(bookId!, page);
-      onBookmarksUpdated?.call();
-    }
-    
-    // Update the note
-    await bookService!.updateBookmarkNote(bookId!, page, note);
-  }
-
-  /// Shows a dialog to edit bookmark note.
-  void showEditNoteDialog(
-    BuildContext context,
-    int currentPage,
-    String initialNote,
-  ) {
-    final controller = TextEditingController(text: initialNote);
-    final s = AppStrings.of(context);
-    
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.editNote),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: s.noteHint,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(s.cancel),
-          ),
-          FilledButton(
-            onPressed: () async {
-              try {
-                await addOrUpdateBookmarkNote(context, currentPage, controller.text.trim());
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                }
-              } catch (error) {
-                // Handle error
-              }
-            },
-            child: Text(s.save),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Shows the bookmarks list in a bottom sheet.
   void showBookmarksList(
     BuildContext context,
@@ -107,15 +44,7 @@ class PdfBookmarkManager {
     if (bookId == null || bookService == null) return;
     
     final book = bookService!.getById(bookId!);
-    if (book == null) {
-      final s = AppStrings.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.noBookmarks)),
-      );
-      return;
-    }
-    
-    if (book.bookmarks.isEmpty) {
+    if (book == null || book.bookmarks.isEmpty) {
       final s = AppStrings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(s.noBookmarks)),
@@ -144,16 +73,6 @@ class PdfBookmarkManager {
             Navigator.pop(ctx);
             onBookmarksUpdated?.call();
           },
-          onEditNote: (page) {
-            Navigator.pop(ctx);
-            onPageSelected(page);
-            Future.delayed(const Duration(milliseconds: 300), () {
-              if (context.mounted) {
-                final bookmark = book.bookmarks.firstWhere((b) => b.page == page);
-                showEditNoteDialog(context, page, bookmark.note);
-              }
-            });
-          },
         ),
       ),
     );
@@ -162,10 +81,7 @@ class PdfBookmarkManager {
   /// Gets all bookmarks for the book.
   List<Bookmark> getAllBookmarks() {
     if (bookId == null || bookService == null) return [];
-    
     final book = bookService!.getById(bookId!);
-    if (book == null) return [];
-    
-    return book.bookmarks;
+    return book?.bookmarks ?? [];
   }
 }

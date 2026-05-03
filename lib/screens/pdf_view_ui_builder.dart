@@ -3,12 +3,10 @@ import 'package:pdfrx/pdfrx.dart';
 import '../l10n/app_strings.dart';
 import 'pdf_highlight_manager.dart';
 import 'pdf_bookmark_manager.dart';
-import 'pdf_ui_controls.dart';
 
 /// UI builder methods for PDF viewer screen.
 class PdfViewUiBuilder {
   final PdfBookmarkManager bookmarkManager;
-  final PdfUiControls uiControls;
   final String fileName;
   final int currentPage;
   final int totalPages;
@@ -19,7 +17,6 @@ class PdfViewUiBuilder {
 
   PdfViewUiBuilder({
     required this.bookmarkManager,
-    required this.uiControls,
     required this.fileName,
     required this.currentPage,
     required this.totalPages,
@@ -69,11 +66,6 @@ class PdfViewUiBuilder {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: onStartSearch,
-          ),
-          IconButton(
-            icon: const Icon(Icons.zoom_in),
-            onPressed: uiControls.toggleZoomControls,
-            tooltip: 'Zoom Controls',
           ),
           IconButton(
             icon: const Icon(Icons.more_vert),

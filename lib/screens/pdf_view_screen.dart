@@ -10,7 +10,6 @@ import 'widgets/search_results_bar.dart';
 import 'pdf_highlight_manager.dart';
 import 'pdf_bookmark_manager.dart';
 import 'pdf_text_selection_manager.dart';
-import 'pdf_ui_controls.dart';
 import 'pdf_view_ui_builder.dart';
 import 'pdf_view_dialogs_manager.dart';
 import 'pdf_view_highlights_ui.dart';
@@ -46,7 +45,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   late PdfHighlightManager _highlightManager;
   late PdfBookmarkManager _bookmarkManager;
   late PdfTextSelectionManager _textSelectionManager;
-  late PdfUiControls _uiControls;
   
   // New UI Managers
   late PdfViewUiBuilder _uiBuilder;
@@ -97,16 +95,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       },
     );
     
-    _uiControls = PdfUiControls(
-      viewerController: _viewerController,
-      onZoomChanged: (zoom) {
-        if (mounted) setState(() {});
-      },
-      onZoomControlsVisibilityChanged: (show) {
-        if (mounted) setState(() {});
-      },
-    );
-    
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _sessionSeconds++;
     });
@@ -148,7 +136,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   void _initializeUiManagers() {
     _uiBuilder = PdfViewUiBuilder(
       bookmarkManager: _bookmarkManager,
-      uiControls: _uiControls,
       fileName: widget.fileName,
       currentPage: _currentPage,
       totalPages: _totalPages,
@@ -161,15 +148,12 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     _dialogsManager = PdfViewDialogsManager(
       highlightManager: _highlightManager,
       bookmarkManager: _bookmarkManager,
-      uiControls: _uiControls,
       viewerController: _viewerController,
       currentPage: _currentPage,
       pdfDocument: _pdfDocument,
-      onStartSearch: _startSearch,
       onShowToc: _showToc,
       onShowHighlightsList: _showHighlightsList,
       onPageSelected: (page) => _viewerController.goToPage(pageNumber: page + 1),
-      onToggleZoomControls: _uiControls.toggleZoomControls,
     );
     
     _highlightsUi = PdfViewHighlightsUi(
@@ -364,7 +348,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     // Rebuild UI builder với giá trị mới nhất
     _uiBuilder = PdfViewUiBuilder(
       bookmarkManager: _bookmarkManager,
-      uiControls: _uiControls,
       fileName: widget.fileName,
       currentPage: _currentPage,
       totalPages: _totalPages,
@@ -408,11 +391,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         ),
         body: Stack(
           children: [
-            GestureDetector(
-                onScaleUpdate: (details) {
-                  _uiControls.handleScaleUpdate(details.scale);
-                },
-                child: PdfViewer.file(
+            PdfViewer.file(
                   widget.filePath,
                   controller: _viewerController,
                   params: PdfViewerParams(
@@ -483,7 +462,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                         : null,
                   ),
                 ),
-              ),
             // Search results overlay
             if (_isSearching && _textSearcher != null)
               Positioned(
@@ -491,13 +469,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 left: 0,
                 right: 0,
                 child: SearchResultsBar(textSearcher: _textSearcher!),
-              ),
-            // Zoom controls overlay
-            if (_uiControls.showZoomControls)
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: _uiControls.buildZoomControls(context),
               ),
           ],
         ),

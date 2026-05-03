@@ -3,34 +3,27 @@ import 'package:pdfrx/pdfrx.dart';
 import '../l10n/app_strings.dart';
 import 'pdf_highlight_manager.dart';
 import 'pdf_bookmark_manager.dart';
-import 'pdf_ui_controls.dart';
 
 /// Manages dialogs and bottom sheets for PDF viewer.
 class PdfViewDialogsManager {
   final PdfHighlightManager highlightManager;
   final PdfBookmarkManager bookmarkManager;
-  final PdfUiControls uiControls;
   final PdfViewerController viewerController;
   final int currentPage;
   final PdfDocument? pdfDocument;
-  final VoidCallback onStartSearch;
   final VoidCallback onShowToc;
   final VoidCallback onShowHighlightsList;
   final ValueChanged<int> onPageSelected;
-  final VoidCallback onToggleZoomControls;
 
   PdfViewDialogsManager({
     required this.highlightManager,
     required this.bookmarkManager,
-    required this.uiControls,
     required this.viewerController,
     required this.currentPage,
     required this.pdfDocument,
-    required this.onStartSearch,
     required this.onShowToc,
     required this.onShowHighlightsList,
     required this.onPageSelected,
-    required this.onToggleZoomControls,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -42,26 +35,6 @@ class PdfViewDialogsManager {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: Icon(bookmarkManager.isBookmarked(currentPage) 
-                  ? Icons.bookmark 
-                  : Icons.bookmark_border),
-              title: Text(bookmarkManager.isBookmarked(currentPage) 
-                  ? s.removeBookmark 
-                  : s.addBookmark),
-              onTap: () {
-                Navigator.pop(ctx);
-                bookmarkManager.toggleBookmark(currentPage);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.note_add_outlined),
-              title: Text(s.addNote),
-              onTap: () {
-                Navigator.pop(ctx);
-                bookmarkManager.showEditNoteDialog(context, currentPage, '');
-              },
-            ),
             ListTile(
               leading: const Icon(Icons.bookmarks_outlined),
               title: Text(s.bookmarkList),
@@ -81,27 +54,11 @@ class PdfViewDialogsManager {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.search),
-              title: Text(s.searchInPdf),
-              onTap: () {
-                Navigator.pop(ctx);
-                onStartSearch();
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.highlight),
               title: Text(s.highlights),
               onTap: () {
                 Navigator.pop(ctx);
                 onShowHighlightsList();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.zoom_in),
-              title: const Text('Zoom Controls'),
-              onTap: () {
-                Navigator.pop(ctx);
-                onToggleZoomControls();
               },
             ),
           ],

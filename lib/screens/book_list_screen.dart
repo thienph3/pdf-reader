@@ -290,7 +290,10 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   Widget _buildCategoryFilter() {
-    final chips = _listManager.buildCategoryFilterChips(context);
+    final chips = _listManager.buildCategoryFilterChips(
+      context,
+      onChanged: () => setState(() {}),
+    );
     if (chips.isEmpty) return const SizedBox.shrink();
     
     return SizedBox(

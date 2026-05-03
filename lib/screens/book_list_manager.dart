@@ -203,7 +203,7 @@ class BookListManager {
   }
 
   /// Builds category filter chips.
-  List<Widget> buildCategoryFilterChips(BuildContext context) {
+  List<Widget> buildCategoryFilterChips(BuildContext context, {VoidCallback? onChanged}) {
     final s = AppStrings.of(context);
     final categories = getCategories();
     
@@ -215,7 +215,10 @@ class BookListManager {
         child: FilterChip(
           label: Text(s.all),
           selected: _filterCategoryId == null,
-          onSelected: (_) => _filterCategoryId = null,
+          onSelected: (_) {
+            _filterCategoryId = null;
+            onChanged?.call();
+          },
         ),
       ),
     ];
@@ -229,7 +232,10 @@ class BookListManager {
         ),
         label: Text(cat.name),
         selected: _filterCategoryId == cat.id,
-        onSelected: (_) => _filterCategoryId = _filterCategoryId == cat.id ? null : cat.id,
+        onSelected: (_) {
+          _filterCategoryId = _filterCategoryId == cat.id ? null : cat.id;
+          onChanged?.call();
+        },
       ),
     )));
     

@@ -125,6 +125,13 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         },
       );
       
+      _textSelectionManager = PdfTextSelectionManager(
+        highlightManager: _highlightManager,
+        onHighlightCreated: () {
+          if (mounted) setState(() {});
+        },
+      );
+      
       // Reinitialize UI managers with updated services
       _initializeUiManagers();
     }

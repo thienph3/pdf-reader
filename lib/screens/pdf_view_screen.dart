@@ -4,6 +4,7 @@ import 'package:pdfrx/pdfrx.dart';
 import '../services/book_service.dart';
 import '../services/reading_log_service.dart';
 import '../main.dart';
+import '../models/highlight.dart';
 import '../utils/velocity_aware_scroll_physics.dart';
 import 'widgets/search_results_bar.dart';
 import 'pdf_highlight_manager.dart';
@@ -344,6 +345,22 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                         items.add(_textSelectionManager.buildHighlightButton(context, params));
                       }
                     },
+                    // Tap on highlight to edit
+                    onGeneralTap: (context, controller, details) {
+                      if (details.type != PdfViewerGeneralTapType.tap) return false;
+                      final hit = controller.getPdfPageHitTestResult(
+                        details.documentPosition,
+                        useDocumentLayoutCoordinates: true,
+                      );
+                      if (hit == null) return false;
+                      final tapped = _findTappedHighlight(hit);
+                      if (tapped == null) return false;
+                      _highlightsUi.showEditMenuForHighlight(
+                        context: this.context,
+                        highlight: tapped,
+                      );
+                      return true;
+                    },
                     onViewerReady: (document, controller) {
                       _pdfDocument = document;
                       _textSearcher = PdfTextSearcher(_viewerController);
@@ -398,6 +415,25 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         ),
       ),
     );
+  }
+
+  Highlight? _findTappedHighlight(PdfPageHitTestResult hit) {
+    final pageIndex = hit.page.pageNumber - 1;
+    final highlights = _highlightManager.getHighlightsForCurrentPage(pageIndex);
+    if (highlights.isEmpty) return null;
+
+    final text = _highlightManager.highlightTextCache.get(hit.page.pageNumber);
+    if (text == null) return null;
+
+    for (final h in highlights) {
+      if (h.startIndex < 0 || h.endIndex > text.charRects.length) continue;
+      for (var i = h.startIndex; i < h.endIndex; i++) {
+        if (text.charRects[i].containsPoint(hit.offset)) {
+          return h;
+        }
+      }
+    }
+    return null;
   }
 
   void _snapToCurrentPage() {

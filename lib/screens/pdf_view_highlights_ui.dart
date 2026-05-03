@@ -17,6 +17,58 @@ class PdfViewHighlightsUi {
     required this.onRefresh,
   });
 
+  /// Shows edit menu when user taps on a highlight in the PDF.
+  void showEditMenuForHighlight({
+    required BuildContext context,
+    required Highlight highlight,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                highlight.text.length > 60
+                    ? '${highlight.text.substring(0, 60)}...'
+                    : highlight.text,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_note),
+              title: const Text('Edit Note'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _editNote(context, highlight);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.color_lens),
+              title: const Text('Change Color'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _changeColor(context, highlight);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _delete(context, highlight);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Shows all highlights list.
   void showHighlightsList({
     required BuildContext context,

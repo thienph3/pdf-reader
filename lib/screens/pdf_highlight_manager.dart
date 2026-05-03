@@ -120,7 +120,6 @@ class PdfHighlightManager {
 
   /// Creates a highlight from text selection.
   Future<void> createHighlightFromSelection(
-    BuildContext context,
     PdfPageTextRange range,
     String selectedText,
     VoidCallback? onSuccess,

@@ -227,9 +227,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       currentPage: _currentPage,
       onHighlightAction: (highlight) => (action) {
         switch (action) {
-          case HighlightEditAction.editNote:
-            _editHighlightNote(highlight);
-            break;
           case HighlightEditAction.changeColor:
             _changeHighlightColor(highlight);
             break;
@@ -238,47 +235,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
             break;
         }
       },
-    );
-  }
-
-  void _editHighlightNote(Highlight highlight) {
-    final controller = TextEditingController(text: highlight.note);
-    
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Highlight Note'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Add a note...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final currentContext = context;
-              try {
-                if (currentContext.mounted && mounted) {
-                  await _highlightManager.editHighlightNote(currentContext, highlight, controller.text.trim());
-                  if (mounted) setState(() {});
-                  if (ctx.mounted) Navigator.pop(ctx);
-                }
-              } catch (error) {
-                // Handle error
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -428,9 +384,13 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                         enabled: true,
                       ),
                     ),
-                    // Custom context menu for text selection
-                    buildContextMenu: (context, params) => 
-                        _textSelectionManager.buildTextSelectionContextMenu(context, params),
+                    // Add highlight option to context menu
+                    customizeContextMenuItems: (params, items) {
+                      if (params.contextMenuFor == PdfViewerPart.selectedText &&
+                          params.textSelectionDelegate.hasSelectedText) {
+                        items.add(_textSelectionManager.buildHighlightButton(context, params));
+                      }
+                    },
                     onViewerReady: (document, controller) {
                       _pdfDocument = document;
                       _textSearcher = PdfTextSearcher(_viewerController);

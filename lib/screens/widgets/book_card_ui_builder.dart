@@ -37,11 +37,14 @@ class BookCardUiBuilder {
         // Category bookmark badge (top-right)
         if (categoryColor != null)
           Positioned(
-            top: 0,
+            top: -2,
             right: 8,
-            child: CustomPaint(
-              size: const Size(16, 22),
-              painter: _BookmarkBadgePainter(color: categoryColor),
+            child: SizedBox(
+              width: 16,
+              height: 28,
+              child: CustomPaint(
+                painter: _BookmarkBadgePainter(color: categoryColor),
+              ),
             ),
           ),
       ],

@@ -57,19 +57,17 @@ class PdfTextSelectionManager {
       // Create Highlight option
       ContextMenuButtonItem(
         onPressed: () async {
-          // Get selected text ranges asynchronously
-          final ranges = await delegate.getSelectedTextRanges();
-          if (ranges.isEmpty) {
-            params.dismissContextMenu();
-            return;
-          }
-          
-          // For simplicity, use the first range
-          final range = ranges.first;
-          final selectedText = await delegate.getSelectedText();
-          
           try {
-            if (context.mounted) {
+            final ranges = await delegate.getSelectedTextRanges();
+            if (ranges.isEmpty) {
+              params.dismissContextMenu();
+              return;
+            }
+            
+            final range = ranges.first;
+            final selectedText = await delegate.getSelectedText();
+            
+            if (context.mounted && highlightManager != null) {
               await highlightManager!.createHighlightFromSelection(
                 context,
                 range,
@@ -77,12 +75,12 @@ class PdfTextSelectionManager {
                 onHighlightCreated,
               );
             }
-          } catch (error) {
-            // Handle error
-          }
-          
-          if (context.mounted) {
-            params.dismissContextMenu();
+          } catch (e) {
+            debugPrint('Create highlight error: $e');
+          } finally {
+            if (context.mounted) {
+              params.dismissContextMenu();
+            }
           }
         },
         label: 'Create Highlight',

@@ -456,14 +456,10 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                       _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument);
                       
                     },
-                    // Add velocity-aware scroll physics for better scrolling experience
-                    scrollPhysics: AdaptiveScrollPhysics(
-                      isHorizontalScroll: _horizontalScroll,
-                      parent: VelocityAwareScrollPhysics(
-                        velocityMultiplier: 1.5,
-                        minFlingVelocity: _horizontalScroll ? 100.0 : 50.0,
-                        maxFlingVelocity: _horizontalScroll ? 10000.0 : 8000.0,
-                      ),
+                    // Velocity-aware scroll physics: tăng tốc scroll & fling
+                    scrollPhysics: VelocityAwareScrollPhysics(
+                      velocityMultiplier: _horizontalScroll ? 1.8 : 1.5,
+                      flingMultiplier: _horizontalScroll ? 2.5 : 2.0,
                     ),
                   ),
                 ),

@@ -412,6 +412,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                   params: PdfViewerParams(
                     layoutPages: _horizontalScroll ? _horizontalLayout : null,
                     panAxis: _horizontalScroll ? PanAxis.horizontal : PanAxis.free,
+                    pageAnchor: _horizontalScroll ? PdfPageAnchor.all : PdfPageAnchor.top,
                     scrollByMouseWheel: _horizontalScroll ? 1.0 : 0.2,
                     onPageChanged: (page) {
                       if (page == null) return;

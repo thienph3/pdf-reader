@@ -453,6 +453,15 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                           widget.initialPage < _totalPages) {
                         controller.goToPage(pageNumber: widget.initialPage + 1);
                       }
+                      // Center page đầu tiên khi cuộn ngang
+                      if (_horizontalScroll) {
+                        Future.delayed(const Duration(milliseconds: 100), () {
+                          if (!mounted) return;
+                          controller.goToPage(
+                            pageNumber: (widget.initialPage > 0 ? widget.initialPage : _currentPage) + 1,
+                          );
+                        });
+                      }
                       // Preload text for initial page and surrounding pages
                       _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument);
                       

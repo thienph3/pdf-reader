@@ -17,6 +17,9 @@ class PdfViewUiBuilder {
   final bool isTtsActive;
   final VoidCallback? onStartOcr;
   final bool isOcrRunning;
+  final VoidCallback? onToggleTextView;
+  final bool isTextViewMode;
+  final bool isTextViewLoading;
   final ValueChanged<int> onToggleBookmark;
 
   PdfViewUiBuilder({
@@ -31,6 +34,9 @@ class PdfViewUiBuilder {
     this.isTtsActive = false,
     this.onStartOcr,
     this.isOcrRunning = false,
+    this.onToggleTextView,
+    this.isTextViewMode = false,
+    this.isTextViewLoading = false,
     required this.onToggleBookmark,
   });
 
@@ -83,9 +89,9 @@ class PdfViewUiBuilder {
             tooltip: isTtsActive ? 'Stop Reading' : 'Read Aloud',
             onPressed: onToggleTts,
           ),
-          if (onStartOcr != null)
+          if (onToggleTextView != null)
             IconButton(
-              icon: isOcrRunning
+              icon: isTextViewLoading || isOcrRunning
                   ? SizedBox(
                       width: 20, height: 20,
                       child: CircularProgressIndicator(
@@ -93,9 +99,12 @@ class PdfViewUiBuilder {
                         color: Theme.of(context).colorScheme.primary,
                       ),
                     )
-                  : const Icon(Icons.document_scanner_outlined),
-              tooltip: 'OCR',
-              onPressed: isOcrRunning ? null : onStartOcr,
+                  : Icon(
+                      isTextViewMode ? Icons.picture_as_pdf : Icons.text_snippet_outlined,
+                      color: isTextViewMode ? Theme.of(context).colorScheme.primary : null,
+                    ),
+              tooltip: isTextViewMode ? 'PDF View' : 'Text View',
+              onPressed: (isTextViewLoading || isOcrRunning) ? null : onToggleTextView,
             ),
           IconButton(
             icon: const Icon(Icons.more_vert),

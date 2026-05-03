@@ -16,7 +16,7 @@ import 'pdf_view_ui_builder.dart';
 import 'pdf_view_dialogs_manager.dart';
 import 'pdf_view_highlights_ui.dart';
 import 'pdf_view_search_ui.dart';
-import 'pdf_ocr_text_view.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../services/tts_service.dart';
 
 class PdfViewScreen extends StatefulWidget {
@@ -186,6 +186,74 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   bool _ocrBatchRunning = false;
   int _ocrBatchTotal = 0;
   int _ocrBatchDone = 0;
+  bool _textViewMode = false;
+  String? _textViewContent;
+  bool _textViewLoading = false;
+
+  void _toggleOcrTextView() {
+    if (_textViewMode) {
+      // Switch back to PDF view
+      setState(() => _textViewMode = false);
+    } else {
+      // Switch to text view - load OCR text for current page
+      _loadTextViewForCurrentPage();
+    }
+  }
+
+  Future<void> _loadTextViewForCurrentPage() async {
+    if (_pdfDocument == null || widget.bookId == null) return;
+    final pageNumber = _currentPage + 1;
+    final ocrService = OcrServiceScope.of(context);
+
+    // Check OCR cache first
+    var md = ocrService.getCachedMarkdown(widget.bookId!, pageNumber);
+    if (md != null && md.isNotEmpty) {
+      setState(() {
+        _textViewContent = md;
+        _textViewMode = true;
+      });
+      return;
+    }
+
+    // Check text layer
+    final cached = _highlightManager.highlightTextCache.get(pageNumber);
+    if (cached != null && cached.fullText.trim().isNotEmpty) {
+      setState(() {
+        _textViewContent = cached.fullText;
+        _textViewMode = true;
+      });
+      return;
+    }
+
+    // Need OCR
+    setState(() => _textViewLoading = true);
+    try {
+      final page = _pdfDocument!.pages[_currentPage];
+      final image = await page.render(fullWidth: 1000, fullHeight: 1400);
+      if (image != null) {
+        final uiImage = await image.createImage();
+        final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+        uiImage.dispose();
+        if (byteData != null) {
+          await ocrService.ocrFromPngBytes(
+            bookId: widget.bookId!,
+            pageNumber: pageNumber,
+            pngBytes: byteData.buffer.asUint8List(),
+          );
+          md = ocrService.getCachedMarkdown(widget.bookId!, pageNumber);
+        }
+      }
+    } catch (e) {
+      debugPrint('OCR for text view failed: $e');
+    }
+    if (mounted) {
+      setState(() {
+        _textViewContent = md ?? '';
+        _textViewMode = true;
+        _textViewLoading = false;
+      });
+    }
+  }
 
   Future<void> _startOcrBatch() async {
     if (_pdfDocument == null || widget.bookId == null || _ocrBatchRunning) return;
@@ -327,6 +395,9 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       isTtsActive: _ttsActive,
       onStartOcr: widget.bookId != null ? _startOcrBatch : null,
       isOcrRunning: _ocrBatchRunning,
+      onToggleTextView: widget.bookId != null ? _toggleOcrTextView : null,
+      isTextViewMode: _textViewMode,
+      isTextViewLoading: _textViewLoading,
       onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
     );
     
@@ -343,7 +414,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onTtsSpeedChanged: () {
         if (_ttsActive) _speakCurrentPage();
       },
-      onShowTextView: _showTextView,
     );
     
     _highlightsUi = PdfViewHighlightsUi(
@@ -360,7 +430,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     setState(() => _currentPage = page);
     _debouncedSaveProgress();
     _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument);
-    
+
     // User manually changed page while TTS active → restart from new page
     if (_ttsActive && _ttsService.isPlaying && !_ttsPageAdvancing) {
       _ttsService.stop();
@@ -368,6 +438,9 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         if (mounted && _ttsActive) _speakCurrentPage();
       });
     }
+
+    // Reload text view content when page changes
+    if (_textViewMode) _loadTextViewForCurrentPage();
   }
 
   void _debouncedSaveProgress() {
@@ -416,15 +489,39 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     );
   }
 
-  void _showTextView() {
-    if (_pdfDocument == null || widget.bookId == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PdfOcrTextView(
-          pdfDocument: _pdfDocument!,
-          bookId: widget.bookId!,
-          initialPage: _currentPage,
+  Widget _buildTextView() {
+    if (_textViewLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_textViewContent == null || _textViewContent!.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.text_snippet_outlined, size: 48),
+            const SizedBox(height: 8),
+            Text(AppStrings.of(context).noTextOnPage),
+          ],
+        ),
+      );
+    }
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity == null) return;
+        if (details.primaryVelocity! < -200 && _currentPage + 1 < _totalPages) {
+          _viewerController.goToPage(pageNumber: _currentPage + 2);
+        } else if (details.primaryVelocity! > 200 && _currentPage > 0) {
+          _viewerController.goToPage(pageNumber: _currentPage);
+        }
+      },
+      child: Markdown(
+        data: _textViewContent!,
+        selectable: true,
+        padding: const EdgeInsets.all(16),
+        styleSheet: MarkdownStyleSheet(
+          p: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6),
+          h2: Theme.of(context).textTheme.titleLarge,
+          listBullet: Theme.of(context).textTheme.bodyLarge,
         ),
       ),
     );
@@ -472,6 +569,9 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       isTtsActive: _ttsActive,
       onStartOcr: widget.bookId != null ? _startOcrBatch : null,
       isOcrRunning: _ocrBatchRunning,
+      onToggleTextView: widget.bookId != null ? _toggleOcrTextView : null,
+      isTextViewMode: _textViewMode,
+      isTextViewLoading: _textViewLoading,
       onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
     );
 
@@ -488,7 +588,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onTtsSpeedChanged: () {
         if (_ttsActive) _speakCurrentPage();
       },
-      onShowTextView: _showTextView,
     );
 
     return PopScope(
@@ -525,7 +624,10 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         ),
         body: Stack(
           children: [
-            PdfViewer.file(
+            if (_textViewMode)
+              _buildTextView()
+            else
+              PdfViewer.file(
                   widget.filePath,
                   controller: _viewerController,
                   params: PdfViewerParams(

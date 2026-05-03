@@ -4,7 +4,6 @@ import 'package:pdfrx/pdfrx.dart';
 import '../services/book_service.dart';
 import '../services/reading_log_service.dart';
 import '../main.dart';
-import '../models/highlight.dart';
 import '../utils/velocity_aware_scroll_physics.dart';
 import 'widgets/search_results_bar.dart';
 import 'pdf_highlight_manager.dart';
@@ -165,7 +164,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     
     _highlightsUi = PdfViewHighlightsUi(
       highlightManager: _highlightManager,
-      textSelectionManager: _textSelectionManager,
       viewerController: _viewerController,
       currentPage: _currentPage,
       onRefresh: () {
@@ -232,58 +230,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     _highlightsUi.showCurrentPageHighlights(
       context: context,
       currentPage: _currentPage,
-      onHighlightAction: (highlight) => (action) {
-        switch (action) {
-          case HighlightEditAction.changeColor:
-            _changeHighlightColor(highlight);
-            break;
-          case HighlightEditAction.delete:
-            _deleteHighlight(highlight);
-            break;
-        }
-      },
-    );
-  }
-
-  void _changeHighlightColor(Highlight highlight) {
-    _highlightManager.showColorPicker(context, onColorSelected: (color) async {
-      try {
-        await _highlightManager.changeHighlightColor(context, highlight, color);
-        if (mounted) setState(() {});
-      } catch (error) {
-        // Handle error
-      }
-    });
-  }
-
-  void _deleteHighlight(Highlight highlight) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Highlight'),
-        content: const Text('Are you sure you want to delete this highlight?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final currentContext = context;
-              try {
-                if (currentContext.mounted && mounted) {
-                  await _highlightManager.deleteHighlight(currentContext, highlight);
-                  if (mounted) setState(() {});
-                  if (ctx.mounted) Navigator.pop(ctx);
-                }
-              } catch (error) {
-                // Handle error
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 

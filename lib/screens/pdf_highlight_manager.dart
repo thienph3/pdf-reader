@@ -122,8 +122,9 @@ class PdfHighlightManager {
   Future<void> createHighlightFromSelection(
     PdfPageTextRange range,
     String selectedText,
-    VoidCallback? onSuccess,
-  ) async {
+    VoidCallback? onSuccess, {
+    String note = '',
+  }) async {
     debugPrint('createHighlight: bookId=$bookId, bookService=$bookService');
     if (bookId == null || bookService == null) {
       debugPrint('createHighlight: ABORTED - bookId or bookService is null');
@@ -137,6 +138,7 @@ class PdfHighlightManager {
       endIndex: range.end,
       text: selectedText,
       colorValue: currentHighlightColor,
+      note: note,
       createdAt: DateTime.now(),
     );
     

@@ -34,14 +34,14 @@ class PdfTextSelectionManager {
         // Show color picker bottom sheet
         _showHighlightColorPicker(
           context,
-          onColorSelected: (color) async {
+          onConfirm: (color, note) async {
             highlightManager!.currentHighlightColor = color;
             await highlightManager!.createHighlightFromSelection(
               range,
               selectedText,
               onHighlightCreated,
+              note: note,
             );
-            // Force viewer repaint
             highlightManager!.viewerController.invalidate();
           },
         );
@@ -61,44 +61,73 @@ class PdfTextSelectionManager {
 
   void _showHighlightColorPicker(
     BuildContext context, {
-    required Future<void> Function(int color) onColorSelected,
+    required Future<void> Function(int color, String note) onConfirm,
   }) {
+    int selectedColor = highlightManager?.currentHighlightColor ?? 0x80FFEB3B;
+    final noteController = TextEditingController();
+
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 16, right: 16, top: 16,
+        ),
+        child: StatefulBuilder(
+          builder: (ctx, setSheetState) => Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Highlight Color',
+              Text('Highlight',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: _highlightColors.map((color) {
+                  final isSelected = selectedColor == color;
                   return GestureDetector(
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      onColorSelected(color);
-                    },
+                    onTap: () => setSheetState(() => selectedColor = color),
                     child: Container(
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
                         color: Color(color),
-                        borderRadius: BorderRadius.circular(22),
+                        shape: BoxShape.circle,
                         border: Border.all(
-                          color: highlightManager?.currentHighlightColor == color
+                          color: isSelected
                               ? Theme.of(context).colorScheme.primary
                               : Colors.grey.shade300,
-                          width: 3,
+                          width: isSelected ? 3 : 1,
                         ),
                       ),
+                      child: isSelected
+                          ? const Icon(Icons.check, size: 20, color: Colors.white)
+                          : null,
                     ),
                   );
                 }).toList(),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: noteController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  hintText: 'Add a note (optional)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    onConfirm(selectedColor, noteController.text.trim());
+                  },
+                  child: const Text('Save'),
+                ),
               ),
               const SizedBox(height: 8),
             ],

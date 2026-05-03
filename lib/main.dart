@@ -7,6 +7,7 @@ import 'services/category_service.dart';
 import 'services/reading_log_service.dart';
 import 'services/settings_service.dart';
 import 'services/thumbnail_service.dart';
+import 'services/tts_service.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -21,12 +22,15 @@ void main() async {
   final readingLogService = ReadingLogService();
   await readingLogService.init();
   final thumbnailService = ThumbnailService();
+  final ttsService = TtsService();
+  await ttsService.init();
   runApp(PdfReaderApp(
     bookService: bookService,
     categoryService: categoryService,
     settingsService: settingsService,
     readingLogService: readingLogService,
     thumbnailService: thumbnailService,
+    ttsService: ttsService,
   ));
 }
 
@@ -66,12 +70,22 @@ class ReadingLogServiceScope extends InheritedWidget {
   bool updateShouldNotify(ReadingLogServiceScope oldWidget) => readingLogService != oldWidget.readingLogService;
 }
 
+class TtsServiceScope extends InheritedWidget {
+  final TtsService ttsService;
+  const TtsServiceScope({super.key, required this.ttsService, required super.child});
+  static TtsService of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<TtsServiceScope>()!.ttsService;
+  @override
+  bool updateShouldNotify(TtsServiceScope oldWidget) => ttsService != oldWidget.ttsService;
+}
+
 class PdfReaderApp extends StatefulWidget {
   final BookService bookService;
   final CategoryService categoryService;
   final SettingsService settingsService;
   final ReadingLogService readingLogService;
   final ThumbnailService thumbnailService;
+  final TtsService ttsService;
 
   const PdfReaderApp({
     super.key,
@@ -80,6 +94,7 @@ class PdfReaderApp extends StatefulWidget {
     required this.settingsService,
     required this.readingLogService,
     required this.thumbnailService,
+    required this.ttsService,
   });
 
   @override
@@ -113,6 +128,8 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
           thumbnailService: widget.thumbnailService,
           child: ReadingLogServiceScope(
             readingLogService: widget.readingLogService,
+            child: TtsServiceScope(
+            ttsService: widget.ttsService,
             child: SettingsScope(
             settingsService: settings,
             child: MaterialApp(
@@ -139,6 +156,7 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
               ],
               home: const SplashScreen(),
             ),
+          ),
           ),
           ),
         ),

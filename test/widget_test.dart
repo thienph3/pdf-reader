@@ -5,6 +5,7 @@ import 'package:pdf_reader/services/category_service.dart';
 import 'package:pdf_reader/services/reading_log_service.dart';
 import 'package:pdf_reader/services/settings_service.dart';
 import 'package:pdf_reader/services/thumbnail_service.dart';
+import 'package:pdf_reader/services/tts_service.dart';
 
 void main() {
   testWidgets('App renders splash screen', (WidgetTester tester) async {
@@ -17,12 +18,14 @@ void main() {
     final logSvc = ReadingLogService();
     await logSvc.init();
     final thumbSvc = ThumbnailService();
+    final ttsSvc = TtsService();
     await tester.pumpWidget(PdfReaderApp(
       bookService: bookSvc,
       categoryService: catSvc,
       settingsService: settingsSvc,
       readingLogService: logSvc,
       thumbnailService: thumbSvc,
+      ttsService: ttsSvc,
     ));
     expect(find.text('PDF Reader'), findsOneWidget);
   });

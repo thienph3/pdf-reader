@@ -1,11 +1,47 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../l10n/app_strings.dart';
 import '../services/settings_service.dart';
+import '../services/tts_service.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   final SettingsService settingsService;
+  final TtsService? ttsService;
 
-  const SettingsScreen({super.key, required this.settingsService});
+  const SettingsScreen({
+    super.key,
+    required this.settingsService,
+    this.ttsService,
+  });
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
+  SettingsService get settingsService => widget.settingsService;
+  TtsService? get ttsService => widget.ttsService;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Refresh TTS installed languages when returning from settings
+      ttsService?.refreshInstalledLanguages();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +114,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // Monthly goal - Cycle through common options
+          // Monthly goal
           ListTile(
             leading: const Icon(Icons.calendar_month_outlined),
             title: Text(s.monthlyGoal),
@@ -89,6 +125,64 @@ class SettingsScreen extends StatelessWidget {
             ),
             onTap: () => _cycleMonthlyGoal(),
           ),
+
+          // TTS section
+          if (ttsService != null) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text('Text-to-Speech',
+                  style: Theme.of(context).textTheme.titleSmall),
+            ),
+            ListenableBuilder(
+              listenable: ttsService!,
+              builder: (context, _) => Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.record_voice_over),
+                    title: Text(ttsService!.isAvailable
+                        ? 'TTS Available'
+                        : 'TTS Not Available'),
+                    subtitle: Text(ttsService!.isAvailable
+                        ? '${ttsService!.availableLanguages.length} languages'
+                        : 'No TTS engine found'),
+                    trailing: Icon(
+                      ttsService!.isAvailable
+                          ? Icons.check_circle
+                          : Icons.error_outline,
+                      color: ttsService!.isAvailable
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                  ),
+                  if (ttsService!.isAvailable)
+                    ...['vi-VN', 'en-US', 'en-GB', 'zh-CN', 'ja-JP', 'ko-KR',
+                        'fr-FR', 'de-DE', 'es-ES', 'th-TH']
+                        .where((l) => ttsService!.availableLanguages.contains(l))
+                        .map((lang) {
+                      final installed = ttsService!.installedLanguages[lang];
+                      return ListTile(
+                        dense: true,
+                        leading: const SizedBox(width: 24),
+                        title: Text(TtsService.languageDisplayName(lang)),
+                        trailing: Icon(
+                          installed == true
+                              ? Icons.download_done
+                              : Icons.download_outlined,
+                          size: 20,
+                          color: installed == true
+                              ? Colors.green
+                              : Colors.orange,
+                        ),
+                        onTap: installed != true
+                            ? () => _showInstallHint(context)
+                            : null,
+                      );
+                    }),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
       ),
@@ -145,6 +239,42 @@ class SettingsScreen extends StatelessWidget {
     final currentIndex = options.indexOf(current);
     final nextIndex = (currentIndex + 1) % options.length;
     settingsService.setMonthlyGoalBooks(options[nextIndex]);
+  }
+
+  void _showInstallHint(BuildContext context) {
+    if (Platform.isAndroid) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Download Voice'),
+          content: const Text(
+            'To download this voice, open your device\'s TTS settings.\n\n'
+            'Settings → System → Language → Text-to-Speech → Install voice data',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                // Open Android TTS settings via intent
+                const channel = MethodChannel('com.example.pdf_reader/tts');
+                channel.invokeMethod('openTtsSettings').catchError((_) {});
+              },
+              child: const Text('Open TTS Settings'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Go to Settings → Accessibility → Spoken Content → Voices'),
+        ),
+      );
+    }
   }
 
 

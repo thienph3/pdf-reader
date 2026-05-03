@@ -14,13 +14,16 @@ class TtsService extends ChangeNotifier {
   double pitch = 1.0;
   String? currentLanguage;
   List<String> availableLanguages = [];
+  Map<String, bool> installedLanguages = {};
   String? currentText;
   bool _isAvailable = false;
+  bool _languageNotInstalled = false;
 
   bool get isPlaying => state == TtsState.playing;
   bool get isPaused => state == TtsState.paused;
   bool get isStopped => state == TtsState.stopped;
   bool get isAvailable => _isAvailable;
+  bool get languageNotInstalled => _languageNotInstalled;
 
   Future<void> init() async {
     try {
@@ -53,9 +56,13 @@ class TtsService extends ChangeNotifier {
         availableLanguages = List<String>.from(langs)..sort();
       }
 
+      // Check which languages are installed (Android only)
+      await refreshInstalledLanguages();
+
       await _tts.setSpeechRate(speed);
       await _tts.setPitch(pitch);
 
+      // Default language
       if (availableLanguages.any((l) => l.startsWith('vi'))) {
         await setLanguage('vi-VN');
       } else if (availableLanguages.any((l) => l.startsWith('en'))) {
@@ -68,6 +75,20 @@ class TtsService extends ChangeNotifier {
       debugPrint('TTS init error: $e');
       _isAvailable = false;
     }
+  }
+
+  /// Refresh installed language status.
+  Future<void> refreshInstalledLanguages() async {
+    if (!Platform.isAndroid) return;
+    final common = ['vi-VN', 'en-US', 'en-GB', 'zh-CN', 'ja-JP', 'ko-KR',
+                     'fr-FR', 'de-DE', 'es-ES', 'pt-BR', 'th-TH'];
+    for (final lang in common) {
+      if (availableLanguages.contains(lang)) {
+        final result = await _tts.isLanguageInstalled(lang);
+        installedLanguages[lang] = result == true;
+      }
+    }
+    notifyListeners();
   }
 
   // ── Foreground service ──
@@ -123,6 +144,7 @@ class TtsService extends ChangeNotifier {
     final result = await _tts.setLanguage(lang);
     if (result == 1) {
       currentLanguage = lang;
+      _languageNotInstalled = false;
       notifyListeners();
     }
   }
@@ -133,10 +155,30 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Speak text. Auto-detects language and switches if needed.
   Future<void> speak(String text) async {
     if (text.trim().isEmpty) return;
     final cleaned = cleanPdfText(text);
     if (cleaned.isEmpty) return;
+
+    // Auto-detect language and switch
+    final detected = detectLanguage(cleaned);
+    final targetLang = _findBestLanguageMatch(detected);
+    if (targetLang != null && targetLang != currentLanguage) {
+      await setLanguage(targetLang);
+    }
+
+    // Check if language is installed
+    if (currentLanguage != null && Platform.isAndroid) {
+      final installed = await _tts.isLanguageInstalled(currentLanguage!);
+      if (installed != true) {
+        _languageNotInstalled = true;
+        notifyListeners();
+        return;
+      }
+    }
+    _languageNotInstalled = false;
+
     currentText = cleaned;
     state = TtsState.playing;
     notifyListeners();
@@ -158,8 +200,108 @@ class TtsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool isLanguageAvailable(String langCode) {
-    return availableLanguages.any((l) => l.startsWith(langCode));
+  // ── Language detection (rule-based) ──
+
+  /// Detect language from text using Unicode character ranges.
+  static String detectLanguage(String text) {
+    final sample = text.length > 500 ? text.substring(0, 500) : text;
+    final runes = sample.runes.toList();
+    if (runes.isEmpty) return 'en';
+
+    int vi = 0, zh = 0, ja = 0, ko = 0, th = 0, latin = 0;
+
+    for (final r in runes) {
+      if (_isVietnamese(r)) {
+        vi++;
+      } else if (_isCJK(r)) {
+        zh++;
+      } else if (_isHiraganaKatakana(r)) {
+        ja++;
+      } else if (_isHangul(r)) {
+        ko++;
+      } else if (_isThai(r)) {
+        th++;
+      } else if (_isLatin(r)) {
+        latin++;
+      }
+    }
+
+    // Vietnamese uses Latin + diacritics, so check vi ratio vs latin
+    final total = vi + zh + ja + ko + th + latin;
+    if (total == 0) return 'en';
+
+    if (vi > 0 && vi / total > 0.05) return 'vi';
+    if (ja > 0) return 'ja'; // Hiragana/Katakana = definitely Japanese
+    if (ko > 0 && ko / total > 0.1) return 'ko';
+    if (th > 0 && th / total > 0.1) return 'th';
+    if (zh > 0 && zh / total > 0.1) return 'zh';
+    return 'en';
+  }
+
+  // Vietnamese diacritics: ă â đ ê ô ơ ư + combining marks
+  static bool _isVietnamese(int r) {
+    return (r == 0x0102 || r == 0x0103 || // Ă ă
+            r == 0x00C2 || r == 0x00E2 || // Â â
+            r == 0x0110 || r == 0x0111 || // Đ đ
+            r == 0x00CA || r == 0x00EA || // Ê ê
+            r == 0x00D4 || r == 0x00F4 || // Ô ô
+            r == 0x01A0 || r == 0x01A1 || // Ơ ơ
+            r == 0x01AF || r == 0x01B0 || // Ư ư
+            // Vowels with tone marks
+            (r >= 0x1EA0 && r <= 0x1EF9));
+  }
+
+  static bool _isCJK(int r) =>
+      (r >= 0x4E00 && r <= 0x9FFF) || (r >= 0x3400 && r <= 0x4DBF);
+
+  static bool _isHiraganaKatakana(int r) =>
+      (r >= 0x3040 && r <= 0x309F) || (r >= 0x30A0 && r <= 0x30FF);
+
+  static bool _isHangul(int r) =>
+      (r >= 0xAC00 && r <= 0xD7AF) || (r >= 0x1100 && r <= 0x11FF);
+
+  static bool _isThai(int r) => r >= 0x0E00 && r <= 0x0E7F;
+
+  static bool _isLatin(int r) =>
+      (r >= 0x0041 && r <= 0x007A) || (r >= 0x00C0 && r <= 0x024F);
+
+  /// Find best matching TTS language code for detected language.
+  String? _findBestLanguageMatch(String langCode) {
+    // Map detected code to TTS language codes
+    final mapping = {
+      'vi': 'vi-VN',
+      'en': 'en-US',
+      'zh': 'zh-CN',
+      'ja': 'ja-JP',
+      'ko': 'ko-KR',
+      'th': 'th-TH',
+    };
+    final target = mapping[langCode];
+    if (target != null && availableLanguages.contains(target)) {
+      return target;
+    }
+    // Try prefix match
+    final match = availableLanguages.where((l) => l.startsWith(langCode)).firstOrNull;
+    return match;
+  }
+
+  /// Get human-readable language name.
+  static String languageDisplayName(String code) {
+    const names = {
+      'vi-VN': 'Tiếng Việt',
+      'en-US': 'English (US)',
+      'en-GB': 'English (UK)',
+      'zh-CN': '中文 (简体)',
+      'zh-TW': '中文 (繁體)',
+      'ja-JP': '日本語',
+      'ko-KR': '한국어',
+      'fr-FR': 'Français',
+      'de-DE': 'Deutsch',
+      'es-ES': 'Español',
+      'pt-BR': 'Português',
+      'th-TH': 'ไทย',
+    };
+    return names[code] ?? code;
   }
 
   // ── Text cleaning ──
@@ -195,7 +337,8 @@ class TtsService extends ChangeNotifier {
       }
     }
 
-    return buffer.toString()
+    return buffer
+        .toString()
         .replaceAll(RegExp(r'\n{3,}'), '\n\n')
         .replaceAll(RegExp(r' {2,}'), ' ')
         .trim();

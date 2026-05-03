@@ -172,6 +172,26 @@ class PdfTtsPanel extends StatelessWidget {
                   style: TextStyle(fontSize: 12, color: colorScheme.error),
                 ),
               ),
+            if (ttsService.languageNotInstalled)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 4),
+                child: Column(
+                  children: [
+                    Text(
+                      'Voice for "${ttsService.currentLanguage}" not installed.',
+                      style: TextStyle(fontSize: 12, color: colorScheme.error),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      Platform.isAndroid
+                          ? 'Go to Settings → System → Language → Text-to-Speech to download.'
+                          : 'Go to Settings → Accessibility → Spoken Content → Voices.',
+                      style: const TextStyle(fontSize: 11),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

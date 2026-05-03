@@ -29,7 +29,10 @@ class _MainShellState extends State<MainShell> {
               const BookListScreen(),
               const CategoryScreen(),
               const StatsScreen(),
-              SettingsScreen(settingsService: SettingsScope.of(context)),
+              SettingsScreen(
+                settingsService: SettingsScope.of(context),
+                ttsService: TtsServiceScope.of(context),
+              ),
             ],
           ),
         ),

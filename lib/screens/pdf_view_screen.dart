@@ -366,6 +366,19 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Rebuild UI builder với giá trị mới nhất
+    _uiBuilder = PdfViewUiBuilder(
+      bookmarkManager: _bookmarkManager,
+      uiControls: _uiControls,
+      fileName: widget.fileName,
+      currentPage: _currentPage,
+      totalPages: _totalPages,
+      onClose: _closeAndPop,
+      onStartSearch: _startSearch,
+      onShowReaderActions: _showReaderActions,
+      onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
+    );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {

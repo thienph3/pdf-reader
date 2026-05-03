@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import '../l10n/app_strings.dart';
 import '../models/highlight.dart';
 import 'pdf_highlight_manager.dart';
 
@@ -38,7 +39,7 @@ class PdfViewHighlightsUi {
     final highlights = highlightManager.getAllHighlights();
     if (highlights.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No highlights found')),
+        SnackBar(content: Text(AppStrings.of(context).noHighlightsFound)),
       );
       return;
     }
@@ -58,7 +59,7 @@ class PdfViewHighlightsUi {
     final items = highlightManager.getHighlightsForCurrentPage(currentPage);
     if (items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No highlights on this page')),
+        SnackBar(content: Text(AppStrings.of(context).noHighlightsOnPage)),
       );
       return;
     }
@@ -66,7 +67,7 @@ class PdfViewHighlightsUi {
       context: context,
       highlights: items,
       showPage: false,
-      title: 'Page ${currentPage + 1} Highlights',
+      title: AppStrings.of(context).highlightsOnPage(currentPage + 1),
     );
   }
 
@@ -130,9 +131,9 @@ class PdfViewHighlightsUi {
               TextField(
                 controller: noteCtrl,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  hintText: 'Add a note (optional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: AppStrings.of(context).addNoteOptional,
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
@@ -146,7 +147,7 @@ class PdfViewHighlightsUi {
                         Navigator.pop(ctx);
                         await _saveHighlight(context, highlight, selectedColor, noteCtrl.text.trim());
                       },
-                      child: const Text('Save'),
+                      child: Text(AppStrings.of(context).save),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -189,16 +190,16 @@ class PdfViewHighlightsUi {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Highlight'),
-        content: const Text('Delete this highlight?'),
+        title: Text(AppStrings.of(context).deleteHighlight),
+        content: Text(AppStrings.of(context).deleteHighlightConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppStrings.of(context).cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(AppStrings.of(context).delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -256,7 +257,7 @@ class PdfViewHighlightsUi {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (showPage)
-                          Text('Page ${h.page + 1}',
+                          Text(AppStrings.of(context).page(h.page + 1),
                               style: Theme.of(context).textTheme.bodySmall),
                         if (h.note.isNotEmpty)
                           Text(h.note,

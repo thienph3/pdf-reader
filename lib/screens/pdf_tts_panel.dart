@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../services/tts_service.dart';
 
 /// Bottom panel for TTS controls in PDF viewer.
@@ -31,6 +32,7 @@ class PdfTtsPanel extends StatelessWidget {
   }
 
   Widget _buildUnavailable(BuildContext context) {
+    final s = AppStrings.of(context);
     return Card(
       margin: const EdgeInsets.all(12),
       child: Padding(
@@ -40,23 +42,23 @@ class PdfTtsPanel extends StatelessWidget {
           children: [
             const Icon(Icons.volume_off, size: 32),
             const SizedBox(height: 8),
-            const Text('TTS not available'),
+            Text(s.ttsNotAvailable),
             const SizedBox(height: 8),
             if (Platform.isAndroid)
               FilledButton.tonal(
                 onPressed: () {
                   // Guide user to settings
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Go to Settings > System > Language > Text-to-Speech')),
+                    SnackBar(content: Text(s.androidTtsHint)),
                   );
                 },
-                child: const Text('How to enable TTS'),
+                child: Text(s.ttsHowToEnable),
               ),
             if (Platform.isIOS)
-              const Text(
-                'Go to Settings > Accessibility > Spoken Content > Voices',
+              Text(
+                s.iosVoiceHint,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12),
               ),
           ],
         ),
@@ -65,6 +67,7 @@ class PdfTtsPanel extends StatelessWidget {
   }
 
   Widget _buildControls(BuildContext context) {
+    final s = AppStrings.of(context);
     final hasText = pageText != null && pageText!.trim().isNotEmpty;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -81,9 +84,9 @@ class PdfTtsPanel extends StatelessWidget {
               children: [
                 const Icon(Icons.record_voice_over, size: 20),
                 const SizedBox(width: 8),
-                const Expanded(
-                  child: Text('Text-to-Speech',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                Expanded(
+                  child: Text(s.tts,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
                 // Language indicator
                 if (ttsService.currentLanguage != null)
@@ -159,7 +162,7 @@ class PdfTtsPanel extends StatelessWidget {
                 // TTS Settings (download voices)
                 IconButton(
                   icon: const Icon(Icons.settings_voice),
-                  tooltip: 'Voice Settings',
+                  tooltip: s.voiceSettings,
                   onPressed: () => _showVoiceSettings(context),
                 ),
               ],
@@ -168,7 +171,7 @@ class PdfTtsPanel extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 4),
                 child: Text(
-                  'No text found on this page (scanned PDF?)',
+                  s.noTextOnPage,
                   style: TextStyle(fontSize: 12, color: colorScheme.error),
                 ),
               ),
@@ -178,14 +181,14 @@ class PdfTtsPanel extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      'Voice for "${ttsService.currentLanguage}" not installed.',
+                      s.voiceNotInstalled(ttsService.currentLanguage!),
                       style: TextStyle(fontSize: 12, color: colorScheme.error),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       Platform.isAndroid
-                          ? 'Go to Settings → System → Language → Text-to-Speech to download.'
-                          : 'Go to Settings → Accessibility → Spoken Content → Voices.',
+                          ? s.androidTtsHint
+                          : s.iosVoiceHint,
                       style: const TextStyle(fontSize: 11),
                       textAlign: TextAlign.center,
                     ),
@@ -199,6 +202,7 @@ class PdfTtsPanel extends StatelessWidget {
   }
 
   void _showLanguagePicker(BuildContext context) {
+    final s = AppStrings.of(context);
     final langs = ttsService.availableLanguages;
     showModalBottomSheet(
       context: context,
@@ -212,7 +216,7 @@ class PdfTtsPanel extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Select Language',
+              child: Text(s.selectLanguage,
                   style: Theme.of(context).textTheme.titleMedium),
             ),
             Expanded(
@@ -244,6 +248,7 @@ class PdfTtsPanel extends StatelessWidget {
   }
 
   void _showVoiceSettings(BuildContext context) {
+    final s = AppStrings.of(context);
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -253,27 +258,22 @@ class PdfTtsPanel extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Voice Settings',
+              Text(s.voiceSettings,
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               if (Platform.isAndroid) ...[
-                const Text(
-                  'To download more voices or languages:\n'
-                  'Settings → System → Language → Text-to-Speech',
-                  style: TextStyle(fontSize: 13),
+                Text(s.androidTtsHint,
+                  style: const TextStyle(fontSize: 13),
                 ),
               ],
               if (Platform.isIOS) ...[
-                const Text(
-                  'To download voices:\n'
-                  'Settings → Accessibility → Spoken Content → Voices\n\n'
-                  'Select a language and tap the download icon next to a voice.',
-                  style: TextStyle(fontSize: 13),
+                Text(s.iosVoiceHint,
+                  style: const TextStyle(fontSize: 13),
                 ),
               ],
               const SizedBox(height: 8),
               Text(
-                '${ttsService.availableLanguages.length} languages available',
+                s.languagesAvailable(ttsService.availableLanguages.length),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],

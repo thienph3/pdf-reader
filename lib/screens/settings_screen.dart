@@ -131,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text('Text-to-Speech',
+              child: Text(s.tts,
                   style: Theme.of(context).textTheme.titleSmall),
             ),
             ListenableBuilder(
@@ -141,11 +141,11 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   ListTile(
                     leading: const Icon(Icons.record_voice_over),
                     title: Text(ttsService!.isAvailable
-                        ? 'TTS Available'
-                        : 'TTS Not Available'),
+                        ? s.ttsAvailable
+                        : s.ttsNotAvailable),
                     subtitle: Text(ttsService!.isAvailable
-                        ? '${ttsService!.availableLanguages.length} languages'
-                        : 'No TTS engine found'),
+                        ? s.languagesAvailable(ttsService!.availableLanguages.length)
+                        : s.noTtsEngine),
                     trailing: Icon(
                       ttsService!.isAvailable
                           ? Icons.check_circle
@@ -242,19 +242,17 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   }
 
   void _showInstallHint(BuildContext context) {
+    final s = AppStrings.of(context);
     if (Platform.isAndroid) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Download Voice'),
-          content: const Text(
-            'To download this voice, open your device\'s TTS settings.\n\n'
-            'Settings → System → Language → Text-to-Speech → Install voice data',
-          ),
+          title: Text(s.downloadVoice),
+          content: Text(s.downloadVoiceHint),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(s.cancel),
             ),
             FilledButton(
               onPressed: () {
@@ -263,15 +261,15 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                 const channel = MethodChannel('com.example.pdf_reader/tts');
                 channel.invokeMethod('openTtsSettings').catchError((_) {});
               },
-              child: const Text('Open TTS Settings'),
+              child: Text(s.openTtsSettings),
             ),
           ],
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Go to Settings → Accessibility → Spoken Content → Voices'),
+        SnackBar(
+          content: Text(s.iosVoiceHint),
         ),
       );
     }

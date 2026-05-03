@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:uuid/uuid.dart';
+import '../l10n/app_strings.dart';
 import '../services/book_service.dart';
 import '../models/highlight.dart';
 
@@ -219,10 +220,11 @@ class PdfHighlightManager {
 
   /// Shows a color picker dialog for highlight colors.
   void showColorPicker(BuildContext context, {required ValueChanged<int> onColorSelected}) {
+    final s = AppStrings.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Select Highlight Color'),
+        title: Text(s.selectHighlightColor),
         content: SizedBox(
           width: 300,
           child: Wrap(
@@ -255,7 +257,7 @@ class PdfHighlightManager {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
         ],
       ),

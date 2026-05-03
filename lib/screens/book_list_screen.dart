@@ -348,7 +348,7 @@ class _BookListScreenState extends State<BookListScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Text('Smart Collections',
+              child: Text(s.smartCollections,
                   style: Theme.of(context).textTheme.titleSmall),
             ),
           ),

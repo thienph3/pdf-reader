@@ -69,7 +69,7 @@ class PdfViewDialogsManager {
             if (ttsService != null && ttsService!.isAvailable)
               ListTile(
                 leading: const Icon(Icons.speed),
-                title: const Text('TTS Speed'),
+                title: Text(s.ttsSpeed),
                 subtitle: Text('${(ttsService!.speed * 2).toStringAsFixed(1)}x'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -83,6 +83,7 @@ class PdfViewDialogsManager {
   }
 
   void _showTtsSpeedPicker(BuildContext context) {
+    final s = AppStrings.of(context);
     final speeds = [0.25, 0.5, 0.75, 1.0];
     final labels = ['0.5x', '1x', '1.5x', '2x'];
     final wasPlaying = ttsService!.isPlaying;
@@ -94,7 +95,7 @@ class PdfViewDialogsManager {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Reading Speed',
+              child: Text(s.readingSpeed,
                   style: Theme.of(context).textTheme.titleMedium),
             ),
             ...List.generate(speeds.length, (i) => ListTile(

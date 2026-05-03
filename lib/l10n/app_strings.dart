@@ -153,6 +153,45 @@ class AppStrings {
   String get highlightNote => _isVi ? 'Ghi chú cho đánh dấu...' : 'Note for highlight...';
   String get noHighlights => _isVi ? 'Chưa có đánh dấu nào' : 'No highlights yet';
   String get selectTextToHighlight => _isVi ? 'Chọn văn bản để đánh dấu' : 'Select text to highlight';
+  String get noHighlightsFound => _isVi ? 'Không có đánh dấu nào' : 'No highlights found';
+  String get noHighlightsOnPage => _isVi ? 'Trang này chưa có đánh dấu' : 'No highlights on this page';
+  String get selectHighlightColor => _isVi ? 'Chọn màu đánh dấu' : 'Select Highlight Color';
+  String get changeColor => _isVi ? 'Đổi màu' : 'Change Color';
+  String get deleteHighlight => _isVi ? 'Xoá đánh dấu' : 'Delete Highlight';
+  String get deleteHighlightConfirm => _isVi ? 'Xoá đánh dấu này?' : 'Delete this highlight?';
+  String get addNoteOptional => _isVi ? 'Thêm ghi chú (tuỳ chọn)' : 'Add a note (optional)';
+  String highlightsOnPage(int n) => _isVi ? 'Đánh dấu trang $n' : 'Highlights on Page $n';
+
+  // Smart collections
+  String get smartCollections => _isVi ? 'Bộ sưu tập' : 'Smart Collections';
+
+  // TTS
+  String get tts => _isVi ? 'Đọc to' : 'Text-to-Speech';
+  String get ttsNotAvailable => _isVi ? 'TTS không khả dụng' : 'TTS not available';
+  String get ttsHowToEnable => _isVi ? 'Cách bật TTS' : 'How to enable TTS';
+  String get ttsSpeed => _isVi ? 'Tốc độ đọc' : 'TTS Speed';
+  String get readingSpeed => _isVi ? 'Tốc độ đọc' : 'Reading Speed';
+  String get stopReading => _isVi ? 'Dừng đọc' : 'Stop Reading';
+  String get readAloud => _isVi ? 'Đọc to' : 'Read Aloud';
+  String get selectLanguage => _isVi ? 'Chọn ngôn ngữ' : 'Select Language';
+  String get voiceSettings => _isVi ? 'Cài đặt giọng đọc' : 'Voice Settings';
+  String get ttsAvailable => _isVi ? 'TTS khả dụng' : 'TTS Available';
+  String get noTtsEngine => _isVi ? 'Không tìm thấy TTS engine' : 'No TTS engine found';
+  String languagesAvailable(int n) => _isVi ? '$n ngôn ngữ' : '$n languages';
+  String get downloadVoice => _isVi ? 'Tải giọng đọc' : 'Download Voice';
+  String get downloadVoiceHint => _isVi
+      ? 'Để tải giọng đọc, mở cài đặt TTS trên thiết bị.\n\nCài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói'
+      : 'To download this voice, open your device\'s TTS settings.\n\nSettings → System → Language → Text-to-Speech → Install voice data';
+  String get openTtsSettings => _isVi ? 'Mở cài đặt TTS' : 'Open TTS Settings';
+  String get iosVoiceHint => _isVi
+      ? 'Vào Cài đặt → Trợ năng → Nội dung được đọc → Giọng đọc'
+      : 'Go to Settings → Accessibility → Spoken Content → Voices';
+  String get searching => _isVi ? 'Đang tìm...' : 'Searching...';
+  String get noTextOnPage => _isVi ? 'Trang này không có văn bản (PDF scan?)' : 'No text found on this page (scanned PDF?)';
+  String voiceNotInstalled(String lang) => _isVi ? 'Giọng đọc "$lang" chưa được cài.' : 'Voice for "$lang" not installed.';
+  String get androidTtsHint => _isVi
+      ? 'Vào Cài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói để tải.'
+      : 'Go to Settings → System → Language → Text-to-Speech to download.';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

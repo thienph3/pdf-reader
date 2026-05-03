@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import '../../l10n/app_strings.dart';
 
 /// Search results count bar at bottom of viewer.
 class SearchResultsBar extends StatelessWidget {
@@ -20,15 +21,15 @@ class SearchResultsBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           color: colorScheme.surfaceContainerHighest,
           child: textSearcher.isSearching
-              ? const Row(
+              ? Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(
+                    const SizedBox(
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2)),
-                    SizedBox(width: 8),
-                    Text('Searching...'),
+                    const SizedBox(width: 8),
+                    Text(AppStrings.of(context).searching),
                   ],
                 )
               : Text(

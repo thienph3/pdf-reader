@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import '../l10n/app_strings.dart';
 import 'pdf_highlight_manager.dart';
 import '../models/highlight.dart';
 
@@ -79,7 +80,7 @@ class PdfTextSelectionManager {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Highlight',
+              Text(AppStrings.of(context).highlight,
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               Row(
@@ -112,9 +113,9 @@ class PdfTextSelectionManager {
               TextField(
                 controller: noteController,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  hintText: 'Add a note (optional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: AppStrings.of(context).addNoteOptional,
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
@@ -126,7 +127,7 @@ class PdfTextSelectionManager {
                     Navigator.pop(ctx);
                     onConfirm(selectedColor, noteController.text.trim());
                   },
-                  child: const Text('Save'),
+                  child: Text(AppStrings.of(context).save),
                 ),
               ),
               const SizedBox(height: 8),
@@ -143,6 +144,7 @@ class PdfTextSelectionManager {
     Highlight highlight,
     ValueChanged<HighlightEditAction> onActionSelected,
   ) {
+    final s = AppStrings.of(context);
     showModalBottomSheet(
       context: context,
       builder: (ctx) => SafeArea(
@@ -151,7 +153,7 @@ class PdfTextSelectionManager {
           children: [
             ListTile(
               leading: const Icon(Icons.color_lens),
-              title: const Text('Change Color'),
+              title: Text(s.changeColor),
               onTap: () {
                 Navigator.pop(ctx);
                 onActionSelected(HighlightEditAction.changeColor);
@@ -159,8 +161,8 @@ class PdfTextSelectionManager {
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete Highlight',
-                  style: TextStyle(color: Colors.red)),
+              title: Text(s.deleteHighlight,
+                  style: const TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(ctx);
                 onActionSelected(HighlightEditAction.delete);

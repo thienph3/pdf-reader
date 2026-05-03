@@ -357,6 +357,17 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
     );
 
+    _dialogsManager = PdfViewDialogsManager(
+      highlightManager: _highlightManager,
+      bookmarkManager: _bookmarkManager,
+      viewerController: _viewerController,
+      currentPage: _currentPage,
+      pdfDocument: _pdfDocument,
+      onShowToc: _showToc,
+      onShowHighlightsList: _showHighlightsList,
+      onPageSelected: (page) => _viewerController.goToPage(pageNumber: page + 1),
+    );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'l10n/app_strings.dart';
 import 'services/book_service.dart';
 import 'services/category_service.dart';
@@ -10,6 +11,7 @@ import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  pdfrxFlutterInitialize(); // Initialize pdfrx for thumbnail rendering
   final bookService = BookService();
   await bookService.init();
   final categoryService = CategoryService();

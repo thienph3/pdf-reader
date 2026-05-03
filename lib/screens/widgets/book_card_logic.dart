@@ -27,15 +27,25 @@ class BookCardLogic {
     required String bookId,
     required String? filePath,
   }) async {
-    if (filePath == null) return;
-    final svc = ThumbnailServiceScope.of(context);
-    final img = await svc.getThumbnail(
-      bookId: bookId,
-      filePath: filePath,
-      width: 300,
-    );
-    thumbnail = img;
-    isLoading = false;
+    if (filePath == null) {
+      isLoading = false;
+      return;
+    }
+    
+    try {
+      final svc = ThumbnailServiceScope.of(context);
+      final img = await svc.getThumbnail(
+        bookId: bookId,
+        filePath: filePath,
+        width: 300,
+      );
+      thumbnail = img;
+    } catch (e) {
+      debugPrint('BookCardLogic: Failed to load thumbnail for $bookId: $e');
+      thumbnail = null;
+    } finally {
+      isLoading = false;
+    }
   }
 
   Color? getCategoryColor({

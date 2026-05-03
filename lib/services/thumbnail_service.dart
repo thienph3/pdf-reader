@@ -45,28 +45,47 @@ class ThumbnailService {
       }
 
       // 3. Render from PDF
-      if (!await File(filePath).exists()) return null;
+      if (!await File(filePath).exists()) {
+        debugPrint('ThumbnailService: File not found: $filePath');
+        return null;
+      }
 
       final doc = await PdfDocument.openFile(filePath);
-      if (doc.pages.isEmpty) return null;
+      if (doc.pages.isEmpty) {
+        debugPrint('ThumbnailService: PDF has no pages: $filePath');
+        return null;
+      }
 
       final page = doc.pages[0];
       final height = width * page.height / page.width;
 
+      debugPrint('ThumbnailService: Rendering thumbnail for $bookId, size: ${width}x$height');
+      
       final rendered = await page.render(
         fullWidth: width,
         fullHeight: height,
       );
 
-      if (rendered == null) return null;
+      if (rendered == null) {
+        debugPrint('ThumbnailService: Render returned null for $bookId');
+        return null;
+      }
 
-      // Use createImage() to get ui.Image directly from render result
-      final image = await rendered.createImage();
+      // Use the PdfImage.createImage() extension method from pdfrx_flutter.dart
+      ui.Image? image;
+      try {
+        image = await rendered.createImage();
+        debugPrint('ThumbnailService: Successfully created thumbnail for $bookId');
+      } catch (e) {
+        debugPrint('ThumbnailService: Failed to create image for $bookId: $e');
+        return null;
+      }
 
       // Save PNG to disk cache for next launch
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData != null) {
         await cacheFile.writeAsBytes(byteData.buffer.asUint8List());
+        debugPrint('ThumbnailService: Saved thumbnail to disk cache: $cacheKey');
       }
 
       _memCache[cacheKey] = image;

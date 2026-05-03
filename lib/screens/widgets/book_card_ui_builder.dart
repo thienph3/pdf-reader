@@ -16,7 +16,11 @@ class BookCardUiBuilder {
       children: [
         // Thumbnail / placeholder
         if (thumbnail != null)
-          RawImage(image: thumbnail, fit: BoxFit.cover)
+          RawImage(
+            image: thumbnail, 
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.medium,
+          )
         else if (isLoading)
           Container(
             color: colorScheme.surfaceContainerHighest,

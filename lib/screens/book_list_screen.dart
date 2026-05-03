@@ -182,6 +182,22 @@ class _BookListScreenState extends State<BookListScreen> {
     return s.library;
   }
 
+  bool get _hasActiveFilter {
+    final q = _searchCtrl.text;
+    return q == 'added:recent' ||
+        q == 'status:unread' ||
+        q == 'status:almost-finished' ||
+        q == 'status:frequently-read' ||
+        _listManager.getFilterCategoryId() != null;
+  }
+
+  void _clearFilter() {
+    setState(() {
+      _searchCtrl.clear();
+      _listManager.setFilterCategoryId(null);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
@@ -196,6 +212,12 @@ class _BookListScreenState extends State<BookListScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: _hasActiveFilter
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _clearFilter,
+              )
+            : null,
         title: _isSearching
             ? TextField(
                 controller: _searchCtrl,

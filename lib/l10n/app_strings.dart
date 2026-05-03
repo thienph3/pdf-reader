@@ -187,6 +187,7 @@ class AppStrings {
       ? 'Vào Cài đặt → Trợ năng → Nội dung được đọc → Giọng đọc'
       : 'Go to Settings → Accessibility → Spoken Content → Voices';
   String get searching => _isVi ? 'Đang tìm...' : 'Searching...';
+  String get ocrProcessing => _isVi ? 'Đang nhận dạng văn bản...' : 'Recognizing text...';
   String get noTextOnPage => _isVi ? 'Trang này không có văn bản (PDF scan?)' : 'No text found on this page (scanned PDF?)';
   String voiceNotInstalled(String lang) => _isVi ? 'Giọng đọc "$lang" chưa được cài.' : 'Voice for "$lang" not installed.';
   String get androidTtsHint => _isVi

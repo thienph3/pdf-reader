@@ -8,6 +8,7 @@ import 'services/reading_log_service.dart';
 import 'services/settings_service.dart';
 import 'services/thumbnail_service.dart';
 import 'services/tts_service.dart';
+import 'services/ocr_service.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -24,6 +25,8 @@ void main() async {
   final thumbnailService = ThumbnailService();
   final ttsService = TtsService();
   await ttsService.init();
+  final ocrService = OcrService();
+  await ocrService.init();
   runApp(PdfReaderApp(
     bookService: bookService,
     categoryService: categoryService,
@@ -31,6 +34,7 @@ void main() async {
     readingLogService: readingLogService,
     thumbnailService: thumbnailService,
     ttsService: ttsService,
+    ocrService: ocrService,
   ));
 }
 
@@ -79,6 +83,15 @@ class TtsServiceScope extends InheritedWidget {
   bool updateShouldNotify(TtsServiceScope oldWidget) => ttsService != oldWidget.ttsService;
 }
 
+class OcrServiceScope extends InheritedWidget {
+  final OcrService ocrService;
+  const OcrServiceScope({super.key, required this.ocrService, required super.child});
+  static OcrService of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<OcrServiceScope>()!.ocrService;
+  @override
+  bool updateShouldNotify(OcrServiceScope oldWidget) => ocrService != oldWidget.ocrService;
+}
+
 class PdfReaderApp extends StatefulWidget {
   final BookService bookService;
   final CategoryService categoryService;
@@ -86,6 +99,7 @@ class PdfReaderApp extends StatefulWidget {
   final ReadingLogService readingLogService;
   final ThumbnailService thumbnailService;
   final TtsService ttsService;
+  final OcrService ocrService;
 
   const PdfReaderApp({
     super.key,
@@ -95,6 +109,7 @@ class PdfReaderApp extends StatefulWidget {
     required this.readingLogService,
     required this.thumbnailService,
     required this.ttsService,
+    required this.ocrService,
   });
 
   @override
@@ -130,6 +145,8 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
             readingLogService: widget.readingLogService,
             child: TtsServiceScope(
             ttsService: widget.ttsService,
+            child: OcrServiceScope(
+            ocrService: widget.ocrService,
             child: SettingsScope(
             settingsService: settings,
             child: MaterialApp(
@@ -156,6 +173,7 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
               ],
               home: const SplashScreen(),
             ),
+          ),
           ),
           ),
           ),

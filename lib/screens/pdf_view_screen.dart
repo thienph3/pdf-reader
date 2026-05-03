@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../services/book_service.dart';
 import '../services/reading_log_service.dart';
 import '../main.dart';
+import '../l10n/app_strings.dart';
 import '../models/highlight.dart';
 import '../utils/velocity_aware_scroll_physics.dart';
 import 'widgets/search_results_bar.dart';
@@ -126,6 +128,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
 
   Future<void> _speakCurrentPage() async {
     final pageNumber = _currentPage + 1;
+    // Try text layer first
     if (_highlightManager.highlightTextCache.get(pageNumber) == null && _pdfDocument != null) {
       if (pageNumber >= 1 && pageNumber <= _pdfDocument!.pages.length) {
         try {
@@ -135,11 +138,50 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       }
     }
     final cached = _highlightManager.highlightTextCache.get(pageNumber);
-    final text = cached?.fullText;
+    var text = cached?.fullText;
+    
+    // Fallback to OCR if text layer is empty
+    if ((text == null || text.trim().isEmpty) && widget.bookId != null) {
+      if (!mounted) return;
+      final ocrService = OcrServiceScope.of(context);
+      text = ocrService.getCachedText(widget.bookId!, pageNumber);
+      if (text == null || text.trim().isEmpty) {
+        // Need to OCR this page
+        if (_pdfDocument != null && pageNumber <= _pdfDocument!.pages.length) {
+          setState(() => _ocrInProgress = true);
+          try {
+            final page = _pdfDocument!.pages[pageNumber - 1];
+            final image = await page.render(
+              fullWidth: 1000,
+              fullHeight: 1400,
+            );
+            if (image != null) {
+              final pngBytes = await image.createImage();
+              final byteData = await pngBytes.toByteData(format: ui.ImageByteFormat.png);
+              if (byteData != null) {
+                text = await ocrService.ocrFromPngBytes(
+                  bookId: widget.bookId!,
+                  pageNumber: pageNumber,
+                  pngBytes: byteData.buffer.asUint8List(),
+                );
+              }
+              pngBytes.dispose();
+            }
+          } catch (e) {
+            debugPrint('OCR for TTS failed: $e');
+          } finally {
+            if (mounted) setState(() => _ocrInProgress = false);
+          }
+        }
+      }
+    }
+    
     if (text != null && text.trim().isNotEmpty) {
       _ttsService.speak(text);
     }
   }
+
+  bool _ocrInProgress = false;
 
   void _toggleTts() {
     if (_ttsActive) {
@@ -486,6 +528,29 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 left: 0,
                 right: 0,
                 child: SearchResultsBar(textSearcher: _textSearcher!),
+              ),
+            // OCR progress indicator
+            if (_ocrInProgress)
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(width: 16, height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2)),
+                          const SizedBox(width: 8),
+                          Text(AppStrings.of(context).ocrProcessing),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
           ],
         ),

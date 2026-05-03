@@ -33,15 +33,7 @@ class _BookListScreenState extends State<BookListScreen> {
   @override
   void initState() {
     super.initState();
-    
-    // Initialize managers
-    _listManager = BookListManager(
-      bookService: _bookService,
-      categoryService: _catService,
-      searchController: _searchCtrl,
-    );
-    
-    _actionsManager = BookActionsManager(bookService: _bookService);
+    // Don't initialize managers here - wait for didChangeDependencies
   }
 
   @override
@@ -49,6 +41,16 @@ class _BookListScreenState extends State<BookListScreen> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
+      
+      // Initialize managers here, after context is available
+      _listManager = BookListManager(
+        bookService: _bookService,
+        categoryService: _catService,
+        searchController: _searchCtrl,
+      );
+      
+      _actionsManager = BookActionsManager(bookService: _bookService);
+      
       _refresh();
     }
   }

@@ -14,6 +14,7 @@ class PdfViewUiBuilder {
   final VoidCallback onStartSearch;
   final VoidCallback onShowReaderActions;
   final VoidCallback onToggleTts;
+  final bool isTtsActive;
   final ValueChanged<int> onToggleBookmark;
 
   PdfViewUiBuilder({
@@ -25,6 +26,7 @@ class PdfViewUiBuilder {
     required this.onStartSearch,
     required this.onShowReaderActions,
     required this.onToggleTts,
+    this.isTtsActive = false,
     required this.onToggleBookmark,
   });
 
@@ -70,8 +72,11 @@ class PdfViewUiBuilder {
             onPressed: onStartSearch,
           ),
           IconButton(
-            icon: const Icon(Icons.record_voice_over),
-            tooltip: 'Text-to-Speech',
+            icon: Icon(
+              isTtsActive ? Icons.stop_circle : Icons.record_voice_over,
+              color: isTtsActive ? Theme.of(context).colorScheme.primary : null,
+            ),
+            tooltip: isTtsActive ? 'Stop Reading' : 'Read Aloud',
             onPressed: onToggleTts,
           ),
           IconButton(

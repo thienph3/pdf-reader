@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../l10n/app_strings.dart';
+import '../services/tts_service.dart';
 import 'pdf_highlight_manager.dart';
 import 'pdf_bookmark_manager.dart';
 
@@ -9,6 +10,7 @@ class PdfViewDialogsManager {
   final PdfHighlightManager highlightManager;
   final PdfBookmarkManager bookmarkManager;
   final PdfViewerController viewerController;
+  final TtsService? ttsService;
   final int currentPage;
   final PdfDocument? pdfDocument;
   final VoidCallback onShowToc;
@@ -19,6 +21,7 @@ class PdfViewDialogsManager {
     required this.highlightManager,
     required this.bookmarkManager,
     required this.viewerController,
+    this.ttsService,
     required this.currentPage,
     required this.pdfDocument,
     required this.onShowToc,
@@ -61,6 +64,46 @@ class PdfViewDialogsManager {
                 onShowHighlightsList();
               },
             ),
+            if (ttsService != null && ttsService!.isAvailable)
+              ListTile(
+                leading: const Icon(Icons.speed),
+                title: const Text('TTS Speed'),
+                subtitle: Text('${(ttsService!.speed * 2).toStringAsFixed(1)}x'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showTtsSpeedPicker(context);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTtsSpeedPicker(BuildContext context) {
+    final speeds = [0.25, 0.5, 0.75, 1.0];
+    final labels = ['0.5x', '1x', '1.5x', '2x'];
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Reading Speed',
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            ...List.generate(speeds.length, (i) => ListTile(
+              title: Text(labels[i]),
+              trailing: ttsService!.speed == speeds[i]
+                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                  : null,
+              onTap: () {
+                ttsService!.setSpeed(speeds[i]);
+                Navigator.pop(ctx);
+              },
+            )),
           ],
         ),
       ),

@@ -10,7 +10,7 @@ class SearchResultsBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: textSearcher,
-      builder: (_, __) {
+      builder: (context, child) {
         final count = textSearcher.matches.length;
         if (count == 0 && !textSearcher.isSearching) {
           return const SizedBox.shrink();

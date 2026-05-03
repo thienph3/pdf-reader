@@ -1,19 +1,19 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:uuid/uuid.dart';
-import '../models/highlight.dart';
 import '../services/book_service.dart';
 import '../services/reading_log_service.dart';
 import '../main.dart';
-import '../l10n/app_strings.dart';
-import 'widgets/bookmark_sheet.dart';
-import 'widgets/highlight_sheet.dart';
-import 'widgets/highlight_info_sheet.dart';
+import '../models/highlight.dart';
 import 'widgets/search_results_bar.dart';
-
-const _uuid = Uuid();
+import 'pdf_highlight_manager.dart';
+import 'pdf_bookmark_manager.dart';
+import 'pdf_text_selection_manager.dart';
+import 'pdf_ui_controls.dart';
+import 'pdf_view_ui_builder.dart';
+import 'pdf_view_dialogs_manager.dart';
+import 'pdf_view_highlights_ui.dart';
+import 'pdf_view_search_ui.dart';
 
 class PdfViewScreen extends StatefulWidget {
   final String filePath;
@@ -39,41 +39,21 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   ReadingLogService? _readingLogService;
 
   PdfDocument? _pdfDocument;
-
-  bool get _isHorizontalScroll {
-    try {
-      return SettingsScope.of(context).isHorizontalScroll;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  static PdfPageLayout _horizontalLayout(
-      List<PdfPage> pages, PdfViewerParams params) {
-    final margin = params.margin;
-    final height = pages.fold<double>(
-            0.0, (prev, page) => prev > page.height ? prev : page.height) +
-        margin * 2;
-    final pageLayouts = <Rect>[];
-    double x = margin;
-    for (final page in pages) {
-      pageLayouts.add(
-        Rect.fromLTWH(
-          x,
-          (height - page.height) / 2,
-          page.width,
-          page.height,
-        ),
-      );
-      x += page.width + margin;
-    }
-    return PdfPageLayout(
-        pageLayouts: pageLayouts, documentSize: Size(x, height));
-  }
+  bool _horizontalScroll = false;
+  
+  // Managers
+  late PdfHighlightManager _highlightManager;
+  late PdfBookmarkManager _bookmarkManager;
+  late PdfTextSelectionManager _textSelectionManager;
+  late PdfUiControls _uiControls;
+  
+  // New UI Managers
+  late PdfViewUiBuilder _uiBuilder;
+  late PdfViewDialogsManager _dialogsManager;
+  late PdfViewHighlightsUi _highlightsUi;
 
   int _totalPages = 0;
   int _currentPage = 0;
-  bool _isBookmarked = false;
   bool _closed = false;
   bool _isSearching = false;
 
@@ -85,13 +65,50 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   PdfTextSearcher? _textSearcher;
 
-  List<PdfTextRanges>? _pendingSelection;
-
   @override
   void initState() {
     super.initState();
     _currentPage = widget.initialPage;
     _sessionStartPage = widget.initialPage;
+    
+    // Initialize managers
+    _highlightManager = PdfHighlightManager(
+      bookService: _bookService,
+      bookId: widget.bookId,
+      viewerController: _viewerController,
+      onHighlightsUpdated: () {
+        if (mounted) setState(() {});
+      },
+    );
+    
+    _bookmarkManager = PdfBookmarkManager(
+      bookService: _bookService,
+      bookId: widget.bookId,
+      onBookmarksUpdated: () {
+        if (mounted) setState(() {});
+      },
+    );
+    
+    _textSelectionManager = PdfTextSelectionManager(
+      highlightManager: _highlightManager,
+      onHighlightCreated: () {
+        if (mounted) setState(() {});
+      },
+    );
+    
+    _uiControls = PdfUiControls(
+      viewerController: _viewerController,
+      onZoomChanged: (zoom) {
+        if (mounted) setState(() {});
+      },
+      onNightModeChanged: (nightMode) {
+        if (mounted) setState(() {});
+      },
+      onZoomControlsVisibilityChanged: (show) {
+        if (mounted) setState(() {});
+      },
+    );
+    
     _readingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _sessionSeconds++;
     });
@@ -103,21 +120,79 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     if (widget.bookId != null) {
       _bookService = BookServiceScope.of(context);
       _readingLogService = ReadingLogServiceScope.of(context);
-      _updateBookmarkState();
+      
+      // Update managers with services
+      _highlightManager = PdfHighlightManager(
+        bookService: _bookService,
+        bookId: widget.bookId,
+        viewerController: _viewerController,
+        onHighlightsUpdated: () {
+          if (mounted) setState(() {});
+        },
+      );
+      
+      _bookmarkManager = PdfBookmarkManager(
+        bookService: _bookService,
+        bookId: widget.bookId,
+        onBookmarksUpdated: () {
+          if (mounted) setState(() {});
+        },
+      );
+      
+      // Reinitialize UI managers with updated services
+      _initializeUiManagers();
     }
+    try {
+      _horizontalScroll = SettingsScope.of(context).isHorizontalScroll;
+    } catch (_) {}
   }
 
-  void _updateBookmarkState() {
-    if (widget.bookId == null || _bookService == null) return;
-    setState(() {
-      _isBookmarked = _bookService!.isBookmarked(widget.bookId!, _currentPage);
-    });
+  void _initializeUiManagers() {
+    _uiBuilder = PdfViewUiBuilder(
+      bookmarkManager: _bookmarkManager,
+      uiControls: _uiControls,
+      fileName: widget.fileName,
+      currentPage: _currentPage,
+      totalPages: _totalPages,
+      onClose: _closeAndPop,
+      onStartSearch: _startSearch,
+      onShowReaderActions: _showReaderActions,
+      onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
+    );
+    
+    _dialogsManager = PdfViewDialogsManager(
+      highlightManager: _highlightManager,
+      bookmarkManager: _bookmarkManager,
+      uiControls: _uiControls,
+      viewerController: _viewerController,
+      currentPage: _currentPage,
+      pdfDocument: _pdfDocument,
+      onStartSearch: _startSearch,
+      onShowToc: _showToc,
+      onShowHighlightsList: _showHighlightsList,
+      onPageSelected: (page) => _viewerController.goToPage(pageNumber: page + 1),
+      onToggleZoomControls: _uiControls.toggleZoomControls,
+      onToggleNightMode: _uiControls.toggleNightMode,
+      nightMode: _uiControls.nightMode,
+    );
+    
+    _highlightsUi = PdfViewHighlightsUi(
+      highlightManager: _highlightManager,
+      textSelectionManager: _textSelectionManager,
+      viewerController: _viewerController,
+      currentPage: _currentPage,
+      onRefresh: () {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   void _onPageChanged(int page) {
     setState(() => _currentPage = page);
-    _updateBookmarkState();
     _debouncedSaveProgress();
+    
+    // Preload text for surrounding pages to improve performance
+    _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument);
   }
 
   void _debouncedSaveProgress() {
@@ -142,151 +217,6 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     return s;
   }
 
-  void _toggleBookmark() {
-    if (widget.bookId == null || _bookService == null) return;
-    if (_isBookmarked) {
-      _bookService!.removeBookmark(widget.bookId!, _currentPage);
-    } else {
-      _bookService!.addBookmark(widget.bookId!, _currentPage);
-    }
-    _updateBookmarkState();
-  }
-
-  void _addNoteToBookmark() {
-    if (widget.bookId == null || _bookService == null) return;
-    if (!_isBookmarked) {
-      _bookService!.addBookmark(widget.bookId!, _currentPage);
-      _updateBookmarkState();
-    }
-    final book = _bookService!.getById(widget.bookId!);
-    final bm =
-        book?.bookmarks.where((b) => b.page == _currentPage).firstOrNull;
-    final s = AppStrings.of(context);
-    final ctrl = TextEditingController(text: bm?.note ?? '');
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.editNote),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: s.noteHint,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: Text(s.cancel)),
-          FilledButton(
-            onPressed: () {
-              _bookService!.updateBookmarkNote(
-                  widget.bookId!, _currentPage, ctrl.text.trim());
-              Navigator.pop(ctx);
-            },
-            child: Text(s.save),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showBookmarksList() {
-    if (widget.bookId == null || _bookService == null) return;
-    final book = _bookService!.getById(widget.bookId!);
-    if (book == null || book.bookmarks.isEmpty) {
-      final s = AppStrings.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.noBookmarks)),
-      );
-      return;
-    }
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        maxChildSize: 0.8,
-        minChildSize: 0.3,
-        expand: false,
-        builder: (_, scrollCtrl) => BookmarkSheet(
-          bookmarks: book.bookmarks,
-          currentPage: _currentPage,
-          scrollController: scrollCtrl,
-          onTap: (page) {
-            Navigator.pop(ctx);
-            _viewerController.goToPage(pageNumber: page + 1);
-          },
-          onDelete: (page) {
-            _bookService!.removeBookmark(widget.bookId!, page);
-            Navigator.pop(ctx);
-            _updateBookmarkState();
-          },
-          onEditNote: (page) {
-            Navigator.pop(ctx);
-            _viewerController.goToPage(pageNumber: page + 1);
-            Future.delayed(const Duration(milliseconds: 300), () {
-              if (mounted) _addNoteToBookmark();
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showToc() async {
-    final s = AppStrings.of(context);
-    if (_pdfDocument == null) return;
-    final outline = await _pdfDocument!.loadOutline();
-    if (!mounted) return;
-    if (outline.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.noToc)),
-      );
-      return;
-    }
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        maxChildSize: 0.8,
-        minChildSize: 0.3,
-        expand: false,
-        builder: (_, scrollCtrl) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(s.tableOfContents,
-                  style: Theme.of(context).textTheme.titleMedium),
-            ),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollCtrl,
-                itemCount: outline.length,
-                itemBuilder: (_, i) {
-                  final item = outline[i];
-                  return ListTile(
-                    contentPadding: EdgeInsets.only(
-                        left: 16.0 + (item.children.isNotEmpty ? 0 : 16)),
-                    title: Text(item.title),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      if (item.dest != null) {
-                        _viewerController.goToDest(item.dest);
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _startSearch() {
     setState(() => _isSearching = true);
   }
@@ -297,362 +227,121 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   }
 
   void _showReaderActions() {
-    final s = AppStrings.of(context);
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(
-                  _isBookmarked ? Icons.bookmark : Icons.bookmark_border),
-              title:
-                  Text(_isBookmarked ? s.removeBookmark : s.addBookmark),
-              onTap: () {
-                Navigator.pop(ctx);
-                _toggleBookmark();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.note_add_outlined),
-              title: Text(s.addNote),
-              onTap: () {
-                Navigator.pop(ctx);
-                _addNoteToBookmark();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bookmarks_outlined),
-              title: Text(s.bookmarkList),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showBookmarksList();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.toc),
-              title: Text(s.tableOfContents),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showToc();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.search),
-              title: Text(s.searchInPdf),
-              onTap: () {
-                Navigator.pop(ctx);
-                _startSearch();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.highlight),
-              title: Text(s.highlights),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showHighlightsList();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+    _dialogsManager.showReaderActions(context);
   }
 
-  static const _highlightColors = [
-    0x80FFEB3B, // yellow
-    0x8066BB6A, // green
-    0x8042A5F5, // blue
-    0x80EF5350, // red
-    0x80AB47BC, // purple
-    0x80FF7043, // orange
-  ];
-
-  void _highlightSelection() {
-    if (_pendingSelection == null || _pendingSelection!.isEmpty) return;
-    final s = AppStrings.of(context);
-    final noteCtrl = TextEditingController();
-    int selectedColor = _highlightColors[0];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(s.addHighlight,
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                children: _highlightColors.map((color) {
-                  final isSelected = selectedColor == color;
-                  return GestureDetector(
-                    onTap: () => setSheetState(() => selectedColor = color),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Color(color),
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(
-                                color: Theme.of(ctx).colorScheme.onSurface,
-                                width: 3)
-                            : null,
-                      ),
-                      child: isSelected
-                          ? const Icon(Icons.check,
-                              color: Colors.white, size: 16)
-                          : null,
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteCtrl,
-                decoration: InputDecoration(
-                  hintText: s.highlightNote,
-                  border: const OutlineInputBorder(),
-                  isDense: true,
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _doHighlight(selectedColor, noteCtrl.text.trim());
-                  },
-                  child: Text(s.save),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _doHighlight(int colorValue, String note) {
-    if (_pendingSelection == null || _pendingSelection!.isEmpty) return;
-    final sel = _pendingSelection!.first;
-    final text = sel.text;
-    final page = sel.pageNumber - 1;
-    final startIndex = sel.ranges.isNotEmpty ? sel.ranges.first.start : 0;
-    final endIndex = sel.ranges.isNotEmpty ? sel.ranges.last.end : 0;
-    _addHighlightFromSelection(text, page, startIndex, endIndex, colorValue, note);
-    _pendingSelection = null;
-    setState(() {});
-  }
-
-  void _addHighlightFromSelection(
-      String text, int page, int startIndex, int endIndex, int colorValue, String note) {
-    if (widget.bookId == null || _bookService == null) return;
-    final highlight = Highlight(
-      id: _uuid.v4(),
-      page: page,
-      startIndex: startIndex,
-      endIndex: endIndex,
-      text: text,
-      colorValue: colorValue,
-      note: note,
-      createdAt: DateTime.now(),
-    );
-    _bookService!.addHighlight(widget.bookId!, highlight);
-    final s = AppStrings.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(s.addHighlight)),
-    );
+  void _showToc() {
+    _dialogsManager.showToc(context);
   }
 
   void _showHighlightsList() {
-    if (widget.bookId == null || _bookService == null) return;
-    final book = _bookService!.getById(widget.bookId!);
-    if (book == null || book.highlights.isEmpty) {
-      final s = AppStrings.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.noHighlights)),
-      );
-      return;
-    }
-    showModalBottomSheet(
+    _highlightsUi.showHighlightsList(
       context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        maxChildSize: 0.8,
-        minChildSize: 0.3,
-        expand: false,
-        builder: (_, scrollCtrl) => HighlightSheet(
-          highlights: book.highlights,
-          currentPage: _currentPage,
-          scrollController: scrollCtrl,
-          onTap: (highlight) {
-            Navigator.pop(ctx);
-            Future.delayed(const Duration(milliseconds: 300), () {
-              if (mounted) _showHighlightInfo(highlight);
-            });
-          },
-          onDelete: (highlight) {
-            _bookService!.removeHighlight(widget.bookId!, highlight.id);
-            Navigator.pop(ctx);
-            setState(() {});
-          },
-          onEditNote: (highlight) {
-            Navigator.pop(ctx);
-            Future.delayed(const Duration(milliseconds: 300), () {
-              if (mounted) _showHighlightInfo(highlight);
-            });
-          },
-        ),
-      ),
+      onPageSelected: (page) => _viewerController.goToPage(pageNumber: page + 1),
     );
   }
 
-  void _showHighlightInfo(Highlight highlight) {
-    showModalBottomSheet(
+  void _showCurrentPageHighlights() {
+    _highlightsUi.showCurrentPageHighlights(
       context: context,
-      builder: (ctx) => HighlightInfoSheet(
-        highlight: highlight,
-        onEditNote: () {
-          Navigator.pop(ctx);
-          _editHighlightNoteDialog(highlight);
-        },
-        onDelete: () {
-          _bookService!.removeHighlight(widget.bookId!, highlight.id);
-          Navigator.pop(ctx);
-          setState(() {});
-        },
-      ),
+      currentPage: _currentPage,
+      onHighlightAction: (highlight) => (action) {
+        switch (action) {
+          case HighlightEditAction.editNote:
+            _editHighlightNote(highlight);
+            break;
+          case HighlightEditAction.changeColor:
+            _changeHighlightColor(highlight);
+            break;
+          case HighlightEditAction.delete:
+            _deleteHighlight(highlight);
+            break;
+        }
+      },
     );
   }
 
-  void _editHighlightNoteDialog(Highlight highlight) {
-    final s = AppStrings.of(context);
-    final ctrl = TextEditingController(text: highlight.note);
+  void _editHighlightNote(Highlight highlight) {
+    final controller = TextEditingController(text: highlight.note);
+    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(s.editNote),
+        title: const Text('Edit Highlight Note'),
         content: TextField(
-          controller: ctrl,
+          controller: controller,
           autofocus: true,
           maxLines: 3,
-          decoration: InputDecoration(
-            hintText: s.highlightNote,
-            border: const OutlineInputBorder(),
+          decoration: const InputDecoration(
+            hintText: 'Add a note...',
+            border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: Text(s.cancel)),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-            onPressed: () {
-              _bookService!.updateHighlightNote(
-                  widget.bookId!, highlight.id, ctrl.text.trim());
-              Navigator.pop(ctx);
+            onPressed: () async {
+              final currentContext = context;
+              try {
+                if (currentContext.mounted && mounted) {
+                  await _highlightManager.editHighlightNote(currentContext, highlight, controller.text.trim());
+                  if (mounted) setState(() {});
+                  if (ctx.mounted) Navigator.pop(ctx);
+                }
+              } catch (error) {
+                // Handle error
+              }
             },
-            child: Text(s.save),
+            child: const Text('Save'),
           ),
         ],
       ),
     );
   }
 
-  // Cache loaded page text for highlight rendering
-  final Map<int, PdfPageText> _pageTextCache = {};
-
-  Future<PdfPageText?> _getPageText(int pageNumber) async {
-    if (_pageTextCache.containsKey(pageNumber)) return _pageTextCache[pageNumber];
-    if (_pdfDocument == null || pageNumber < 1 || pageNumber > _totalPages) return null;
-    try {
-      final text = await _pdfDocument!.pages[pageNumber - 1].loadText();
-      _pageTextCache[pageNumber] = text;
-      return text;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void _paintHighlights(ui.Canvas canvas, Rect pageRect, PdfPage page) {
-    if (widget.bookId == null || _bookService == null) return;
-    final pageIndex = page.pageNumber - 1;
-    final highlights = _bookService!.getHighlightsForPage(widget.bookId!, pageIndex);
-    if (highlights.isEmpty) return;
-
-    final pageText = _pageTextCache[page.pageNumber];
-    if (pageText == null) {
-      _getPageText(page.pageNumber).then((_) {
+  void _changeHighlightColor(Highlight highlight) {
+    _highlightManager.showColorPicker(context, onColorSelected: (color) async {
+      try {
+        await _highlightManager.changeHighlightColor(context, highlight, color);
         if (mounted) setState(() {});
-      });
-      return;
-    }
-
-    for (final h in highlights) {
-      final paint = ui.Paint()..color = Color(h.colorValue);
-
-      for (final fragment in pageText.fragments) {
-        final fragStart = fragment.index;
-        final fragEnd = fragment.index + fragment.length;
-
-        if (fragEnd <= h.startIndex || fragStart >= h.endIndex) continue;
-
-        final overlapStart = (h.startIndex - fragStart).clamp(0, fragment.length);
-        final overlapEnd = (h.endIndex - fragStart).clamp(0, fragment.length);
-
-        if (overlapStart >= overlapEnd) continue;
-
-        for (int ci = overlapStart; ci < overlapEnd && ci < fragment.charRects.length; ci++) {
-          final charRect = fragment.charRects[ci];
-          final rect = Rect.fromLTRB(
-            pageRect.left + charRect.left / page.width * pageRect.width,
-            pageRect.top + (1 - charRect.top / page.height) * pageRect.height,
-            pageRect.left + charRect.right / page.width * pageRect.width,
-            pageRect.top + (1 - charRect.bottom / page.height) * pageRect.height,
-          );
-          canvas.drawRect(rect, paint);
-        }
+      } catch (error) {
+        // Handle error
       }
-    }
+    });
   }
 
-  void _paintSearchMatches(ui.Canvas canvas, Rect pageRect, PdfPage page) {
-    if (_textSearcher == null || !_isSearching) return;
-    final matches = _textSearcher!.matches;
-    if (matches.isEmpty) return;
-
-    final currentIdx = _textSearcher!.currentIndex;
-
-    for (int mi = 0; mi < matches.length; mi++) {
-      final match = matches[mi];
-      if (match.pageNumber != page.pageNumber) continue;
-
-      final isCurrent = mi == currentIdx;
-      final paint = ui.Paint()
-        ..color = isCurrent
-            ? const Color(0xAAFF9800) // orange for current match
-            : const Color(0x55FFEB3B); // light yellow for others
-
-      // Use bounds from the match directly
-      final b = match.bounds;
-      final rect = Rect.fromLTRB(
-        pageRect.left + b.left / page.width * pageRect.width,
-        pageRect.top + (1 - b.top / page.height) * pageRect.height,
-        pageRect.left + b.right / page.width * pageRect.width,
-        pageRect.top + (1 - b.bottom / page.height) * pageRect.height,
-      );
-      canvas.drawRect(rect, paint);
-    }
+  void _deleteHighlight(Highlight highlight) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Highlight'),
+        content: const Text('Are you sure you want to delete this highlight?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final currentContext = context;
+              try {
+                if (currentContext.mounted && mounted) {
+                  await _highlightManager.deleteHighlight(currentContext, highlight);
+                  if (mounted) setState(() {});
+                  if (ctx.mounted) Navigator.pop(ctx);
+                }
+              } catch (error) {
+                // Handle error
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _closeAndPop() {
@@ -690,60 +379,84 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         }
       },
       child: Scaffold(
-        appBar: _isSearching ? _buildSearchBar() : _buildAppBar(),
-        floatingActionButton: _pendingSelection != null && widget.bookId != null
-            ? FloatingActionButton.small(
-                onPressed: _highlightSelection,
-                child: const Icon(Icons.highlight),
+        appBar: _isSearching 
+            ? _uiBuilder.buildSearchBar(
+                context: context,
+                searchController: _searchCtrl,
+                textSearcher: _textSearcher,
+                onBackPressed: () {
+                  setState(() => _isSearching = false);
+                  _searchCtrl.clear();
+                  _textSearcher?.resetTextSearch();
+                },
+                onSearchSubmitted: _doSearch,
               )
-            : null,
+            : _uiBuilder.buildAppBar(context),
+        floatingActionButton: _uiBuilder.buildHighlightsFAB(
+          highlightManager: _highlightManager,
+          currentPage: _currentPage,
+          onPressed: _showCurrentPageHighlights,
+        ),
         body: Stack(
           children: [
-            PdfViewer.file(
-              widget.filePath,
-              controller: _viewerController,
-              params: PdfViewerParams(
-                enableTextSelection: true,
-                layoutPages: _isHorizontalScroll ? _horizontalLayout : null,
-                panAxis: _isHorizontalScroll ? PanAxis.horizontal : PanAxis.free,
-                scrollByMouseWheel: _isHorizontalScroll ? 1.0 : 0.2,
-                onPageChanged: (page) {
-                  if (page == null) return;
-                  final zeroIndexed = page - 1;
-                  if (zeroIndexed == _currentPage) return; // no change, skip
-                  _onPageChanged(zeroIndexed);
-                  if (_isHorizontalScroll) {
-                    _viewerController.goToPage(pageNumber: page);
-                  }
+            Container(
+              color: _uiControls.nightMode ? Colors.black : null,
+              child: GestureDetector(
+                onScaleUpdate: (details) {
+                  _uiControls.handleScaleUpdate(details.scale);
                 },
-                pagePaintCallbacks: [_paintHighlights, _paintSearchMatches],
-                onTextSelectionChange: (selections) {
-                  if (selections.isNotEmpty) {
-                    _pendingSelection = selections;
-                  } else {
-                    _pendingSelection = null;
-                  }
-                  setState(() {});
-                },
-                onViewerReady: (document, controller) {
-                  _pdfDocument = document;
-                  _textSearcher = PdfTextSearcher(_viewerController);
-              _textSearcher!.addListener(() {
-                if (mounted) setState(() {}); // repaint search highlights
-              });
-                  setState(() {
-                    _totalPages = document.pages.length;
-                    if (_currentPage >= _totalPages) _currentPage = 0;
-                  });
-                  if (widget.bookId != null && _bookService != null) {
-                    _bookService!.saveProgress(widget.bookId!, _currentPage,
-                        totalPages: _totalPages);
-                  }
-                  if (widget.initialPage > 0 &&
-                      widget.initialPage < _totalPages) {
-                    controller.goToPage(pageNumber: widget.initialPage + 1);
-                  }
-                },
+                child: PdfViewer.file(
+                  widget.filePath,
+                  controller: _viewerController,
+                  params: PdfViewerParams(
+                    layoutPages: _horizontalScroll ? _horizontalLayout : null,
+                    panAxis: _horizontalScroll ? PanAxis.horizontal : PanAxis.free,
+                    scrollByMouseWheel: _horizontalScroll ? 1.0 : 0.2,
+                    onPageChanged: (page) {
+                      if (page == null) return;
+                      final zeroIndexed = page - 1;
+                      if (zeroIndexed != _currentPage) {
+                        _onPageChanged(zeroIndexed);
+                      }
+                    },
+                    pagePaintCallbacks: [
+                      (canvas, rect, page) => _highlightManager.paintHighlights(canvas, rect, page, _pdfDocument),
+                      (canvas, rect, page) => PdfViewSearchUi.paintSearchMatches(canvas, rect, page, _textSearcher, _isSearching),
+                    ],
+                    // Enable text selection with default parameters
+                    textSelectionParams: const PdfTextSelectionParams(
+                      enabled: true,
+                      magnifier: PdfViewerSelectionMagnifierParams(
+                        enabled: true,
+                      ),
+                    ),
+                    // Custom context menu for text selection
+                    buildContextMenu: (context, params) => 
+                        _textSelectionManager.buildTextSelectionContextMenu(context, params),
+                    onViewerReady: (document, controller) {
+                      _pdfDocument = document;
+                      _textSearcher = PdfTextSearcher(_viewerController);
+                      _textSearcher!.addListener(() {
+                        if (mounted) setState(() {}); // repaint search highlights
+                      });
+                      setState(() {
+                        _totalPages = document.pages.length;
+                        if (_currentPage >= _totalPages) _currentPage = 0;
+                      });
+                      if (widget.bookId != null && _bookService != null) {
+                        _bookService!.saveProgress(widget.bookId!, _currentPage,
+                            totalPages: _totalPages);
+                      }
+                      if (widget.initialPage > 0 &&
+                          widget.initialPage < _totalPages) {
+                        controller.goToPage(pageNumber: widget.initialPage + 1);
+                      }
+                      // Preload text for initial page and surrounding pages
+                      _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument);
+                      
+                    },
+                  ),
+                ),
               ),
             ),
             // Search results overlay
@@ -754,117 +467,37 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 right: 0,
                 child: SearchResultsBar(textSearcher: _textSearcher!),
               ),
+            // Zoom controls overlay
+            if (_uiControls.showZoomControls)
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: _uiControls.buildZoomControls(context),
+              ),
           ],
         ),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: _closeAndPop,
-      ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.fileName,
-            style: Theme.of(context).textTheme.titleSmall,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (_totalPages > 0)
-            Text(
-              '${_currentPage + 1} / $_totalPages',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-        ],
-      ),
-      actions: [
-        if (_totalPages > 0 && widget.bookId != null) ...[
-          // Bookmark toggle always visible
-          IconButton(
-            icon: Icon(
-              _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              color: _isBookmarked
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-            ),
-            onPressed: _toggleBookmark,
-          ),
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _startSearch,
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: _showReaderActions,
-          ),
-        ],
-      ],
-    );
-  }
-
-  PreferredSizeWidget _buildSearchBar() {
-    final s = AppStrings.of(context);
-    return AppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          setState(() => _isSearching = false);
-          _searchCtrl.clear();
-          _textSearcher?.resetTextSearch();
-        },
-      ),
-      title: TextField(
-        controller: _searchCtrl,
-        autofocus: true,
-        decoration: InputDecoration(
-          hintText: s.searchHintPdf,
-          border: InputBorder.none,
-        ),
-        onSubmitted: _doSearch,
-      ),
-      actions: [
-        if (_textSearcher != null)
-          ListenableBuilder(
-            listenable: _textSearcher!,
-            builder: (_, __) {
-              final matches = _textSearcher!.matches;
-              final currentIdx = _textSearcher!.currentIndex;
-              final hasMatches = matches.isNotEmpty && currentIdx != null;
-              final isFirst = !hasMatches || currentIdx <= 0;
-              final isLast = !hasMatches || currentIdx >= matches.length - 1;
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (hasMatches)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: Text(
-                        '${currentIdx + 1}/${matches.length}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.navigate_before),
-                    onPressed:
-                        hasMatches && !isFirst ? () => _textSearcher!.goToPrevMatch() : null,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.navigate_next),
-                    onPressed:
-                        hasMatches && !isLast ? () => _textSearcher!.goToNextMatch() : null,
-                  ),
-                ],
-              );
-            },
-          ),
-      ],
-    );
+  static PdfPageLayout _horizontalLayout(
+      List<PdfPage> pages, PdfViewerParams params) {
+    final margin = params.margin;
+    final height = pages.fold<double>(
+            0.0, (prev, page) => prev > page.height ? prev : page.height) +
+        margin * 2;
+    final pageLayouts = <Rect>[];
+    double x = margin;
+    for (final page in pages) {
+      pageLayouts.add(Rect.fromLTWH(
+        x,
+        (height - page.height) / 2,
+        page.width,
+        page.height,
+      ));
+      x += page.width + margin;
+    }
+    return PdfPageLayout(
+        pageLayouts: pageLayouts, documentSize: Size(x, height));
   }
 }

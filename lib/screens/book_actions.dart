@@ -29,8 +29,8 @@ Future<String?> validateBookPath(BuildContext context, Book book, BookService bo
     ),
   );
   if (shouldRepick != true || !context.mounted) return null;
-  final result = await FilePicker.platform
-      .pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+  final result = await FilePicker.pickFiles(
+      type: FileType.custom, allowedExtensions: ['pdf']);
   if (result != null && result.files.single.path != null) {
     final newPath = result.files.single.path!;
     await bookService.update(book.copyWith(filePath: () => newPath));
@@ -42,7 +42,7 @@ Future<String?> validateBookPath(BuildContext context, Book book, BookService bo
 /// Exports all books to a JSON file chosen by user.
 Future<void> exportBooks(BuildContext context, BookService bookService) async {
   final s = AppStrings.of(context);
-  final path = await FilePicker.platform.saveFile(
+  final path = await FilePicker.saveFile(
     dialogTitle: s.exportLib,
     fileName: 'books_backup.json',
   );
@@ -56,7 +56,7 @@ Future<void> exportBooks(BuildContext context, BookService bookService) async {
 
 /// Imports books from a JSON file chosen by user. Returns count imported.
 Future<int> importBooks(BuildContext context, BookService bookService) async {
-  final result = await FilePicker.platform.pickFiles(
+  final result = await FilePicker.pickFiles(
     type: FileType.custom,
     allowedExtensions: ['json'],
   );

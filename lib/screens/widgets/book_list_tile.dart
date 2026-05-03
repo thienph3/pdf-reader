@@ -119,7 +119,7 @@ class _BookListTileState extends State<BookListTile> {
             [
               if (book.author.isNotEmpty) book.author,
               _formatLabel,
-              if (_categoryName != null) _categoryName!,
+              _categoryName,
               if (book.readingSeconds > 0) book.readingTimeFormatted,
             ].join(' · '),
           ),

@@ -158,6 +158,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(s.categories)),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addCategory',
         onPressed: _addCategory,
         child: const Icon(Icons.add),
       ),

@@ -5,8 +5,8 @@ Route<T> buildPageRoute<T>(Widget page) {
   return PageRouteBuilder<T>(
     transitionDuration: const Duration(milliseconds: 400),
     reverseTransitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (_, animation, __) => page,
-    transitionsBuilder: (_, animation, __, child) {
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
         opacity: animation,
         child: SlideTransition(

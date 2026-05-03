@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// OCR service for scanned PDF pages.
 /// Results cached in Hive: plain text + markdown.
@@ -48,16 +50,12 @@ class OcrService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final inputImage = InputImage.fromBytes(
-        bytes: pngBytes,
-        metadata: InputImageMetadata(
-          size: const Size(1000, 1400),
-          rotation: InputImageRotation.rotation0deg,
-          format: InputImageFormat.nv21,
-          bytesPerRow: 1000,
-        ),
-      );
+      // Write PNG to temp file (ML Kit needs file path for PNG)
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/ocr_page_$pageNumber.png');
+      await tempFile.writeAsBytes(pngBytes);
 
+      final inputImage = InputImage.fromFilePath(tempFile.path);
       final result = await _recognizer.processImage(inputImage);
       final plainText = result.text;
       final markdown = _toMarkdown(result);
@@ -65,6 +63,9 @@ class OcrService extends ChangeNotifier {
       final key = _key(bookId, pageNumber);
       await _textBox.put(key, plainText);
       await _mdBox.put(key, markdown);
+
+      // Clean up temp file
+      try { await tempFile.delete(); } catch (_) {}
 
       return plainText;
     } catch (e) {

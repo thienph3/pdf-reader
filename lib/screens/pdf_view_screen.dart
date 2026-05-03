@@ -462,6 +462,10 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                       velocityMultiplier: _horizontalScroll ? 1.8 : 1.5,
                       flingMultiplier: _horizontalScroll ? 2.5 : 2.0,
                     ),
+                    // Snap to page khi cuộn ngang
+                    onInteractionEnd: _horizontalScroll
+                        ? (_) => _snapToCurrentPage()
+                        : null,
                   ),
                 ),
               ),
@@ -485,6 +489,20 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         ),
       ),
     );
+  }
+
+  void _snapToCurrentPage() {
+    // Đợi fling animation settle rồi snap
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted || !_horizontalScroll) return;
+      final pageNumber = _viewerController.pageNumber;
+      if (pageNumber != null && pageNumber > 0) {
+        _viewerController.goToPage(
+          pageNumber: pageNumber,
+          duration: const Duration(milliseconds: 200),
+        );
+      }
+    });
   }
 
   static PdfPageLayout _horizontalLayout(

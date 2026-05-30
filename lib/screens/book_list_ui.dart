@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../l10n/app_strings.dart';
-import 'widgets/book_card.dart';
-import 'widgets/book_list_tile.dart';
 import 'widgets/recent_book_item.dart';
+import 'book_list_grid.dart';
 
 /// UI components for the book list screen.
 class BookListUi {
-  /// Builds a continue reading card for the most recently opened book.
   static Widget buildContinueReadingCard({
-    required BuildContext context,
-    required Book book,
-    required VoidCallback onContinue,
+    required BuildContext context, required Book book, required VoidCallback onContinue,
   }) {
     final s = AppStrings.of(context);
     final percent = (book.progressPercent * 100).toInt();
@@ -22,148 +18,63 @@ class BookListUi {
           leading: const Icon(Icons.auto_stories),
           title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text('${s.progress(percent)} ${s.continueReading.toLowerCase()}'),
-          trailing: FilledButton(
-            onPressed: onContinue,
-            child: Text(s.continueBtn),
-          ),
+          trailing: FilledButton(onPressed: onContinue, child: Text(s.continueBtn)),
         ),
       ),
     );
   }
 
-  /// Builds a responsive grid view of books.
   static Widget buildResponsiveGridView({
-    required BuildContext context,
-    required List<Book> books,
-    required Function(Book) onTap,
-    required Function(Book) onEdit,
-    required Function(Book) onDelete,
-    Function(Book)? onExportAnnotations,
-    Function(Book)? onLongPress,
-    Set<String>? selectedIds,
-  }) {
-    final width = MediaQuery.of(context).size.width;
-    final crossAxisCount = width > 900 ? 4 : (width >= 600 ? 3 : 2);
-    return GridView.builder(
-      padding: const EdgeInsets.all(12).copyWith(bottom: 80),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: 0.58,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: books.length,
-      itemBuilder: (context, index) {
-        final book = books[index];
-        return BookCard(
-          book: book,
-          onTap: () => onTap(book),
-          onEdit: () => onEdit(book),
-          onDelete: () => onDelete(book),
-          onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null,
-          onLongPress: onLongPress != null ? () => onLongPress(book) : null,
-          selected: selectedIds?.contains(book.id) ?? false,
-        );
-      },
-    );
-  }
+    required BuildContext context, required List<Book> books,
+    required Function(Book) onTap, required Function(Book) onEdit,
+    required Function(Book) onDelete, Function(Book)? onExportAnnotations,
+    Function(Book)? onLongPress, Set<String>? selectedIds,
+  }) => BookListGridBuilder.buildResponsiveGridView(context: context, books: books, onTap: onTap, onEdit: onEdit, onDelete: onDelete, onExportAnnotations: onExportAnnotations, onLongPress: onLongPress, selectedIds: selectedIds);
 
-  /// Builds a responsive sliver grid for books.
   static Widget buildResponsiveSliverGrid({
-    required BuildContext context,
-    required List<Book> books,
-    required Function(Book) onTap,
-    required Function(Book) onEdit,
-    required Function(Book) onDelete,
-    Function(Book)? onExportAnnotations,
-    Function(Book)? onLongPress,
-    Set<String>? selectedIds,
-  }) {
-    final width = MediaQuery.of(context).size.width;
-    final crossAxisCount = width > 900 ? 4 : (width >= 600 ? 3 : 2);
-    return SliverPadding(
-      padding: const EdgeInsets.all(12).copyWith(bottom: 80),
-      sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          childAspectRatio: 0.58,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (_, i) {
-            final book = books[i];
-            return BookCard(
-              book: book,
-              onTap: () => onTap(book),
-              onEdit: () => onEdit(book),
-              onDelete: () => onDelete(book),
-              onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null,
-              onLongPress: onLongPress != null ? () => onLongPress(book) : null,
-              selected: selectedIds?.contains(book.id) ?? false,
-            );
-          },
-          childCount: books.length,
-        ),
-      ),
-    );
-  }
-  /// Builds an empty state widget.
+    required BuildContext context, required List<Book> books,
+    required Function(Book) onTap, required Function(Book) onEdit,
+    required Function(Book) onDelete, Function(Book)? onExportAnnotations,
+    Function(Book)? onLongPress, Set<String>? selectedIds,
+  }) => BookListGridBuilder.buildResponsiveSliverGrid(context: context, books: books, onTap: onTap, onEdit: onEdit, onDelete: onDelete, onExportAnnotations: onExportAnnotations, onLongPress: onLongPress, selectedIds: selectedIds);
+
+  static Widget buildListView({
+    required List<Book> books, required Function(Book) onTap,
+    required Function(Book) onEdit, required Function(Book) onDelete,
+    required Function(Book) onDismiss,
+  }) => BookListGridBuilder.buildListView(books: books, onTap: onTap, onEdit: onEdit, onDelete: onDelete, onDismiss: onDismiss);
+
+  static Widget buildSliverList({
+    required List<Book> books, required Function(Book) onTap,
+    required Function(Book) onEdit, required Function(Book) onDelete,
+  }) => BookListGridBuilder.buildSliverList(books: books, onTap: onTap, onEdit: onEdit, onDelete: onDelete);
+
   static Widget buildEmptyState({
-    required BuildContext context,
-    required bool hasSearchQuery,
-    required VoidCallback onAddBook,
+    required BuildContext context, required bool hasSearchQuery, required VoidCallback onAddBook,
   }) {
     final s = AppStrings.of(context);
     final colorScheme = Theme.of(context).colorScheme;
-    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              hasSearchQuery ? Icons.search_off : Icons.auto_stories_outlined,
-              size: 80,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-            ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(hasSearchQuery ? Icons.search_off : Icons.auto_stories_outlined, size: 80, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+          const SizedBox(height: 24),
+          Text(hasSearchQuery ? s.noResults : s.noBooks, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+          if (!hasSearchQuery) ...[
+            const SizedBox(height: 8),
+            Text(s.addBookHint, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
             const SizedBox(height: 24),
-            Text(
-              hasSearchQuery ? s.noResults : s.noBooks,
-              style: Theme.of(context).textTheme.titleLarge,
-              textAlign: TextAlign.center,
-            ),
-            if (!hasSearchQuery) ...[
-              const SizedBox(height: 8),
-              Text(
-                s.addBookHint,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: onAddBook,
-                icon: const Icon(Icons.add),
-                label: Text(s.addBook),
-              ),
-            ],
+            FilledButton.icon(onPressed: onAddBook, icon: const Icon(Icons.add), label: Text(s.addBook)),
           ],
-        ),
+        ]),
       ),
     );
   }
 
-  /// Builds a smart collection card.
   static Widget buildSmartCollectionCard({
-    required BuildContext context,
-    required String title,
-    required int bookCount,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
+    required BuildContext context, required String title, required int bookCount,
+    required IconData icon, required Color color, required VoidCallback onTap,
   }) {
     return Padding(
       padding: const EdgeInsets.only(right: 10),
@@ -172,165 +83,20 @@ class BookListUi {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            width: 140,
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                CircleAvatar(
-                  backgroundColor: color.withValues(alpha: 0.1),
-                  child: Icon(icon, color: color, size: 20),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  AppStrings.of(context).nBooks(bookCount),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
+            width: 140, padding: const EdgeInsets.all(12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              CircleAvatar(backgroundColor: color.withValues(alpha: 0.1), child: Icon(icon, color: color, size: 20)),
+              const SizedBox(height: 8),
+              Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(AppStrings.of(context).nBooks(bookCount), style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ]),
           ),
         ),
       ),
     );
   }
 
-  /// Builds a grid view of books.
-  static Widget buildGridView({
-    required List<Book> books,
-    required Function(Book) onTap,
-    required Function(Book) onEdit,
-    required Function(Book) onDelete,
-  }) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(12).copyWith(bottom: 80),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.58,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: books.length,
-      itemBuilder: (context, index) {
-        final book = books[index];
-        return BookCard(
-          book: book,
-          onTap: () => onTap(book),
-          onEdit: () => onEdit(book),
-          onDelete: () => onDelete(book),
-        );
-      },
-    );
-  }
-
-  /// Builds a list view of books with dismissible items.
-  static Widget buildListView({
-    required List<Book> books,
-    required Function(Book) onTap,
-    required Function(Book) onEdit,
-    required Function(Book) onDelete,
-    required Function(Book) onDismiss,
-  }) {
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 80),
-      itemCount: books.length,
-      itemBuilder: (context, index) {
-        final book = books[index];
-        return Dismissible(
-          key: ValueKey(book.id),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 24),
-            color: Theme.of(context).colorScheme.error,
-            child: Icon(Icons.delete,
-                color: Theme.of(context).colorScheme.onError),
-          ),
-          confirmDismiss: (_) async {
-            onDismiss(book);
-            return false;
-          },
-          child: BookListTile(
-            book: book,
-            onTap: () => onTap(book),
-            onEdit: () => onEdit(book),
-            onDelete: () => onDelete(book),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Builds a sliver grid for books.
-  static Widget buildSliverGrid({
-    required List<Book> books,
-    required Function(Book) onTap,
-    required Function(Book) onEdit,
-    required Function(Book) onDelete,
-  }) {
-    return SliverPadding(
-      padding: const EdgeInsets.all(12).copyWith(bottom: 80),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.58,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (_, i) {
-            final book = books[i];
-            return BookCard(
-              book: book,
-              onTap: () => onTap(book),
-              onEdit: () => onEdit(book),
-              onDelete: () => onDelete(book),
-            );
-          },
-          childCount: books.length,
-        ),
-      ),
-    );
-  }
-
-  /// Builds a sliver list for books.
-  static Widget buildSliverList({
-    required List<Book> books,
-    required Function(Book) onTap,
-    required Function(Book) onEdit,
-    required Function(Book) onDelete,
-  }) {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (_, i) {
-          final book = books[i];
-          return BookListTile(
-            book: book,
-            onTap: () => onTap(book),
-            onEdit: () => onEdit(book),
-            onDelete: () => onDelete(book),
-          );
-        },
-        childCount: books.length,
-      ),
-    );
-  }
-
-  /// Builds a horizontal list of recent books.
-  static Widget buildRecentBooksList({
-    required List<Book> recentBooks,
-    required Function(Book) onTap,
-  }) {
+  static Widget buildRecentBooksList({required List<Book> recentBooks, required Function(Book) onTap}) {
     return SizedBox(
       height: 140,
       child: ListView.builder(
@@ -339,50 +105,27 @@ class BookListUi {
         itemCount: recentBooks.length,
         itemBuilder: (_, i) {
           final book = recentBooks[i];
-          return Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: RecentBookItem(
-              book: book,
-              onTap: () => onTap(book),
-            ),
-          );
+          return Padding(padding: const EdgeInsets.only(right: 10), child: RecentBookItem(book: book, onTap: () => onTap(book)));
         },
       ),
     );
   }
 
-  /// Builds a horizontal list of smart collection cards.
   static Widget buildSmartCollectionsList({
-    required BuildContext context,
-    required List<dynamic> collections,
+    required BuildContext context, required List<dynamic> collections,
     required Function(String, int) onCollectionTap,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final colors = [
-      colorScheme.primary,
-      colorScheme.secondary,
-      colorScheme.tertiary,
-      colorScheme.error,
-    ];
-
+    final colors = [colorScheme.primary, colorScheme.secondary, colorScheme.tertiary, colorScheme.error];
     return SizedBox(
       height: 120,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         children: collections.asMap().entries.map((entry) {
-          final index = entry.key;
-          final collection = entry.value;
-          final color = index < colors.length ? colors[index] : colorScheme.primary;
-          
-          return buildSmartCollectionCard(
-            context: context,
-            title: collection.title,
-            bookCount: collection.count,
-            icon: collection.icon,
-            color: color,
-            onTap: () => onCollectionTap(collection.title, collection.count),
-          );
+          final color = entry.key < colors.length ? colors[entry.key] : colorScheme.primary;
+          final c = entry.value;
+          return buildSmartCollectionCard(context: context, title: c.title, bookCount: c.count, icon: c.icon, color: color, onTap: () => onCollectionTap(c.title, c.count));
         }).toList(),
       ),
     );

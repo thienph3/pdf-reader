@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../services/tts_service.dart';
+import 'pdf_tts_dialogs.dart';
 
 /// Bottom panel for TTS controls in PDF viewer.
 class PdfTtsPanel extends StatelessWidget {
@@ -10,24 +11,13 @@ class PdfTtsPanel extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onPlay;
 
-  const PdfTtsPanel({
-    super.key,
-    required this.ttsService,
-    required this.pageText,
-    required this.onClose,
-    required this.onPlay,
-  });
+  const PdfTtsPanel({super.key, required this.ttsService, required this.pageText, required this.onClose, required this.onPlay});
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: ttsService,
-      builder: (context, _) {
-        if (!ttsService.isAvailable) {
-          return _buildUnavailable(context);
-        }
-        return _buildControls(context);
-      },
+      builder: (context, _) => ttsService.isAvailable ? _buildControls(context) : _buildUnavailable(context),
     );
   }
 
@@ -37,31 +27,14 @@ class PdfTtsPanel extends StatelessWidget {
       margin: const EdgeInsets.all(12),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.volume_off, size: 32),
-            const SizedBox(height: 8),
-            Text(s.ttsNotAvailable),
-            const SizedBox(height: 8),
-            if (Platform.isAndroid)
-              FilledButton.tonal(
-                onPressed: () {
-                  // Guide user to settings
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(s.androidTtsHint)),
-                  );
-                },
-                child: Text(s.ttsHowToEnable),
-              ),
-            if (Platform.isIOS)
-              Text(
-                s.iosVoiceHint,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12),
-              ),
-          ],
-        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.volume_off, size: 32),
+          const SizedBox(height: 8),
+          Text(s.ttsNotAvailable),
+          const SizedBox(height: 8),
+          if (Platform.isAndroid) FilledButton.tonal(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.androidTtsHint))), child: Text(s.ttsHowToEnable)),
+          if (Platform.isIOS) Text(s.iosVoiceHint, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
+        ]),
       ),
     );
   }
@@ -72,220 +45,53 @@ class PdfTtsPanel extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
-      margin: const EdgeInsets.all(12),
-      elevation: 4,
+      margin: const EdgeInsets.all(12), elevation: 4,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header row
-            Row(
-              children: [
-                const Icon(Icons.record_voice_over, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(s.tts,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                ),
-                // Language indicator
-                if (ttsService.currentLanguage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => _showLanguagePicker(context),
-                      child: Chip(
-                        label: Text(
-                          _shortLang(ttsService.currentLanguage!),
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () {
-                    ttsService.stop();
-                    onClose();
-                  },
-                  visualDensity: VisualDensity.compact,
-                ),
-              ],
-            ),
-            // Speed slider
-            Row(
-              children: [
-                const Icon(Icons.speed, size: 16),
-                Expanded(
-                  child: Slider(
-                    value: ttsService.speed,
-                    min: 0.1,
-                    max: 1.0,
-                    divisions: 9,
-                    label: '${(ttsService.speed * 2).toStringAsFixed(1)}x',
-                    onChanged: (v) => ttsService.setSpeed(v),
-                  ),
-                ),
-              ],
-            ),
-            // Play controls
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Stop
-                IconButton(
-                  icon: const Icon(Icons.stop),
-                  onPressed: ttsService.isStopped ? null : () => ttsService.stop(),
-                ),
-                const SizedBox(width: 16),
-                // Play / Pause
-                FilledButton.icon(
-                  onPressed: hasText
-                      ? () {
-                          if (ttsService.isPlaying) {
-                            ttsService.pause();
-                          } else {
-                            onPlay();
-                          }
-                        }
-                      : null,
-                  icon: Icon(ttsService.isPlaying ? Icons.pause : Icons.play_arrow),
-                  label: Text(ttsService.isPlaying ? 'Pause' : 'Read Page'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // TTS Settings (download voices)
-                IconButton(
-                  icon: const Icon(Icons.settings_voice),
-                  tooltip: s.voiceSettings,
-                  onPressed: () => _showVoiceSettings(context),
-                ),
-              ],
-            ),
-            if (!hasText)
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(children: [
+            const Icon(Icons.record_voice_over, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(s.tts, style: const TextStyle(fontWeight: FontWeight.w600))),
+            if (ttsService.currentLanguage != null)
               Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 4),
-                child: Text(
-                  s.noTextOnPage,
-                  style: TextStyle(fontSize: 12, color: colorScheme.error),
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () => showTtsLanguagePicker(context, ttsService),
+                  child: Chip(label: Text(_shortLang(ttsService.currentLanguage!), style: const TextStyle(fontSize: 11)), visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
                 ),
               ),
-            if (ttsService.languageNotInstalled)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 4),
-                child: Column(
-                  children: [
-                    Text(
-                      s.voiceNotInstalled(ttsService.currentLanguage!),
-                      style: TextStyle(fontSize: 12, color: colorScheme.error),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      Platform.isAndroid
-                          ? s.androidTtsHint
-                          : s.iosVoiceHint,
-                      style: const TextStyle(fontSize: 11),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLanguagePicker(BuildContext context) {
-    final s = AppStrings.of(context);
-    final langs = ttsService.availableLanguages;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        maxChildSize: 0.8,
-        minChildSize: 0.3,
-        expand: false,
-        builder: (_, scrollCtrl) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(s.selectLanguage,
-                  style: Theme.of(context).textTheme.titleMedium),
+            IconButton(icon: const Icon(Icons.close, size: 20), onPressed: () { ttsService.stop(); onClose(); }, visualDensity: VisualDensity.compact),
+          ]),
+          Row(children: [
+            const Icon(Icons.speed, size: 16),
+            Expanded(child: Slider(value: ttsService.speed, min: 0.1, max: 1.0, divisions: 9, label: '${(ttsService.speed * 2).toStringAsFixed(1)}x', onChanged: (v) => ttsService.setSpeed(v))),
+          ]),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            IconButton(icon: const Icon(Icons.stop), onPressed: ttsService.isStopped ? null : () => ttsService.stop()),
+            const SizedBox(width: 16),
+            FilledButton.icon(
+              onPressed: hasText ? () { if (ttsService.isPlaying) ttsService.pause(); else onPlay(); } : null,
+              icon: Icon(ttsService.isPlaying ? Icons.pause : Icons.play_arrow),
+              label: Text(ttsService.isPlaying ? 'Pause' : 'Read Page'),
+              style: FilledButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: colorScheme.onPrimary),
             ),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollCtrl,
-                itemCount: langs.length,
-                itemBuilder: (_, i) {
-                  final lang = langs[i];
-                  final isSelected = lang == ttsService.currentLanguage;
-                  return ListTile(
-                    title: Text(lang),
-                    trailing: isSelected
-                        ? Icon(Icons.check,
-                            color: Theme.of(context).colorScheme.primary)
-                        : null,
-                    selected: isSelected,
-                    onTap: () {
-                      ttsService.setLanguage(lang);
-                      Navigator.pop(ctx);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showVoiceSettings(BuildContext context) {
-    final s = AppStrings.of(context);
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(s.voiceSettings,
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              if (Platform.isAndroid) ...[
-                Text(s.androidTtsHint,
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ],
-              if (Platform.isIOS) ...[
-                Text(s.iosVoiceHint,
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ],
-              const SizedBox(height: 8),
-              Text(
-                s.languagesAvailable(ttsService.availableLanguages.length),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
+            const SizedBox(width: 16),
+            IconButton(icon: const Icon(Icons.settings_voice), tooltip: s.voiceSettings, onPressed: () => showTtsVoiceSettings(context, ttsService)),
+          ]),
+          if (!hasText) Padding(padding: const EdgeInsets.only(top: 4, bottom: 4), child: Text(s.noTextOnPage, style: TextStyle(fontSize: 12, color: colorScheme.error))),
+          if (ttsService.languageNotInstalled) Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 4),
+            child: Column(children: [
+              Text(s.voiceNotInstalled(ttsService.currentLanguage!), style: TextStyle(fontSize: 12, color: colorScheme.error)),
+              const SizedBox(height: 4),
+              Text(Platform.isAndroid ? s.androidTtsHint : s.iosVoiceHint, style: const TextStyle(fontSize: 11), textAlign: TextAlign.center),
+            ]),
           ),
-        ),
+        ]),
       ),
     );
   }
 
-  String _shortLang(String lang) {
-    // "vi-VN" → "VI", "en-US" → "EN"
-    final parts = lang.split('-');
-    return parts.first.toUpperCase();
-  }
+  String _shortLang(String lang) => lang.split('-').first.toUpperCase();
 }

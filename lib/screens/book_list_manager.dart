@@ -4,158 +4,71 @@ import '../models/category.dart';
 import '../services/book_service.dart';
 import '../services/category_service.dart';
 import '../l10n/app_strings.dart';
+import 'book_smart_collections.dart';
 
 enum SortMode { updatedDesc, titleAsc, createdDesc }
-
 enum SmartFilter { none, recentlyAdded, unread, almostFinished, frequentlyRead }
 
 /// Manages book list logic including filtering, sorting, and smart collections.
-class BookListManager {
+class BookListManager with BookSmartCollections {
   final BookService bookService;
   final CategoryService categoryService;
   final TextEditingController searchController;
-  
+
   List<Book> _books = [];
   SortMode _sortMode = SortMode.updatedDesc;
   String? _filterCategoryId;
   SmartFilter _smartFilter = SmartFilter.none;
-  
-  BookListManager({
-    required this.bookService,
-    required this.categoryService,
-    required this.searchController,
-  });
 
-  /// Refreshes the book list from the service.
-  void refresh() {
-    _books = bookService.getAll();
-  }
+  BookListManager({required this.bookService, required this.categoryService, required this.searchController});
 
-  /// Gets the current list of books.
+  void refresh() { _books = bookService.getAll(); }
+  @override
   List<Book> get books => _books;
-
-  /// Sets the sort mode.
-  void setSortMode(SortMode mode) {
-    _sortMode = mode;
-  }
-
-  /// Gets the current sort mode.
+  void setSortMode(SortMode mode) { _sortMode = mode; }
   SortMode getSortMode() => _sortMode;
-
-  /// Sets the filter category ID.
-  void setFilterCategoryId(String? categoryId) {
-    _filterCategoryId = categoryId;
-  }
-
-  /// Gets the current filter category ID.
+  void setFilterCategoryId(String? categoryId) { _filterCategoryId = categoryId; }
   String? getFilterCategoryId() => _filterCategoryId;
-
-  /// Sets the smart filter.
-  void setSmartFilter(SmartFilter filter) {
-    _smartFilter = filter;
-  }
-
-  /// Gets the current smart filter.
+  void setSmartFilter(SmartFilter filter) { _smartFilter = filter; }
   SmartFilter get smartFilter => _smartFilter;
 
-  /// Gets filtered and sorted books based on current filters and search.
   List<Book> get filteredAndSorted {
     var result = _books;
-    
-    // Filter by category
-    if (_filterCategoryId != null) {
-      result = result.where((b) => b.categoryId == _filterCategoryId).toList();
-    }
-    
-    // Apply smart filter
+    if (_filterCategoryId != null) result = result.where((b) => b.categoryId == _filterCategoryId).toList();
     switch (_smartFilter) {
-      case SmartFilter.none:
-        break;
+      case SmartFilter.none: break;
       case SmartFilter.recentlyAdded:
         final weekAgo = DateTime.now().subtract(const Duration(days: 7));
         result = result.where((b) => b.createdAt.isAfter(weekAgo)).toList();
-      case SmartFilter.unread:
-        result = result.where((b) => b.progressPercent < 0.1).toList();
-      case SmartFilter.almostFinished:
-        result = result.where((b) => b.progressPercent >= 0.7 && b.progressPercent < 1.0).toList();
-      case SmartFilter.frequentlyRead:
-        result = result.where((b) => b.readingSeconds > 3600).toList();
+      case SmartFilter.unread: result = result.where((b) => b.progressPercent < 0.1).toList();
+      case SmartFilter.almostFinished: result = result.where((b) => b.progressPercent >= 0.7 && b.progressPercent < 1.0).toList();
+      case SmartFilter.frequentlyRead: result = result.where((b) => b.readingSeconds > 3600).toList();
     }
-    
-    // Filter by search query (only text search now, no magic strings)
     final query = searchController.text.toLowerCase();
     if (query.isNotEmpty && _smartFilter == SmartFilter.none) {
-      result = result
-          .where((b) =>
-              b.title.toLowerCase().contains(query) ||
-              b.author.toLowerCase().contains(query))
-          .toList();
+      result = result.where((b) => b.title.toLowerCase().contains(query) || b.author.toLowerCase().contains(query)).toList();
     }
-    
-    // Sort
     switch (_sortMode) {
-      case SortMode.updatedDesc:
-        break;
-      case SortMode.titleAsc:
-        result = List.of(result)
-          ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
-      case SortMode.createdDesc:
-        result = List.of(result)
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      case SortMode.updatedDesc: break;
+      case SortMode.titleAsc: result = List.of(result)..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+      case SortMode.createdDesc: result = List.of(result)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
-    
     return result;
   }
 
-  /// Gets recently added books (within last 7 days).
-  List<Book> get recentlyAdded {
-    final now = DateTime.now();
-    final weekAgo = now.subtract(const Duration(days: 7));
-    return _books.where((b) => b.createdAt.isAfter(weekAgo)).toList();
-  }
+  List<Book> getRecentlyOpened({int limit = 5}) => bookService.getRecentlyOpened(limit: limit);
 
-  /// Gets unread books (progress < 10%).
-  List<Book> get unreadBooks {
-    return _books.where((b) => b.progressPercent < 0.1).toList();
-  }
-
-  /// Gets almost finished books (progress >= 70% and < 100%).
-  List<Book> get almostFinished {
-    return _books.where((b) => b.progressPercent >= 0.7 && b.progressPercent < 1.0).toList();
-  }
-
-  /// Gets frequently read books (reading time > 1 hour).
-  List<Book> get frequentlyRead {
-    return _books.where((b) => b.readingSeconds > 3600).toList();
-  }
-
-  /// Gets recently opened books.
-  List<Book> getRecentlyOpened({int limit = 5}) {
-    return bookService.getRecentlyOpened(limit: limit);
-  }
-
-  /// Deletes a book with undo functionality.
   Future<void> deleteBook(BuildContext context, Book book) async {
     final s = AppStrings.of(context);
     await bookService.delete(book.id);
-    
     if (!context.mounted) return;
-    
     ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(s.bookDeleted(book.title)),
-        action: SnackBarAction(
-          label: s.undo,
-          onPressed: () async {
-            await bookService.restore(book);
-          },
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(s.bookDeleted(book.title)),
+      action: SnackBarAction(label: s.undo, onPressed: () async { await bookService.restore(book); }),
+    ));
   }
 
-  /// Shows a confirmation dialog for deleting a book.
   Future<bool?> showDeleteConfirmation(BuildContext context, Book book) async {
     final s = AppStrings.of(context);
     return await showDialog<bool>(
@@ -164,130 +77,37 @@ class BookListManager {
         title: Text(s.deleteBook),
         content: Text(s.deleteBookConfirm(book.title)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(s.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(s.delete),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.delete)),
         ],
       ),
     );
   }
 
-  /// Gets all categories for filtering.
-  List<Category> getCategories() {
-    return categoryService.getAll();
+  List<Category> getCategories() => categoryService.getAll();
+
+  PopupMenuItem<SortMode> buildSortMenuItem(BuildContext context, SortMode mode, String label) {
+    return PopupMenuItem(value: mode, child: Row(children: [
+      if (_sortMode == mode) const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.check, size: 18)),
+      Text(label),
+    ]));
   }
 
-  /// Builds a sort menu item widget.
-  PopupMenuItem<SortMode> buildSortMenuItem(
-    BuildContext context,
-    SortMode mode,
-    String label,
-  ) {
-    return PopupMenuItem(
-      value: mode,
-      child: Row(
-        children: [
-          if (_sortMode == mode)
-            const Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.check, size: 18),
-            ),
-          Text(label),
-        ],
-      ),
-    );
-  }
-
-  /// Builds category filter chips.
   List<Widget> buildCategoryFilterChips(BuildContext context, {VoidCallback? onChanged}) {
     final s = AppStrings.of(context);
     final categories = getCategories();
-    
     if (categories.isEmpty) return [];
-    
     final chips = <Widget>[
-      Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: FilterChip(
-          label: Text(s.all),
-          selected: _filterCategoryId == null,
-          onSelected: (_) {
-            _filterCategoryId = null;
-            onChanged?.call();
-          },
-        ),
-      ),
+      Padding(padding: const EdgeInsets.only(right: 8), child: FilterChip(label: Text(s.all), selected: _filterCategoryId == null, onSelected: (_) { _filterCategoryId = null; onChanged?.call(); })),
     ];
-    
     chips.addAll(categories.map((cat) => Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        avatar: CircleAvatar(
-          radius: 6,
-          backgroundColor: Color(cat.colorValue),
-        ),
-        label: Text(cat.name),
-        selected: _filterCategoryId == cat.id,
-        onSelected: (_) {
-          _filterCategoryId = _filterCategoryId == cat.id ? null : cat.id;
-          onChanged?.call();
-        },
-      ),
+      child: FilterChip(avatar: CircleAvatar(radius: 6, backgroundColor: Color(cat.colorValue)), label: Text(cat.name), selected: _filterCategoryId == cat.id, onSelected: (_) { _filterCategoryId = _filterCategoryId == cat.id ? null : cat.id; onChanged?.call(); }),
     )));
-    
     return chips;
   }
 
-  /// Checks if smart collections should be shown.
   bool shouldShowSmartCollections(String searchText, String? categoryId) {
     return searchText.isEmpty && categoryId == null && _smartFilter == SmartFilter.none;
   }
-
-  /// Gets smart collections data.
-  List<SmartCollectionData> getSmartCollections() {
-    return [
-      SmartCollectionData(
-        title: 'Recently Added',
-        books: recentlyAdded,
-        icon: Icons.new_releases,
-      ),
-      SmartCollectionData(
-        title: 'Unread',
-        books: unreadBooks,
-        icon: Icons.bookmark_border,
-      ),
-      SmartCollectionData(
-        title: 'Almost Finished',
-        books: almostFinished,
-        icon: Icons.trending_up,
-      ),
-      SmartCollectionData(
-        title: 'Frequently Read',
-        books: frequentlyRead,
-        icon: Icons.star,
-      ),
-    ];
-  }
-}
-
-/// Data for a smart collection card.
-class SmartCollectionData {
-  final String title;
-  final List<Book> books;
-  final IconData icon;
-  final Color? color;
-
-  SmartCollectionData({
-    required this.title,
-    required this.books,
-    required this.icon,
-    this.color,
-  });
-
-  int get count => books.length;
 }

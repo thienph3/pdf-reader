@@ -1,22 +1,15 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import '../l10n/app_strings.dart';
 import '../main.dart';
 import '../services/settings_service.dart';
 import '../services/tts_service.dart';
+import 'settings_tts_section.dart';
 
 class SettingsScreen extends StatefulWidget {
   final SettingsService settingsService;
   final TtsService? ttsService;
-
-  const SettingsScreen({
-    super.key,
-    required this.settingsService,
-    this.ttsService,
-  });
-
+  const SettingsScreen({super.key, required this.settingsService, this.ttsService});
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -26,252 +19,103 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   TtsService? get ttsService => widget.ttsService;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
+  void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); }
   @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
+  void dispose() { WidgetsBinding.instance.removeObserver(this); super.dispose(); }
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Refresh TTS installed languages when returning from settings
-      ttsService?.refreshInstalledLanguages();
-    }
+    if (state == AppLifecycleState.resumed) ttsService?.refreshInstalledLanguages();
   }
 
   @override
   Widget build(BuildContext context) {
     final s = AppStrings.of(context);
-
     return Scaffold(
       appBar: AppBar(title: Text(s.settings)),
       body: ListenableBuilder(
         listenable: settingsService,
-        builder: (context, _) => ListView(
-        children: [
-          // Theme - Cycle through 3 options
+        builder: (context, _) => ListView(children: [
           ListTile(
             leading: const Icon(Icons.palette_outlined),
             title: Text(s.theme),
             subtitle: Text(_themeName(s, settingsService.themeMode)),
-            trailing: IconButton(
-              icon: const Icon(Icons.arrow_forward_ios),
-              onPressed: () => _cycleTheme(),
-            ),
-            onTap: () => _cycleTheme(),
+            trailing: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: _cycleTheme),
+            onTap: _cycleTheme,
           ),
           const Divider(height: 1),
-
-          // Language - Toggle between 2 options
           ListTile(
             leading: const Icon(Icons.language),
             title: Text(s.language),
-            subtitle: Text(
-              settingsService.locale.languageCode == 'vi'
-                  ? s.langVi
-                  : s.langEn,
-            ),
-            trailing: Switch(
-              value: settingsService.locale.languageCode == 'en',
-              onChanged: (_) => _toggleLanguage(),
-            ),
-            onTap: () => _toggleLanguage(),
+            subtitle: Text(settingsService.locale.languageCode == 'vi' ? s.langVi : s.langEn),
+            trailing: Switch(value: settingsService.locale.languageCode == 'en', onChanged: (_) => _toggleLanguage()),
+            onTap: _toggleLanguage,
           ),
           const Divider(height: 1),
-
-          // Scroll direction - Already a toggle
           ListTile(
             leading: const Icon(Icons.swap_vert),
             title: Text(s.scrollDirection),
-            subtitle: Text(settingsService.isHorizontalScroll
-                ? s.scrollHorizontal
-                : s.scrollVertical),
-            trailing: Switch(
-              value: settingsService.isHorizontalScroll,
-              onChanged: (value) => settingsService.setHorizontalScroll(value),
-            ),
-            onTap: () {
-              settingsService
-                  .setHorizontalScroll(!settingsService.isHorizontalScroll);
-            },
+            subtitle: Text(settingsService.isHorizontalScroll ? s.scrollHorizontal : s.scrollVertical),
+            trailing: Switch(value: settingsService.isHorizontalScroll, onChanged: (v) => settingsService.setHorizontalScroll(v)),
+            onTap: () => settingsService.setHorizontalScroll(!settingsService.isHorizontalScroll),
           ),
           const Divider(height: 1),
-
-          // Daily goal - Cycle through common options
           ListTile(
             leading: const Icon(Icons.timer_outlined),
             title: Text(s.dailyGoal),
             subtitle: Text(s.minutesPerDay(settingsService.dailyGoalMinutes)),
-            trailing: IconButton(
-              icon: const Icon(Icons.arrow_forward_ios),
-              onPressed: () => _cycleDailyGoal(),
-            ),
-            onTap: () => _cycleDailyGoal(),
+            trailing: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: _cycleDailyGoal),
+            onTap: _cycleDailyGoal,
           ),
           const Divider(height: 1),
-
-          // Monthly goal
           ListTile(
             leading: const Icon(Icons.calendar_month_outlined),
             title: Text(s.monthlyGoal),
             subtitle: Text(s.booksPerMonth(settingsService.monthlyGoalBooks)),
-            trailing: IconButton(
-              icon: const Icon(Icons.arrow_forward_ios),
-              onPressed: () => _cycleMonthlyGoal(),
-            ),
-            onTap: () => _cycleMonthlyGoal(),
+            trailing: IconButton(icon: const Icon(Icons.arrow_forward_ios), onPressed: _cycleMonthlyGoal),
+            onTap: _cycleMonthlyGoal,
           ),
           const Divider(height: 1),
-
-          // Backup / Restore
-          ListTile(
-            leading: const Icon(Icons.backup_outlined),
-            title: const Text('Backup'),
-            subtitle: const Text('Export all books as JSON'),
-            onTap: () => _handleBackup(context),
-          ),
+          ListTile(leading: const Icon(Icons.backup_outlined), title: const Text('Backup'), subtitle: const Text('Export all books as JSON'), onTap: () => _handleBackup(context)),
           const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.restore),
-            title: const Text('Restore'),
-            subtitle: const Text('Import books from JSON backup'),
-            onTap: () => _handleRestore(context),
-          ),
-
-          // TTS section
-          if (ttsService != null) ...[
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text(s.tts,
-                  style: Theme.of(context).textTheme.titleSmall),
-            ),
-            ListenableBuilder(
-              listenable: ttsService!,
-              builder: (context, _) => Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.record_voice_over),
-                    title: Text(ttsService!.isAvailable
-                        ? s.ttsAvailable
-                        : s.ttsNotAvailable),
-                    subtitle: Text(ttsService!.isAvailable
-                        ? s.languagesAvailable(ttsService!.availableLanguages.length)
-                        : s.noTtsEngine),
-                    trailing: Icon(
-                      ttsService!.isAvailable
-                          ? Icons.check_circle
-                          : Icons.error_outline,
-                      color: ttsService!.isAvailable
-                          ? Colors.green
-                          : Colors.red,
-                    ),
-                  ),
-                  if (ttsService!.isAvailable)
-                    ...['vi-VN', 'en-US', 'en-GB', 'zh-CN', 'ja-JP', 'ko-KR',
-                        'fr-FR', 'de-DE', 'es-ES', 'th-TH']
-                        .where((l) => ttsService!.availableLanguages.contains(l))
-                        .map((lang) {
-                      final installed = ttsService!.installedLanguages[lang];
-                      return ListTile(
-                        dense: true,
-                        leading: const SizedBox(width: 24),
-                        title: Text(TtsService.languageDisplayName(lang)),
-                        trailing: Icon(
-                          installed == true
-                              ? Icons.download_done
-                              : Icons.download_outlined,
-                          size: 20,
-                          color: installed == true
-                              ? Colors.green
-                              : Colors.orange,
-                        ),
-                        onTap: installed != true
-                            ? () => _showInstallHint(context)
-                            : null,
-                      );
-                    }),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
+          ListTile(leading: const Icon(Icons.restore), title: const Text('Restore'), subtitle: const Text('Import books from JSON backup'), onTap: () => _handleRestore(context)),
+          if (ttsService != null) SettingsTtsSection(ttsService: ttsService!),
+        ]),
       ),
     );
   }
 
   String _themeName(AppStrings s, ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return s.themeLight;
-      case ThemeMode.dark:
-        return s.themeDark;
-      default:
-        return s.themeSystem;
-    }
+    switch (mode) { case ThemeMode.light: return s.themeLight; case ThemeMode.dark: return s.themeDark; default: return s.themeSystem; }
   }
 
   void _cycleTheme() {
-    final current = settingsService.themeMode;
-    ThemeMode next;
-    
-    switch (current) {
-      case ThemeMode.system:
-        next = ThemeMode.light;
-        break;
-      case ThemeMode.light:
-        next = ThemeMode.dark;
-        break;
-      case ThemeMode.dark:
-        next = ThemeMode.system;
-        break;
-    }
-    
+    final next = switch (settingsService.themeMode) { ThemeMode.system => ThemeMode.light, ThemeMode.light => ThemeMode.dark, ThemeMode.dark => ThemeMode.system };
     settingsService.setThemeMode(next);
   }
 
   void _toggleLanguage() {
-    final current = settingsService.locale.languageCode;
-    final next = current == 'vi' ? const Locale('en') : const Locale('vi');
+    final next = settingsService.locale.languageCode == 'vi' ? const Locale('en') : const Locale('vi');
     settingsService.setLocale(next);
   }
 
   void _cycleDailyGoal() {
-    final options = [10, 15, 20, 30, 45, 60, 90, 120];
-    final current = settingsService.dailyGoalMinutes;
-    final currentIndex = options.indexOf(current);
-    final nextIndex = (currentIndex + 1) % options.length;
-    settingsService.setDailyGoalMinutes(options[nextIndex]);
+    const options = [10, 15, 20, 30, 45, 60, 90, 120];
+    final i = options.indexOf(settingsService.dailyGoalMinutes);
+    settingsService.setDailyGoalMinutes(options[(i + 1) % options.length]);
   }
 
   void _cycleMonthlyGoal() {
-    final options = [1, 2, 3, 4, 5, 8, 10, 12];
-    final current = settingsService.monthlyGoalBooks;
-    final currentIndex = options.indexOf(current);
-    final nextIndex = (currentIndex + 1) % options.length;
-    settingsService.setMonthlyGoalBooks(options[nextIndex]);
+    const options = [1, 2, 3, 4, 5, 8, 10, 12];
+    final i = options.indexOf(settingsService.monthlyGoalBooks);
+    settingsService.setMonthlyGoalBooks(options[(i + 1) % options.length]);
   }
 
   Future<void> _handleBackup(BuildContext context) async {
     final bookService = BookServiceScope.of(context);
-    final path = await FilePicker.saveFile(
-      dialogTitle: 'Backup',
-      fileName: 'pdf_reader_backup.json',
-    );
+    final path = await FilePicker.saveFile(dialogTitle: 'Backup', fileName: 'pdf_reader_backup.json');
     if (path == null) return;
     await bookService.backupToFile(path);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Backup saved')),
-      );
-    }
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup saved')));
   }
 
   Future<void> _handleRestore(BuildContext context) async {
@@ -279,46 +123,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     final result = await FilePicker.pickFiles(type: FileType.any);
     if (result == null || result.files.single.path == null) return;
     final count = await bookService.importFromFile(result.files.single.path!);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Restored $count books')),
-      );
-    }
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Restored $count books')));
   }
-
-  void _showInstallHint(BuildContext context) {
-    final s = AppStrings.of(context);
-    if (Platform.isAndroid) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(s.downloadVoice),
-          content: Text(s.downloadVoiceHint),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(s.cancel),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                // Open Android TTS settings via intent
-                const channel = MethodChannel('com.thienph3.pdfreader/tts');
-                channel.invokeMethod('openTtsSettings').catchError((_) {});
-              },
-              child: Text(s.openTtsSettings),
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(s.iosVoiceHint),
-        ),
-      );
-    }
-  }
-
-
 }

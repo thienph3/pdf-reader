@@ -4,37 +4,37 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/book.dart';
-import '../models/highlight.dart';
+import 'book_service_annotations.dart';
 
 const _boxName = 'books';
 const _uuid = Uuid();
 
-class BookService {
+class BookService with BookServiceAnnotations {
   late Box<Map> _box;
   List<Book>? _sortedCache;
+
+  @override
+  Box<Map> get box => _box;
+  @override
+  void invalidateCache() => _sortedCache = null;
 
   Future<void> init() async {
     await Hive.initFlutter();
     _box = await Hive.openBox<Map>(_boxName);
   }
 
-  void _invalidateCache() => _sortedCache = null;
-
   List<Book> getAll() {
     if (_sortedCache != null) return _sortedCache!;
     final books = <Book>[];
     for (final m in _box.values) {
-      try {
-        books.add(Book.fromMap(m));
-      } catch (e) {
-        debugPrint('BookService: skipping corrupt book entry: $e');
-      }
+      try { books.add(Book.fromMap(m)); } catch (e) { debugPrint('BookService: skipping corrupt book entry: $e'); }
     }
     books.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     _sortedCache = books;
     return _sortedCache!;
   }
 
+  @override
   Book? getById(String id) {
     final map = _box.get(id);
     if (map == null) return null;
@@ -42,177 +42,44 @@ class BookService {
   }
 
   Future<Book> create({
-    required String title,
-    String author = '',
-    BookFormat format = BookFormat.paper,
-    String? filePath,
-    String? categoryId,
-    String notes = '',
+    required String title, String author = '', BookFormat format = BookFormat.paper,
+    String? filePath, String? categoryId, String notes = '',
   }) async {
     final now = DateTime.now();
-    final book = Book(
-      id: _uuid.v4(),
-      title: title,
-      author: author,
-      format: format,
-      filePath: filePath,
-      categoryId: categoryId,
-      notes: notes,
-      createdAt: now,
-      updatedAt: now,
-    );
+    final book = Book(id: _uuid.v4(), title: title, author: author, format: format, filePath: filePath, categoryId: categoryId, notes: notes, createdAt: now, updatedAt: now);
     await _box.put(book.id, book.toMap());
-    _invalidateCache();
+    invalidateCache();
     return book;
   }
 
   Future<Book> update(Book book) async {
     final updated = book.copyWith(updatedAt: DateTime.now());
     await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
+    invalidateCache();
     return updated;
   }
 
-  Future<Book> saveProgress(String bookId, int page,
-      {int? totalPages, int? addSeconds}) async {
+  Future<Book> saveProgress(String bookId, int page, {int? totalPages, int? addSeconds}) async {
     final book = getById(bookId);
     if (book == null) throw StateError('Book not found: $bookId');
     final updated = book.copyWith(
-      lastPage: page,
-      totalPages: totalPages ?? book.totalPages,
-      readingSeconds:
-          addSeconds != null ? book.readingSeconds + addSeconds : null,
-      lastOpenedAt: () => DateTime.now(),
-      updatedAt: DateTime.now(),
+      lastPage: page, totalPages: totalPages ?? book.totalPages,
+      readingSeconds: addSeconds != null ? book.readingSeconds + addSeconds : null,
+      lastOpenedAt: () => DateTime.now(), updatedAt: DateTime.now(),
     );
     await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
+    invalidateCache();
     return updated;
   }
 
-  // --- Bookmarks ---
-
-  Future<Book> addBookmark(String bookId, int page, {String note = ''}) async {
-    final book = getById(bookId);
-    if (book == null) throw StateError('Book not found: $bookId');
-    // Don't duplicate same page
-    if (book.bookmarks.any((b) => b.page == page)) return book;
-    final bm = Bookmark(page: page, note: note, createdAt: DateTime.now());
-    final updated = book.copyWith(
-      bookmarks: [...book.bookmarks, bm],
-      updatedAt: DateTime.now(),
-    );
-    await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
-    return updated;
-  }
-
-  Future<Book> removeBookmark(String bookId, int page) async {
-    final book = getById(bookId);
-    if (book == null) throw StateError('Book not found: $bookId');
-    final updated = book.copyWith(
-      bookmarks: book.bookmarks.where((b) => b.page != page).toList(),
-      updatedAt: DateTime.now(),
-    );
-    await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
-    return updated;
-  }
-
-  bool isBookmarked(String bookId, int page) {
-    final book = getById(bookId);
-    return book?.bookmarks.any((b) => b.page == page) ?? false;
-  }
-
-  Future<Book> updateBookmarkNote(String bookId, int page, String note) async {
-    final book = getById(bookId);
-    if (book == null) throw StateError('Book not found: $bookId');
-    final updated = book.copyWith(
-      bookmarks: book.bookmarks
-          .map((b) => b.page == page ? b.copyWith(note: note) : b)
-          .toList(),
-      updatedAt: DateTime.now(),
-    );
-    await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
-    return updated;
-  }
-
-  /// Returns books sorted by lastOpenedAt desc, limited to [limit].
   List<Book> getRecentlyOpened({int limit = 5}) {
-    final recent = getAll()
-        .where((b) => b.lastOpenedAt != null && b.canRead)
-        .toList()
+    final recent = getAll().where((b) => b.lastOpenedAt != null && b.canRead).toList()
       ..sort((a, b) => b.lastOpenedAt!.compareTo(a.lastOpenedAt!));
     return recent.take(limit).toList();
   }
 
-  // --- Highlights ---
-
-  Future<Book> addHighlight(String bookId, Highlight highlight) async {
-    final book = getById(bookId);
-    if (book == null) throw StateError('Book not found: $bookId');
-    final updated = book.copyWith(
-      highlights: [...book.highlights, highlight],
-      updatedAt: DateTime.now(),
-    );
-    await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
-    return updated;
-  }
-
-  Future<Book> removeHighlight(String bookId, String highlightId) async {
-    final book = getById(bookId);
-    if (book == null) throw StateError('Book not found: $bookId');
-    final updated = book.copyWith(
-      highlights: book.highlights.where((h) => h.id != highlightId).toList(),
-      updatedAt: DateTime.now(),
-    );
-    await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
-    return updated;
-  }
-
-  Future<Book> updateHighlightNote(
-      String bookId, String highlightId, String note) async {
-    final book = getById(bookId);
-    if (book == null) throw StateError('Book not found: $bookId');
-    final updated = book.copyWith(
-      highlights: book.highlights
-          .map((h) => h.id == highlightId ? h.copyWith(note: note) : h)
-          .toList(),
-      updatedAt: DateTime.now(),
-    );
-    await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
-    return updated;
-  }
-
-  Future<Book> updateHighlightColor(
-      String bookId, String highlightId, int colorValue) async {
-    final book = getById(bookId);
-    if (book == null) throw StateError('Book not found: $bookId');
-    final updated = book.copyWith(
-      highlights: book.highlights
-          .map((h) => h.id == highlightId ? h.copyWith(colorValue: colorValue) : h)
-          .toList(),
-      updatedAt: DateTime.now(),
-    );
-    await _box.put(updated.id, updated.toMap());
-    _invalidateCache();
-    return updated;
-  }
-
-  List<Highlight> getHighlightsForPage(String bookId, int page) {
-    final book = getById(bookId);
-    if (book == null) return [];
-    return book.highlights.where((h) => h.page == page).toList();
-  }
-
-
   // --- Export / Import ---
 
-  /// Backup all data to a JSON file at [path].
   Future<File> backupToFile(String path) async {
     final json = await exportToJson();
     return File(path).writeAsString(json);
@@ -234,27 +101,19 @@ class BookService {
     for (final item in list) {
       try {
         if (item is! Map) continue;
-        // Validate required fields
         if (item['id'] == null || item['id'] is! String) continue;
         if (item['title'] == null) continue;
-        // Validate format index
         final formatIdx = item['format'] as int? ?? 0;
         if (formatIdx < 0 || formatIdx >= BookFormat.values.length) continue;
-        // Sanitize file path (no path traversal)
         final filePath = item['filePath'] as String?;
-        if (filePath != null && (filePath.contains('..') || filePath.contains('\x00'))) {
-          item['filePath'] = null;
-        }
+        if (filePath != null && (filePath.contains('..') || filePath.contains('\x00'))) item['filePath'] = null;
         final book = Book.fromMap(item);
-        // Skip if already exists
         if (getById(book.id) != null) continue;
         await _box.put(book.id, book.toMap());
         count++;
-      } catch (e) {
-        debugPrint('Import: skipping invalid entry: $e');
-      }
+      } catch (e) { debugPrint('Import: skipping invalid entry: $e'); }
     }
-    _invalidateCache();
+    invalidateCache();
     return count;
   }
 
@@ -263,13 +122,6 @@ class BookService {
     return importFromJson(json);
   }
 
-  Future<void> delete(String id) async {
-    await _box.delete(id);
-    _invalidateCache();
-  }
-
-  Future<void> restore(Book book) async {
-    await _box.put(book.id, book.toMap());
-    _invalidateCache();
-  }
+  Future<void> delete(String id) async { await _box.delete(id); invalidateCache(); }
+  Future<void> restore(Book book) async { await _box.put(book.id, book.toMap()); invalidateCache(); }
 }

@@ -1,9 +1,9 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../main.dart';
 import '../l10n/app_strings.dart';
+import '../utils/pdf_render_utils.dart';
 import 'pdf_highlight_manager.dart';
 
 class PdfTextViewController {
@@ -59,19 +59,14 @@ class PdfTextViewController {
 
     try {
       final pdfPage = pdfDocument.pages[page];
-      final image = await pdfPage.render(fullWidth: 1000, fullHeight: 1400);
-      if (image != null) {
-        final uiImage = await image.createImage();
-        final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
-        uiImage.dispose();
-        if (byteData != null) {
-          await ocrService.ocrFromPngBytes(
-            bookId: bookId!,
-            pageNumber: pageNumber,
-            pngBytes: byteData.buffer.asUint8List(),
-          );
-          md = ocrService.getCachedMarkdown(bookId!, pageNumber);
-        }
+      final pngBytes = await renderPageToPngBytes(pdfPage);
+      if (pngBytes != null) {
+        await ocrService.ocrFromPngBytes(
+          bookId: bookId!,
+          pageNumber: pageNumber,
+          pngBytes: pngBytes,
+        );
+        md = ocrService.getCachedMarkdown(bookId!, pageNumber);
       }
     } catch (e) {
       debugPrint('Text view OCR error: $e');

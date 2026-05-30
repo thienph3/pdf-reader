@@ -7,6 +7,7 @@ import '../services/book_service.dart';
 import '../services/category_service.dart';
 import '../l10n/app_strings.dart';
 import '../utils/annotation_export.dart';
+import '../utils/dialogs.dart';
 import 'book_actions.dart';
 import 'book_list_manager.dart';
 import 'book_actions_manager.dart';
@@ -57,14 +58,14 @@ class _BookListScreenState extends State<BookListScreen> {
   Future<void> _handleExportAnnotations(Book book) async {
     final s = AppStrings.of(context);
     if (book.highlights.isEmpty && book.bookmarks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.noAnnotations)));
+      showAppSnackBar(context, s.noAnnotations);
       return;
     }
     final md = exportAnnotationsAsMarkdown(book);
     final path = await FilePicker.saveFile(dialogTitle: s.exportAnnotations, fileName: '${book.title}_annotations.md');
     if (path == null) return;
     await io.File(path).writeAsString(md);
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.exportAnnotationsSuccess)));
+    if (mounted) showAppSnackBar(context, s.exportAnnotationsSuccess);
   }
 
   void _filterBySmartCollection(String title) {

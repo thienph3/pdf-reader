@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/book_service.dart';
 import '../models/book.dart';
 import '../l10n/app_strings.dart';
+import '../utils/dialogs.dart';
 import 'widgets/bookmark_sheet.dart';
 
 /// Manages bookmark-related functionality for PDF viewer.
@@ -50,9 +51,7 @@ class PdfBookmarkManager {
     final book = bookService!.getById(bookId!);
     if (book == null || book.bookmarks.isEmpty) {
       final s = AppStrings.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.noBookmarks)),
-      );
+      showAppSnackBar(context, s.noBookmarks);
       return;
     }
     

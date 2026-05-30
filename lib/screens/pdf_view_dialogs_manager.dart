@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../l10n/app_strings.dart';
 import '../services/tts_service.dart';
+import '../utils/dialogs.dart';
 import 'pdf_highlight_manager.dart';
 import 'pdf_bookmark_manager.dart';
 
@@ -149,9 +150,7 @@ class PdfViewDialogsManager {
     final outline = await pdfDocument!.loadOutline();
     if (!context.mounted) return;
     if (outline.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.noToc)),
-      );
+      showAppSnackBar(context, s.noToc);
       return;
     }
     if (!context.mounted) return;

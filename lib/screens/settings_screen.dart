@@ -4,6 +4,7 @@ import '../l10n/app_strings.dart';
 import '../main.dart';
 import '../services/settings_service.dart';
 import '../services/tts_service.dart';
+import '../utils/dialogs.dart';
 import 'settings_tts_section.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -115,7 +116,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     final path = await FilePicker.saveFile(dialogTitle: 'Backup', fileName: 'pdf_reader_backup.json');
     if (path == null) return;
     await bookService.backupToFile(path);
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup saved')));
+    if (context.mounted) showAppSnackBar(context, 'Backup saved');
   }
 
   Future<void> _handleRestore(BuildContext context) async {
@@ -123,6 +124,6 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     final result = await FilePicker.pickFiles(type: FileType.any);
     if (result == null || result.files.single.path == null) return;
     final count = await bookService.importFromFile(result.files.single.path!);
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Restored $count books')));
+    if (context.mounted) showAppSnackBar(context, 'Restored $count books');
   }
 }

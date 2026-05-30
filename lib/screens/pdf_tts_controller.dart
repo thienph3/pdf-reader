@@ -1,8 +1,8 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../main.dart';
 import '../services/tts_service.dart';
+import '../utils/pdf_render_utils.dart';
 import 'pdf_highlight_manager.dart';
 
 class PdfTtsController {
@@ -68,18 +68,13 @@ class PdfTtsController {
           setOcrInProgress(true);
           try {
             final page = pdfDocument.pages[pageNumber - 1];
-            final image = await page.render(fullWidth: 1000, fullHeight: 1400);
-            if (image != null) {
-              final pngBytes = await image.createImage();
-              final byteData = await pngBytes.toByteData(format: ui.ImageByteFormat.png);
-              if (byteData != null) {
-                text = await ocrService.ocrFromPngBytes(
-                  bookId: bookId!,
-                  pageNumber: pageNumber,
-                  pngBytes: byteData.buffer.asUint8List(),
-                );
-              }
-              pngBytes.dispose();
+            final pngBytes = await renderPageToPngBytes(page);
+            if (pngBytes != null) {
+              text = await ocrService.ocrFromPngBytes(
+                bookId: bookId!,
+                pageNumber: pageNumber,
+                pngBytes: pngBytes,
+              );
             }
           } catch (e) {
             debugPrint('OCR for TTS failed: $e');

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../services/tts_service.dart';
+import '../utils/dialogs.dart';
 import 'pdf_tts_dialogs.dart';
 
 /// Bottom panel for TTS controls in PDF viewer.
@@ -32,7 +33,7 @@ class PdfTtsPanel extends StatelessWidget {
           const SizedBox(height: 8),
           Text(s.ttsNotAvailable),
           const SizedBox(height: 8),
-          if (Platform.isAndroid) FilledButton.tonal(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.androidTtsHint))), child: Text(s.ttsHowToEnable)),
+          if (Platform.isAndroid) FilledButton.tonal(onPressed: () => showAppSnackBar(context, s.androidTtsHint), child: Text(s.ttsHowToEnable)),
           if (Platform.isIOS) Text(s.iosVoiceHint, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
         ]),
       ),

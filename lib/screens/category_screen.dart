@@ -3,6 +3,7 @@ import '../main.dart';
 import '../models/category.dart';
 import '../services/category_service.dart';
 import '../l10n/app_strings.dart';
+import '../utils/dialogs.dart';
 import 'category_dialog.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -40,18 +41,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   Future<void> _deleteCategory(Category cat) async {
     final s = AppStrings.of(context);
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.deleteCategory),
-        content: Text(s.deleteCategoryConfirm(cat.name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.delete)),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: s.deleteCategory,
+      content: s.deleteCategoryConfirm(cat.name),
+      confirmLabel: s.delete,
+      cancelLabel: s.cancel,
     );
-    if (confirm == true) {
+    if (confirm) {
       if (!mounted) return;
       final bookService = BookServiceScope.of(context);
       for (final book in bookService.getAll().where((b) => b.categoryId == cat.id)) {

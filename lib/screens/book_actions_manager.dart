@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/book.dart';
 import '../services/book_service.dart';
 import '../l10n/app_strings.dart';
+import '../utils/dialogs.dart';
 import 'shared_route.dart';
 import 'book_form_screen.dart';
-import 'pdf_view_screen.dart';
 
 /// Manages book-related actions (open, edit, delete, etc.).
 class BookActionsManager {
@@ -26,14 +26,12 @@ class BookActionsManager {
     if (file == null) return;
     if (!context.mounted) return;
     
-    await Navigator.push(
+    await openPdfViewer(
       context,
-      buildPageRoute(PdfViewScreen(
-        filePath: file,
-        fileName: book.title,
-        bookId: book.id,
-        initialPage: book.lastPage,
-      )),
+      filePath: file,
+      fileName: book.title,
+      bookId: book.id,
+      initialPage: book.lastPage,
     );
     
     onRefresh();
@@ -73,25 +71,15 @@ class BookActionsManager {
     required Future<void> Function(BuildContext, Book) onDelete,
   }) async {
     final s = AppStrings.of(context);
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.deleteBook),
-        content: Text(s.deleteBookConfirm(book.title)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(s.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(s.delete),
-          ),
-        ],
-      ),
+    final confirm = await showConfirmDialog(
+      context,
+      title: s.deleteBook,
+      content: s.deleteBookConfirm(book.title),
+      confirmLabel: s.delete,
+      cancelLabel: s.cancel,
     );
     
-    if (confirm == true && context.mounted) {
+    if (confirm && context.mounted) {
       await onDelete(context, book);
     }
   }
@@ -120,11 +108,6 @@ class BookActionsManager {
     String title,
     int bookCount,
   ) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title: ${AppStrings.of(context).nBooks(bookCount)}'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    showAppSnackBar(context, '$title: ${AppStrings.of(context).nBooks(bookCount)}');
   }
 }

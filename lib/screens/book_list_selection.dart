@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/book_service.dart';
 import '../l10n/app_strings.dart';
+import '../utils/dialogs.dart';
 
 class BookListSelection {
   bool selectionMode = false;
@@ -31,18 +32,14 @@ class BookListSelection {
     VoidCallback onDone,
   ) async {
     final s = AppStrings.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.deleteBook),
-        content: Text('Delete ${selectedIds.length} books?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.delete)),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: s.deleteBook,
+      content: 'Delete ${selectedIds.length} books?',
+      confirmLabel: s.delete,
+      cancelLabel: s.cancel,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     for (final id in selectedIds) {
       await bookService.delete(id);
     }

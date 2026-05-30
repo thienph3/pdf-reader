@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import '../l10n/app_strings.dart';
 import '../models/book.dart';
 import '../services/book_service.dart';
+import '../utils/dialogs.dart';
 import '../utils/pdf_file_utils.dart';
 
 /// Validates a book's file path. If invalid, prompts user to pick a new file.
@@ -14,22 +15,14 @@ Future<String?> validateBookPath(BuildContext context, Book book, BookService bo
   }
   if (!context.mounted) return null;
   final s = AppStrings.of(context);
-  final shouldRepick = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(s.fileNotFound),
-      content: Text(s.fileInvalidMessage),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(s.cancel)),
-        FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(s.repick)),
-      ],
-    ),
+  final shouldRepick = await showConfirmDialog(
+    context,
+    title: s.fileNotFound,
+    content: s.fileInvalidMessage,
+    confirmLabel: s.repick,
+    cancelLabel: s.cancel,
   );
-  if (shouldRepick != true || !context.mounted) return null;
+  if (!shouldRepick || !context.mounted) return null;
   final result = await FilePicker.pickFiles(
       type: FileType.custom, allowedExtensions: ['pdf']);
   if (result != null && result.files.single.path != null) {
@@ -50,9 +43,7 @@ Future<void> exportBooks(BuildContext context, BookService bookService) async {
   if (path == null) return;
   await bookService.exportToFile(path);
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(s.exportSuccess)),
-  );
+  showAppSnackBar(context, s.exportSuccess);
 }
 
 /// Imports books from a JSON file chosen by user. Returns count imported.
@@ -65,8 +56,6 @@ Future<int> importBooks(BuildContext context, BookService bookService) async {
   final count = await bookService.importFromFile(result.files.single.path!);
   if (!context.mounted) return count;
   final s = AppStrings.of(context);
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(s.importSuccess(count))),
-  );
+  showAppSnackBar(context, s.importSuccess(count));
   return count;
 }

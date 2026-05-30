@@ -3,7 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import '../models/book.dart';
 import '../l10n/app_strings.dart';
 import '../main.dart';
-import '../utils/pdf_file_utils.dart';
+import '../utils/dialogs.dart';
+import '../utils/pdf_file_utils.dart' as pdf_utils;
 
 class BookFormLogic {
   final Book? book;
@@ -59,7 +60,7 @@ class BookFormLogic {
     );
     if (result != null && result.files.single.path != null) {
       final name = result.files.single.name;
-      final path = await copyPdfToAppDir(result.files.single.path!);
+      final path = await pdf_utils.copyPdfToAppDir(result.files.single.path!);
       
       onFilePicked(path);
       
@@ -76,24 +77,13 @@ class BookFormLogic {
 
   Future<bool> showDiscardDialog(BuildContext context) async {
     final s = AppStrings.of(context);
-    final discard = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.discardTitle),
-        content: Text(s.discardMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(s.continueEditing),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(s.discard),
-          ),
-        ],
-      ),
+    return showConfirmDialog(
+      context,
+      title: s.discardTitle,
+      content: s.discardMessage,
+      confirmLabel: s.discard,
+      cancelLabel: s.continueEditing,
     );
-    return discard ?? false;
   }
 
   Future<void> save({
@@ -159,8 +149,5 @@ class BookFormLogic {
     }
   }
 
-  String fileNameFromPath(String path) {
-    final sep = path.contains('\\') ? '\\' : '/';
-    return path.split(sep).last;
-  }
+  String fileNameFromPath(String path) => pdf_utils.fileNameFromPath(path);
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../l10n/app_strings.dart';
 import '../models/highlight.dart';
+import '../utils/dialogs.dart';
 import 'pdf_highlight_manager.dart';
 import 'pdf_highlight_edit_form.dart';
 
@@ -27,7 +28,7 @@ class PdfViewHighlightsUi {
   void showHighlightsList({required BuildContext context, required ValueChanged<int> onPageSelected}) {
     final highlights = highlightManager.getAllHighlights();
     if (highlights.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.of(context).noHighlightsFound)));
+      showAppSnackBar(context, AppStrings.of(context).noHighlightsFound);
       return;
     }
     _showList(context: context, highlights: highlights, showPage: true, onPageSelected: onPageSelected);
@@ -36,7 +37,7 @@ class PdfViewHighlightsUi {
   void showCurrentPageHighlights({required BuildContext context, required int currentPage}) {
     final items = highlightManager.getHighlightsForCurrentPage(currentPage);
     if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppStrings.of(context).noHighlightsOnPage)));
+      showAppSnackBar(context, AppStrings.of(context).noHighlightsOnPage);
       return;
     }
     _showList(context: context, highlights: items, showPage: false, title: AppStrings.of(context).highlightsOnPage(currentPage + 1));
@@ -55,18 +56,14 @@ class PdfViewHighlightsUi {
 
   Future<void> _deleteWithConfirm(BuildContext context, Highlight highlight) async {
     final s = AppStrings.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.deleteHighlight),
-        content: Text(s.deleteHighlightConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.delete, style: const TextStyle(color: Colors.red))),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: s.deleteHighlight,
+      content: s.deleteHighlightConfirm,
+      confirmLabel: s.delete,
+      cancelLabel: s.cancel,
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
     await highlightManager.deleteHighlight(context, highlight);
     onRefresh();
     viewerController.invalidate();

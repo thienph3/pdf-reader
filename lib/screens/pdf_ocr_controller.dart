@@ -1,8 +1,9 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../main.dart';
 import '../l10n/app_strings.dart';
+import '../utils/dialogs.dart';
+import '../utils/pdf_render_utils.dart';
 import 'pdf_highlight_manager.dart';
 
 class PdfOcrController {
@@ -46,9 +47,7 @@ class PdfOcrController {
     }
 
     if (pagesToOcr.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.of(context).ocrAlreadyDone)),
-      );
+      showAppSnackBar(context, AppStrings.of(context).ocrAlreadyDone);
       return;
     }
 
@@ -63,18 +62,13 @@ class PdfOcrController {
 
       try {
         final page = pdfDocument.pages[pageIndex];
-        final image = await page.render(fullWidth: 1000, fullHeight: 1400);
-        if (image != null) {
-          final uiImage = await image.createImage();
-          final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
-          uiImage.dispose();
-          if (byteData != null) {
-            await ocrService.ocrFromPngBytes(
-              bookId: bookId!,
-              pageNumber: pageNum,
-              pngBytes: byteData.buffer.asUint8List(),
-            );
-          }
+        final pngBytes = await renderPageToPngBytes(page);
+        if (pngBytes != null) {
+          await ocrService.ocrFromPngBytes(
+            bookId: bookId!,
+            pageNumber: pageNum,
+            pngBytes: pngBytes,
+          );
         }
       } catch (e) {
         debugPrint('OCR batch error page $pageNum: $e');
@@ -88,9 +82,7 @@ class PdfOcrController {
     ocrBatchRunning = false;
     onStateChanged();
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppStrings.of(context).ocrComplete)),
-      );
+      showAppSnackBar(context, AppStrings.of(context).ocrComplete);
     }
   }
 

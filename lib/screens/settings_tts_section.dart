@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/app_strings.dart';
 import '../services/tts_service.dart';
+import '../utils/dialogs.dart';
 
 class SettingsTtsSection extends StatelessWidget {
   final TtsService ttsService;
@@ -56,7 +57,7 @@ class SettingsTtsSection extends StatelessWidget {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.iosVoiceHint)));
+      showAppSnackBar(context, s.iosVoiceHint);
     }
   }
 }

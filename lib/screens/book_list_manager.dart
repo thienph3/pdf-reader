@@ -4,6 +4,7 @@ import '../models/category.dart';
 import '../services/book_service.dart';
 import '../services/category_service.dart';
 import '../l10n/app_strings.dart';
+import '../utils/dialogs.dart';
 import 'book_smart_collections.dart';
 
 enum SortMode { updatedDesc, titleAsc, createdDesc }
@@ -63,24 +64,19 @@ class BookListManager with BookSmartCollections {
     await bookService.delete(book.id);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(s.bookDeleted(book.title)),
+    showAppSnackBar(context, s.bookDeleted(book.title),
       action: SnackBarAction(label: s.undo, onPressed: () async { await bookService.restore(book); }),
-    ));
+    );
   }
 
   Future<bool?> showDeleteConfirmation(BuildContext context, Book book) async {
     final s = AppStrings.of(context);
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.deleteBook),
-        content: Text(s.deleteBookConfirm(book.title)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.delete)),
-        ],
-      ),
+    return showConfirmDialog(
+      context,
+      title: s.deleteBook,
+      content: s.deleteBookConfirm(book.title),
+      confirmLabel: s.delete,
+      cancelLabel: s.cancel,
     );
   }
 

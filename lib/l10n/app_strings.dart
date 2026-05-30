@@ -242,6 +242,10 @@ class AppStrings {
 
   // Loading
   String get loadingPdf => _isVi ? 'Đang tải PDF...' : 'Loading PDF...';
+
+  // Open file intent
+  String get addToLibraryPrompt => _isVi ? 'Thêm vào thư viện để lưu tiến độ?' : 'Add to library to save progress?';
+  String get readOnly => _isVi ? 'Chỉ đọc' : 'Just read';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../l10n/app_strings.dart';
 import '../main.dart';
+import '../models/book.dart';
+import '../utils/pdf_file_utils.dart';
 import 'book_list_screen.dart';
 import 'category_screen.dart';
 import 'stats_screen.dart';
@@ -29,11 +31,68 @@ class _MainShellState extends State<MainShell> {
   Future<void> _checkOpenedFile() async {
     try {
       final path = await _intentChannel.invokeMethod<String>('getOpenedFile');
-      if (path != null && path.isNotEmpty && mounted) {
-        final fileName = path.split('/').last;
-        Navigator.push(context, buildPageRoute(
-          PdfViewScreen(filePath: path, fileName: fileName),
-        ));
+      if (path == null || path.isEmpty || !mounted) return;
+
+      final bookService = BookServiceScope.of(context);
+      final fileName = path.split('/').last;
+
+      // Check if this file is already in the library
+      final existing = bookService.getAll().where((b) =>
+        b.filePath != null && b.filePath!.split('/').last == fileName
+      ).firstOrNull;
+
+      if (existing != null) {
+        // Existing book — open directly with saved progress
+        if (!mounted) return;
+        Navigator.push(context, buildPageRoute(PdfViewScreen(
+          filePath: existing.filePath!,
+          fileName: existing.title,
+          bookId: existing.id,
+          initialPage: existing.lastPage,
+        )));
+      } else {
+        // New PDF — copy to app dir and prompt to add
+        final savedPath = await copyPdfToAppDir(path);
+        if (!mounted) return;
+        final title = fileName.endsWith('.pdf')
+            ? fileName.substring(0, fileName.length - 4)
+            : fileName;
+
+        final shouldAdd = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(AppStrings.of(context).addBook),
+            content: Text('"$title"\n${AppStrings.of(context).addToLibraryPrompt}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(AppStrings.of(context).readOnly),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(AppStrings.of(context).addBook),
+              ),
+            ],
+          ),
+        );
+
+        if (!mounted) return;
+        String? bookId;
+        if (shouldAdd == true) {
+          final book = await bookService.create(
+            title: title,
+            format: BookFormat.ebook,
+            filePath: savedPath,
+          );
+          bookId = book.id;
+        }
+
+        if (!mounted) return;
+        Navigator.push(context, buildPageRoute(PdfViewScreen(
+          filePath: savedPath,
+          fileName: title,
+          bookId: bookId,
+        )));
       }
     } catch (_) {}
   }

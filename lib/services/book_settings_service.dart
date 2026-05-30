@@ -3,20 +3,20 @@ import 'package:hive_flutter/hive_flutter.dart';
 class BookSettings {
   final int readingMode;
   final bool horizontalScroll;
-  final bool cropMargins;
+  final int cropMargins; // 0=off, 10, 15, 20, 25 percent
   final double brightness; // -1 = use system
 
   const BookSettings({
     this.readingMode = 0,
     this.horizontalScroll = false,
-    this.cropMargins = false,
+    this.cropMargins = 0,
     this.brightness = -1,
   });
 
   BookSettings copyWith({
     int? readingMode,
     bool? horizontalScroll,
-    bool? cropMargins,
+    int? cropMargins,
     double? brightness,
   }) =>
       BookSettings(
@@ -33,12 +33,15 @@ class BookSettings {
         'brightness': brightness,
       };
 
-  factory BookSettings.fromMap(Map map) => BookSettings(
-        readingMode: map['readingMode'] as int? ?? 0,
-        horizontalScroll: map['horizontalScroll'] as bool? ?? false,
-        cropMargins: map['cropMargins'] as bool? ?? false,
-        brightness: (map['brightness'] as num?)?.toDouble() ?? -1,
-      );
+  factory BookSettings.fromMap(Map map) {
+    final crop = map['cropMargins'];
+    return BookSettings(
+      readingMode: map['readingMode'] as int? ?? 0,
+      horizontalScroll: map['horizontalScroll'] as bool? ?? false,
+      cropMargins: crop is int ? crop : (crop == true ? 20 : 0),
+      brightness: (map['brightness'] as num?)?.toDouble() ?? -1,
+    );
+  }
 }
 
 class BookSettingsService {

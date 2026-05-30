@@ -22,8 +22,8 @@ class PdfViewDialogsManager {
   final int readingMode;
   final double brightness;
   final ValueChanged<double>? onBrightnessChanged;
-  final bool cropMargins;
-  final VoidCallback? onToggleCrop;
+  final int cropMargins;
+  final VoidCallback? onCycleCrop;
 
   PdfViewDialogsManager({
     required this.highlightManager,
@@ -40,8 +40,8 @@ class PdfViewDialogsManager {
     this.readingMode = 0,
     this.brightness = 0.5,
     this.onBrightnessChanged,
-    this.cropMargins = false,
-    this.onToggleCrop,
+    this.cropMargins = 0,
+    this.onCycleCrop,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -106,12 +106,12 @@ class PdfViewDialogsManager {
                   onChanged: (v) { setSt(() {}); onBrightnessChanged!(v); },
                 )),
               ),
-            if (onToggleCrop != null)
+            if (onCycleCrop != null)
               ListTile(
-                leading: Icon(cropMargins ? Icons.crop : Icons.crop_free),
+                leading: Icon(cropMargins > 0 ? Icons.crop : Icons.crop_free),
                 title: Text(s.cropMargins),
-                trailing: Switch(value: cropMargins, onChanged: (_) { Navigator.pop(ctx); onToggleCrop!(); }),
-                onTap: () { Navigator.pop(ctx); onToggleCrop!(); },
+                trailing: Text(cropMargins > 0 ? '$cropMargins%' : 'Off'),
+                onTap: () { Navigator.pop(ctx); onCycleCrop!(); },
               ),
           ],
         ),

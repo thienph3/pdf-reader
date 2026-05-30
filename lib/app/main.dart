@@ -22,6 +22,7 @@ export 'service_scope.dart';
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    CrashLogService.appVersion = '1.0.0';
 
     FlutterError.onError = (details) {
       FlutterError.presentError(details);

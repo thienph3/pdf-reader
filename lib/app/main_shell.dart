@@ -9,7 +9,6 @@ import '../features/settings/screens/category_screen.dart';
 import '../features/stats/screens/stats_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import '../core/routing/shared_route.dart';
-import '../features/reader/screens/epub_view_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -107,20 +106,12 @@ class _MainShellState extends State<MainShell> {
     String? bookId,
     int initialPage = 0,
   }) async {
-    if (filePath.toLowerCase().endsWith('.epub')) {
-      await Navigator.push(context, buildPageRoute(EpubViewScreen(
-        filePath: filePath,
-        fileName: fileName,
-        bookId: bookId,
-      )));
-    } else {
-      await openPdfViewer(context,
-        filePath: filePath,
-        fileName: fileName,
-        bookId: bookId,
-        initialPage: initialPage,
-      );
-    }
+    await openPdfViewer(context,
+      filePath: filePath,
+      fileName: fileName,
+      bookId: bookId,
+      initialPage: initialPage,
+    );
   }
 
   @override

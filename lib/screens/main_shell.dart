@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../l10n/app_strings.dart';
 import '../main.dart';
 import 'book_list_screen.dart';
 import 'category_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
+import 'pdf_view_screen.dart';
+import 'shared_route.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -15,6 +18,25 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+  static const _intentChannel = MethodChannel('com.thienph3.pdfreader/intent');
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOpenedFile();
+  }
+
+  Future<void> _checkOpenedFile() async {
+    try {
+      final path = await _intentChannel.invokeMethod<String>('getOpenedFile');
+      if (path != null && path.isNotEmpty && mounted) {
+        final fileName = path.split('/').last;
+        Navigator.push(context, buildPageRoute(
+          PdfViewScreen(filePath: path, fileName: fileName),
+        ));
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {

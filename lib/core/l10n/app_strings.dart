@@ -253,6 +253,11 @@ class AppStrings {
   String get brightness => _isVi ? 'Độ sáng' : 'Brightness';
   String get invalidPage => _isVi ? 'Số trang không hợp lệ' : 'Invalid page number';
   String get cropMargins => _isVi ? 'Cắt lề' : 'Crop Margins';
+
+  // EPUB
+  String get epubChapter => _isVi ? 'Chương' : 'Chapter';
+  String get epubLoading => _isVi ? 'Đang tải EPUB...' : 'Loading EPUB...';
+  String get epubError => _isVi ? 'Không thể mở file EPUB' : 'Failed to open EPUB file';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

@@ -9,6 +9,7 @@ import '../features/settings/screens/category_screen.dart';
 import '../features/stats/screens/stats_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 import '../core/routing/shared_route.dart';
+import '../features/reader/screens/epub_view_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -43,19 +44,22 @@ class _MainShellState extends State<MainShell> {
       if (existing != null) {
         // Existing book — open directly with saved progress
         if (!mounted) return;
-        await openPdfViewer(context,
+        await _openBookFile(context,
           filePath: existing.filePath!,
           fileName: existing.title,
           bookId: existing.id,
           initialPage: existing.lastPage,
         );
       } else {
-        // New PDF — copy to app dir and prompt to add
+        // New file — copy to app dir and prompt to add
         final savedPath = await copyPdfToAppDir(path);
         if (!mounted) return;
-        final title = fileName.endsWith('.pdf')
-            ? fileName.substring(0, fileName.length - 4)
-            : fileName;
+        final isEpub = path.toLowerCase().endsWith('.epub');
+        final title = isEpub
+            ? fileName.replaceAll(RegExp(r'\.epub$', caseSensitive: false), '')
+            : fileName.endsWith('.pdf')
+                ? fileName.substring(0, fileName.length - 4)
+                : fileName;
 
         final shouldAdd = await showDialog<bool>(
           context: context,
@@ -87,13 +91,36 @@ class _MainShellState extends State<MainShell> {
         }
 
         if (!mounted) return;
-        await openPdfViewer(context,
+        await _openBookFile(context,
           filePath: savedPath,
           fileName: title,
           bookId: bookId,
         );
       }
     } catch (_) {}
+  }
+
+  Future<void> _openBookFile(
+    BuildContext context, {
+    required String filePath,
+    required String fileName,
+    String? bookId,
+    int initialPage = 0,
+  }) async {
+    if (filePath.toLowerCase().endsWith('.epub')) {
+      await Navigator.push(context, buildPageRoute(EpubViewScreen(
+        filePath: filePath,
+        fileName: fileName,
+        bookId: bookId,
+      )));
+    } else {
+      await openPdfViewer(context,
+        filePath: filePath,
+        fileName: fileName,
+        bookId: bookId,
+        initialPage: initialPage,
+      );
+    }
   }
 
   @override

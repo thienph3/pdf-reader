@@ -4,6 +4,7 @@ import '../../../services/book_service.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/utils/dialogs.dart';
 import '../../../core/routing/shared_route.dart';
+import '../../reader/screens/epub_view_screen.dart';
 import '../screens/book_form_screen.dart';
 
 /// Manages book-related actions (open, edit, delete, etc.).
@@ -26,13 +27,21 @@ class BookActionsManager {
     if (file == null) return;
     if (!context.mounted) return;
     
-    await openPdfViewer(
-      context,
-      filePath: file,
-      fileName: book.title,
-      bookId: book.id,
-      initialPage: book.lastPage,
-    );
+    if (file.toLowerCase().endsWith('.epub')) {
+      await Navigator.push(context, buildPageRoute(EpubViewScreen(
+        filePath: file,
+        fileName: book.title,
+        bookId: book.id,
+      )));
+    } else {
+      await openPdfViewer(
+        context,
+        filePath: file,
+        fileName: book.title,
+        bookId: book.id,
+        initialPage: book.lastPage,
+      );
+    }
     
     onRefresh();
   }

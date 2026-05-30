@@ -12,6 +12,8 @@ import '../../../core/l10n/app_strings.dart';
 import '../providers/content_provider.dart';
 import '../providers/pdf_content_provider.dart';
 import '../providers/epub_content_provider.dart';
+import '../providers/text_content_provider.dart';
+import '../providers/cbz_content_provider.dart';
 import '../controllers/tts_controller.dart';
 import 'reader_screen_body.dart';
 
@@ -54,6 +56,7 @@ class ReaderScreenState extends State<ReaderScreen> {
 
   TtsService get ttsService => TtsServiceScope.of(context);
   bool get isEpub => _isEpub;
+  bool get isPdf => !_isEpub;
   ContentProvider get provider => _provider;
   PdfContentProvider? get pdfProvider => _pdfProvider;
   EpubContentProvider? get epubProvider => _epubProvider;
@@ -79,8 +82,9 @@ class ReaderScreenState extends State<ReaderScreen> {
     _currentPage = widget.initialPage;
     _sessionStartPage = widget.initialPage;
     _isEpub = widget.filePath.toLowerCase().endsWith('.epub');
+    final ext = widget.filePath.toLowerCase().split('.').last;
 
-    if (_isEpub) {
+    if (ext == 'epub') {
       _epubProvider = EpubContentProvider(filePath: widget.filePath);
       _provider = _epubProvider!;
       _epubPageController = PageController(initialPage: widget.initialPage);
@@ -91,6 +95,22 @@ class ReaderScreenState extends State<ReaderScreen> {
           _totalPages = _epubProvider!.totalPages;
         });
         _restoreEpubProgress();
+      });
+    } else if (ext == 'txt' || ext == 'md') {
+      final textProvider = TextContentProvider(filePath: widget.filePath);
+      _provider = textProvider;
+      _epubPageController = PageController(initialPage: widget.initialPage);
+      textProvider.load().then((_) {
+        if (!mounted) return;
+        setState(() { _pdfLoading = false; _totalPages = textProvider.totalPages; });
+      });
+    } else if (ext == 'cbz' || ext == 'cbr') {
+      final cbzProvider = CbzContentProvider(filePath: widget.filePath);
+      _provider = cbzProvider;
+      _epubPageController = PageController(initialPage: widget.initialPage);
+      cbzProvider.load().then((_) {
+        if (!mounted) return;
+        setState(() { _pdfLoading = false; _totalPages = cbzProvider.totalPages; });
       });
     } else {
       _pdfProvider = PdfContentProvider(

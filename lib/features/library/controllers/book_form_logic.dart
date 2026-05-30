@@ -56,7 +56,7 @@ class BookFormLogic {
   }) async {
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'epub'],
+      allowedExtensions: ['pdf', 'epub', 'txt', 'md', 'cbz', 'cbr'],
     );
     if (result != null && result.files.single.path != null) {
       final name = result.files.single.name;
@@ -66,7 +66,7 @@ class BookFormLogic {
       
       // Auto-fill title from filename if empty
       if (titleCtrl.text.trim().isEmpty) {
-        final title = name.replaceAll(RegExp(r'\.(pdf|epub)$', caseSensitive: false), '');
+        final title = name.replaceAll(RegExp(r'\.(pdf|epub|txt|md|cbz|cbr)$', caseSensitive: false), '');
         titleCtrl.text = title;
       }
     }

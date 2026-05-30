@@ -24,7 +24,7 @@ Future<String?> validateBookPath(BuildContext context, Book book, BookService bo
   );
   if (!shouldRepick || !context.mounted) return null;
   final result = await FilePicker.pickFiles(
-      type: FileType.custom, allowedExtensions: ['pdf', 'epub']);
+      type: FileType.custom, allowedExtensions: ['pdf', 'epub', 'txt', 'md', 'cbz', 'cbr']);
   if (result != null && result.files.single.path != null) {
     final newPath = await copyPdfToAppDir(result.files.single.path!);
     await bookService.update(book.copyWith(filePath: () => newPath));

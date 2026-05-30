@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:uuid/uuid.dart';
 import '../l10n/app_strings.dart';
@@ -152,6 +153,7 @@ class PdfHighlightManager {
     try {
       final updated = await bookService!.addHighlight(bookId!, highlight);
       debugPrint('createHighlight: SUCCESS - book now has ${updated.highlights.length} highlights');
+      HapticFeedback.mediumImpact();
       onSuccess?.call();
     } catch (error) {
       debugPrint('createHighlight: ERROR - $error');

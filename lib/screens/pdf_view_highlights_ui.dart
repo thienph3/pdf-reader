@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:share_plus/share_plus.dart';
 import '../l10n/app_strings.dart';
 import '../models/highlight.dart';
 import 'pdf_highlight_manager.dart';
@@ -151,6 +152,16 @@ class PdfViewHighlightsUi {
                     ),
                   ),
                   const SizedBox(width: 12),
+                  IconButton(
+                    onPressed: () {
+                      final text = highlight.note.isNotEmpty
+                          ? '${highlight.text}\n\n${highlight.note}'
+                          : highlight.text;
+                      Share.share(text);
+                    },
+                    icon: const Icon(Icons.share),
+                    tooltip: 'Share',
+                  ),
                   IconButton(
                     onPressed: () async {
                       Navigator.pop(ctx);

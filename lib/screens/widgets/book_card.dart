@@ -9,6 +9,8 @@ class BookCard extends StatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback? onExportAnnotations;
+  final VoidCallback? onLongPress;
+  final bool selected;
 
   const BookCard({
     super.key,
@@ -17,6 +19,8 @@ class BookCard extends StatefulWidget {
     required this.onEdit,
     required this.onDelete,
     this.onExportAnnotations,
+    this.onLongPress,
+    this.selected = false,
   });
 
   @override
@@ -94,20 +98,22 @@ class _BookCardState extends State<BookCard> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: widget.onTap,
-        onLongPress: () => _showMenu(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        onLongPress: widget.onLongPress ?? () => _showMenu(context),
+        child: Stack(
           children: [
-            // Cover area
-            Expanded(
-              child: BookCardUiBuilder.buildCover(
-                book: book,
-                thumbnail: _logic.thumbnail,
-                isLoading: _logic.isLoading,
-                colorScheme: colorScheme,
-                categoryColor: categoryColor,
-              ),
-            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Cover area
+                Expanded(
+                  child: BookCardUiBuilder.buildCover(
+                    book: book,
+                    thumbnail: _logic.thumbnail,
+                    isLoading: _logic.isLoading,
+                    colorScheme: colorScheme,
+                    categoryColor: categoryColor,
+                  ),
+                ),
             // Progress bar with percentage
             if (book.canRead && book.totalPages > 0)
               BookCardUiBuilder.buildProgressBar(
@@ -120,6 +126,13 @@ class _BookCardState extends State<BookCard> {
               book: book,
               colorScheme: colorScheme,
             ),
+          ],
+        ),
+        if (widget.selected)
+          Positioned(
+            top: 4, right: 4,
+            child: Icon(Icons.check_circle, color: colorScheme.primary),
+          ),
           ],
         ),
       ),

@@ -23,6 +23,8 @@ class _BookListScreenState extends State<BookListScreen> {
   bool _isSearching = false;
   bool _initialized = false;
   bool _isGridView = true;
+  bool _selectionMode = false;
+  final Set<String> _selectedIds = {};
   
   final TextEditingController _searchCtrl = TextEditingController();
   
@@ -151,7 +153,6 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   void _handleSmartCollectionTap(String title, int bookCount) {
-    // Instead of just showing snackbar, filter books by collection
     _filterBySmartCollection(title);
   }
 
@@ -160,47 +161,39 @@ class _BookListScreenState extends State<BookListScreen> {
       _searchCtrl.text = '';
       _listManager.setFilterCategoryId(null);
       
-      // Set search query based on collection
       switch (collectionTitle) {
         case 'Recently Added':
-          // Filter by recently added (within last 7 days)
-          _searchCtrl.text = 'added:recent'; // Special marker for UI
-          break;
+          _listManager.setSmartFilter(SmartFilter.recentlyAdded);
         case 'Unread':
-          // Filter unread books (progress < 10%)
-          _searchCtrl.text = 'status:unread'; // Special marker for UI
-          break;
+          _listManager.setSmartFilter(SmartFilter.unread);
         case 'Almost Finished':
-          // Filter almost finished books (progress >= 70% and < 100%)
-          _searchCtrl.text = 'status:almost-finished'; // Special marker for UI
-          break;
+          _listManager.setSmartFilter(SmartFilter.almostFinished);
         case 'Frequently Read':
-          // Filter frequently read books (reading time > 1 hour)
-          _searchCtrl.text = 'status:frequently-read'; // Special marker for UI
-          break;
+          _listManager.setSmartFilter(SmartFilter.frequentlyRead);
       }
     });
   }
 
   String _getDisplayTitle(AppStrings s) {
-    final query = _searchCtrl.text.toLowerCase();
+    switch (_listManager.smartFilter) {
+      case SmartFilter.recentlyAdded:
+        return s.recentlyAdded;
+      case SmartFilter.unread:
+        return s.unreadBooks;
+      case SmartFilter.almostFinished:
+        return s.almostFinished;
+      case SmartFilter.frequentlyRead:
+        return s.frequentlyRead;
+      case SmartFilter.none:
+        break;
+    }
     
-    if (query == 'added:recent') {
-      return s.recentlyAdded;
-    } else if (query == 'status:unread') {
-      return s.unreadBooks;
-    } else if (query == 'status:almost-finished') {
-      return s.almostFinished;
-    } else if (query == 'status:frequently-read') {
-      return s.frequentlyRead;
-    } else if (_listManager.getFilterCategoryId() != null) {
+    if (_listManager.getFilterCategoryId() != null) {
       final catId = _listManager.getFilterCategoryId();
       if (catId != null) {
         final catService = CategoryServiceScope.of(context);
         final cat = catService.getById(catId);
-        if (cat != null) {
-          return cat.name;
-        }
+        if (cat != null) return cat.name;
       }
     }
     
@@ -208,11 +201,7 @@ class _BookListScreenState extends State<BookListScreen> {
   }
 
   bool get _hasActiveFilter {
-    final q = _searchCtrl.text;
-    return q == 'added:recent' ||
-        q == 'status:unread' ||
-        q == 'status:almost-finished' ||
-        q == 'status:frequently-read' ||
+    return _listManager.smartFilter != SmartFilter.none ||
         _listManager.getFilterCategoryId() != null;
   }
 
@@ -220,7 +209,54 @@ class _BookListScreenState extends State<BookListScreen> {
     setState(() {
       _searchCtrl.clear();
       _listManager.setFilterCategoryId(null);
+      _listManager.setSmartFilter(SmartFilter.none);
     });
+  }
+
+  void _enterSelectionMode(String bookId) {
+    setState(() {
+      _selectionMode = true;
+      _selectedIds.add(bookId);
+    });
+  }
+
+  void _toggleSelection(String bookId) {
+    setState(() {
+      if (_selectedIds.contains(bookId)) {
+        _selectedIds.remove(bookId);
+        if (_selectedIds.isEmpty) _selectionMode = false;
+      } else {
+        _selectedIds.add(bookId);
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _selectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    final s = AppStrings.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.deleteBook),
+        content: Text('Delete ${_selectedIds.length} books?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.delete)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    for (final id in _selectedIds) {
+      await _bookService.delete(id);
+    }
+    _exitSelectionMode();
+    _refresh();
   }
 
   @override
@@ -236,7 +272,21 @@ class _BookListScreenState extends State<BookListScreen> {
     final displayTitle = _getDisplayTitle(s);
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectionMode
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelectionMode,
+              ),
+              title: Text('${_selectedIds.length} selected'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: _selectedIds.isNotEmpty ? _deleteSelected : null,
+                ),
+              ],
+            )
+          : AppBar(
         leading: _hasActiveFilter
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -350,14 +400,20 @@ class _BookListScreenState extends State<BookListScreen> {
           ? BookListUi.buildResponsiveGridView(
               context: context,
               books: filtered,
-              onTap: (book) => book.canRead ? _handleOpenBook(book) : _handleEditBook(book),
+              onTap: (book) => _selectionMode
+                  ? _toggleSelection(book.id)
+                  : (book.canRead ? _handleOpenBook(book) : _handleEditBook(book)),
               onEdit: _handleEditBook,
               onDelete: _handleConfirmDeleteBook,
               onExportAnnotations: _handleExportAnnotations,
+              onLongPress: _selectionMode ? (book) => _toggleSelection(book.id) : (book) => _enterSelectionMode(book.id),
+              selectedIds: _selectionMode ? _selectedIds : null,
             )
           : BookListUi.buildListView(
               books: filtered,
-              onTap: (book) => book.canRead ? _handleOpenBook(book) : _handleEditBook(book),
+              onTap: (book) => _selectionMode
+                  ? _toggleSelection(book.id)
+                  : (book.canRead ? _handleOpenBook(book) : _handleEditBook(book)),
               onEdit: _handleEditBook,
               onDelete: _handleConfirmDeleteBook,
               onDismiss: (book) => _handleDeleteBook(context, book),
@@ -422,10 +478,14 @@ class _BookListScreenState extends State<BookListScreen> {
           BookListUi.buildResponsiveSliverGrid(
             context: context,
             books: filtered,
-            onTap: (book) => book.canRead ? _handleOpenBook(book) : _handleEditBook(book),
+            onTap: (book) => _selectionMode
+                ? _toggleSelection(book.id)
+                : (book.canRead ? _handleOpenBook(book) : _handleEditBook(book)),
             onEdit: _handleEditBook,
             onDelete: _handleConfirmDeleteBook,
             onExportAnnotations: _handleExportAnnotations,
+            onLongPress: _selectionMode ? (book) => _toggleSelection(book.id) : (book) => _enterSelectionMode(book.id),
+            selectedIds: _selectionMode ? _selectedIds : null,
           )
         else
           BookListUi.buildSliverList(

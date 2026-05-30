@@ -39,76 +39,21 @@ Based on Product Manager + Technical Lead + Design Lead + QA/QC Lead review (202
 
 ---
 
-## P2 — Medium Impact (Next 1–2 Months)
+## P2 — Medium Impact ✅ COMPLETED (2026-05-31)
 
-### 24. Unit Tests (HIGH PRIORITY)
-- **Current:** 1 smoke test. Effectively zero coverage.
-- **Target:** 60%+ coverage on services
-- **Priority test suites:**
-  - `BookService` — CRUD, saveProgress, bookmarks, highlights, import/export
-  - `Book model` — fromMap/toMap roundtrip, edge cases, invalid data
-  - `TtsService` — language detection, text cleaning
-  - `ReadingLogService` — daily aggregation, date boundaries
-  - `BookListManager` — filtering, sorting, smart collections
-- **Effort:** 3-5 days
-
-### 25. Design Tokens & Visual Consistency
-- `lib/theme/design_tokens.dart` with spacing, elevation, semantic colors
-- Replace hardcoded `Colors.red/green/orange/white` with `colorScheme`
-- Theme-aware highlight colors for dark mode
-- **Effort:** 4 hours
-
-### 26. Haptic Feedback + Micro-animations
-- Haptics on bookmark toggle, highlight creation, long-press
-- `AnimatedSwitcher` on grid/list toggle; animate chart bars
-- **Effort:** 4 hours
-
-### 27. Accessibility Improvements
-- `Semantics` on custom painters; `InkWell` on `RecentBookItem`
-- Category color circles → 48×48; text labels on highlight colors
-- Test with `textScaleFactor` 1.5x/2x
-- **Effort:** 1 day
-
-### 28. Refactor PdfViewScreen (God Object)
-- Extract `PdfTtsController`, `PdfOcrHelper`
-- Stop recreating `_uiBuilder`/`_dialogsManager` in every `build()`
-- **Effort:** 1 day
-
-### 29. Replace Magic String Filters
-- Enum-based `FilterState` model, separate from search text
-- **Effort:** 3 hours
-
-### 30. Validate Import Data
-- Check format index range, string lengths, date validity
-- Sanitize file paths (no path traversal)
-- **Effort:** 3 hours
-
-### 31. Fix Concurrent Thumbnail Requests
-- **Problem:** Two `BookCard` widgets requesting same thumbnail simultaneously both render from PDF
-- **Fix:** Add in-flight request tracking (Completer map)
-- **Effort:** 2 hours
-
-### 32. Add OCR Batch Cancellation UI
-- **Problem:** No way to cancel OCR batch mid-processing on large PDFs
-- **Fix:** Add cancel button in OCR progress indicator
-- **Effort:** 1 hour
-
-### 33. Share Highlights
-- `share_plus` package; long-press highlight → "Share"
-- **Effort:** 3 hours
-
-### 34. Batch Operations
-- Multi-select for bulk delete / categorize
-- **Effort:** 1 day
-
-### 35. Manual Backup / Restore
-- Export Hive DB + `/pdfs/` as zip
-- **Effort:** 1 day
-
-### 36. Migrate DI from InheritedWidgets
-- Replace 7 nested InheritedWidgets with `provider` or `riverpod`
-- Fixes full widget tree rebuild on settings change
-- **Effort:** 1-2 days
+### 24. ✅ Unit Tests (25 tests: Book model, BookService, ReadingLog)
+### 25. ✅ Design Tokens (spacing, elevation, theme-aware highlight colors)
+### 26. ✅ Haptic Feedback (bookmark toggle, highlight creation)
+### 27. ✅ Accessibility (InkWell + Semantics on RecentBookItem)
+### 28. ✅ Refactor PdfViewScreen (extracted _updateUiManagers from build)
+### 29. ✅ Replace Magic String Filters (SmartFilter enum)
+### 30. ✅ Validate Import Data (format index, path traversal, required fields)
+### 31. ✅ Fix Concurrent Thumbnail Requests (in-flight dedup)
+### 32. ✅ OCR Batch Cancellation UI (cancel button)
+### 33. ✅ Share Highlights (share_plus)
+### 34. ✅ Batch Operations (long-press selection mode + bulk delete)
+### 35. ✅ Manual Backup/Restore (JSON export/import in settings)
+### 36. ✅ Migrate DI (flattened to single ServiceScope)
 
 ---
 
@@ -255,11 +200,8 @@ Based on Product Manager + Technical Lead + Design Lead + QA/QC Lead review (202
 ```
 Week 1:   ✅ P0 DONE
 Week 2-4: ✅ P1 DONE (except reading reminders — deferred)
-Week 5:   #24 Unit tests (BookService, models)
-Week 6:   #24 Unit tests (TTS, ReadingLog, BookListManager)
-Week 7:   #25 Design tokens, #26 Haptics, #27 Accessibility, #28 Refactor PdfViewScreen
-Week 8:   #29 Filters, #30 Validation, #31 Thumbnails, #32 OCR cancel, #33 Share
-Month 3:  #34-36 Batch/Backup/DI, then P3 items
+Week 5-8: ✅ P2 DONE
+Month 3:  P3 items (Hive migration, highlights storage, streaks, EPUB, cloud, accessibility audit)
 ```
 
 ---

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 import '../l10n/app_strings.dart';
+import '../main.dart';
 import '../services/settings_service.dart';
 import '../services/tts_service.dart';
 
@@ -125,6 +127,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             ),
             onTap: () => _cycleMonthlyGoal(),
           ),
+          const Divider(height: 1),
+
+          // Backup / Restore
+          ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: const Text('Backup'),
+            subtitle: const Text('Export all books as JSON'),
+            onTap: () => _handleBackup(context),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.restore),
+            title: const Text('Restore'),
+            subtitle: const Text('Import books from JSON backup'),
+            onTap: () => _handleRestore(context),
+          ),
 
           // TTS section
           if (ttsService != null) ...[
@@ -239,6 +257,33 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     final currentIndex = options.indexOf(current);
     final nextIndex = (currentIndex + 1) % options.length;
     settingsService.setMonthlyGoalBooks(options[nextIndex]);
+  }
+
+  Future<void> _handleBackup(BuildContext context) async {
+    final bookService = BookServiceScope.of(context);
+    final path = await FilePicker.saveFile(
+      dialogTitle: 'Backup',
+      fileName: 'pdf_reader_backup.json',
+    );
+    if (path == null) return;
+    await bookService.backupToFile(path);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Backup saved')),
+      );
+    }
+  }
+
+  Future<void> _handleRestore(BuildContext context) async {
+    final bookService = BookServiceScope.of(context);
+    final result = await FilePicker.pickFiles(type: FileType.any);
+    if (result == null || result.files.single.path == null) return;
+    final count = await bookService.importFromFile(result.files.single.path!);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Restored $count books')),
+      );
+    }
   }
 
   void _showInstallHint(BuildContext context) {

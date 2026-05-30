@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/book_service.dart';
 import '../models/book.dart';
 import '../l10n/app_strings.dart';
@@ -29,13 +30,12 @@ class PdfBookmarkManager {
   /// Toggles bookmark for the current page.
   void toggleBookmark(int currentPage) {
     if (bookId == null || bookService == null) return;
-    
+    HapticFeedback.lightImpact();
     if (isBookmarked(currentPage)) {
       bookService!.removeBookmark(bookId!, currentPage);
     } else {
       bookService!.addBookmark(bookId!, currentPage);
     }
-    
     onBookmarksUpdated?.call();
   }
 

@@ -634,9 +634,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Rebuild UI builder với giá trị mới nhất
+  void _updateUiManagers() {
     _uiBuilder = PdfViewUiBuilder(
       bookmarkManager: _bookmarkManager,
       fileName: widget.fileName,
@@ -672,6 +670,21 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onCycleReadingMode: _cycleReadingMode,
       readingMode: _readingMode,
     );
+
+    _highlightsUi = PdfViewHighlightsUi(
+      highlightManager: _highlightManager,
+      viewerController: _viewerController,
+      currentPage: _currentPage,
+      onRefresh: () {
+        if (mounted) setState(() {});
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Update UI managers with latest state
+    _updateUiManagers();
 
     return PopScope(
       canPop: false,
@@ -851,6 +864,13 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                           Text(_ocrBatchRunning
                             ? AppStrings.of(context).ocrProgress(_ocrBatchDone, _ocrBatchTotal)
                             : AppStrings.of(context).ocrProcessing),
+                          if (_ocrBatchRunning) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => setState(() => _ocrBatchRunning = false),
+                              child: Icon(Icons.close, size: 18, color: Theme.of(context).colorScheme.error),
+                            ),
+                          ],
                         ],
                       ),
                     ),

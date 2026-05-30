@@ -7,6 +7,8 @@ import '../l10n/app_strings.dart';
 
 enum SortMode { updatedDesc, titleAsc, createdDesc }
 
+enum SmartFilter { none, recentlyAdded, unread, almostFinished, frequentlyRead }
+
 /// Manages book list logic including filtering, sorting, and smart collections.
 class BookListManager {
   final BookService bookService;
@@ -16,6 +18,7 @@ class BookListManager {
   List<Book> _books = [];
   SortMode _sortMode = SortMode.updatedDesc;
   String? _filterCategoryId;
+  SmartFilter _smartFilter = SmartFilter.none;
   
   BookListManager({
     required this.bookService,
@@ -47,6 +50,14 @@ class BookListManager {
   /// Gets the current filter category ID.
   String? getFilterCategoryId() => _filterCategoryId;
 
+  /// Sets the smart filter.
+  void setSmartFilter(SmartFilter filter) {
+    _smartFilter = filter;
+  }
+
+  /// Gets the current smart filter.
+  SmartFilter get smartFilter => _smartFilter;
+
   /// Gets filtered and sorted books based on current filters and search.
   List<Book> get filteredAndSorted {
     var result = _books;
@@ -56,51 +67,41 @@ class BookListManager {
       result = result.where((b) => b.categoryId == _filterCategoryId).toList();
     }
     
-    // Filter by search query
+    // Apply smart filter
+    switch (_smartFilter) {
+      case SmartFilter.none:
+        break;
+      case SmartFilter.recentlyAdded:
+        final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+        result = result.where((b) => b.createdAt.isAfter(weekAgo)).toList();
+      case SmartFilter.unread:
+        result = result.where((b) => b.progressPercent < 0.1).toList();
+      case SmartFilter.almostFinished:
+        result = result.where((b) => b.progressPercent >= 0.7 && b.progressPercent < 1.0).toList();
+      case SmartFilter.frequentlyRead:
+        result = result.where((b) => b.readingSeconds > 3600).toList();
+    }
+    
+    // Filter by search query (only text search now, no magic strings)
     final query = searchController.text.toLowerCase();
-    if (query.isNotEmpty) {
-      // Check for special collection filters
-      if (query.startsWith('added:')) {
-        if (query == 'added:recent') {
-          // Recently added (within last 7 days)
-          final now = DateTime.now();
-          final weekAgo = now.subtract(const Duration(days: 7));
-          result = result.where((b) => b.createdAt.isAfter(weekAgo)).toList();
-        }
-      } else if (query.startsWith('status:')) {
-        if (query == 'status:unread') {
-          // Unread books (progress < 10%)
-          result = result.where((b) => b.progressPercent < 0.1).toList();
-        } else if (query == 'status:almost-finished') {
-          // Almost finished books (progress >= 70% and < 100%)
-          result = result.where((b) => b.progressPercent >= 0.7 && b.progressPercent < 1.0).toList();
-        } else if (query == 'status:frequently-read') {
-          // Frequently read books (reading time > 1 hour)
-          result = result.where((b) => b.readingSeconds > 3600).toList();
-        }
-      } else {
-        // Regular text search
-        result = result
-            .where((b) =>
-                b.title.toLowerCase().contains(query) ||
-                b.author.toLowerCase().contains(query))
-            .toList();
-      }
+    if (query.isNotEmpty && _smartFilter == SmartFilter.none) {
+      result = result
+          .where((b) =>
+              b.title.toLowerCase().contains(query) ||
+              b.author.toLowerCase().contains(query))
+          .toList();
     }
     
     // Sort
     switch (_sortMode) {
       case SortMode.updatedDesc:
-        // Already sorted by service (most recent first)
         break;
       case SortMode.titleAsc:
         result = List.of(result)
           ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
-        break;
       case SortMode.createdDesc:
         result = List.of(result)
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        break;
     }
     
     return result;
@@ -244,7 +245,7 @@ class BookListManager {
 
   /// Checks if smart collections should be shown.
   bool shouldShowSmartCollections(String searchText, String? categoryId) {
-    return searchText.isEmpty && categoryId == null;
+    return searchText.isEmpty && categoryId == null && _smartFilter == SmartFilter.none;
   }
 
   /// Gets smart collections data.

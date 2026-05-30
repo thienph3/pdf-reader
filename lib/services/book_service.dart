@@ -212,6 +212,12 @@ class BookService {
 
   // --- Export / Import ---
 
+  /// Backup all data to a JSON file at [path].
+  Future<File> backupToFile(String path) async {
+    final json = await exportToJson();
+    return File(path).writeAsString(json);
+  }
+
   Future<String> exportToJson() async {
     final books = getAll().map((b) => b.toMap()).toList();
     return jsonEncode(books);
@@ -226,11 +232,27 @@ class BookService {
     final list = jsonDecode(json) as List;
     int count = 0;
     for (final item in list) {
-      final book = Book.fromMap(item as Map);
-      // Skip if already exists
-      if (getById(book.id) != null) continue;
-      await _box.put(book.id, book.toMap());
-      count++;
+      try {
+        if (item is! Map) continue;
+        // Validate required fields
+        if (item['id'] == null || item['id'] is! String) continue;
+        if (item['title'] == null) continue;
+        // Validate format index
+        final formatIdx = item['format'] as int? ?? 0;
+        if (formatIdx < 0 || formatIdx >= BookFormat.values.length) continue;
+        // Sanitize file path (no path traversal)
+        final filePath = item['filePath'] as String?;
+        if (filePath != null && (filePath.contains('..') || filePath.contains('\x00'))) {
+          item['filePath'] = null;
+        }
+        final book = Book.fromMap(item);
+        // Skip if already exists
+        if (getById(book.id) != null) continue;
+        await _box.put(book.id, book.toMap());
+        count++;
+      } catch (e) {
+        debugPrint('Import: skipping invalid entry: $e');
+      }
     }
     _invalidateCache();
     return count;

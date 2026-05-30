@@ -55,39 +55,44 @@ class _RecentBookItemState extends State<RecentBookItem> {
     final book = widget.book;
     final colorScheme = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: SizedBox(
-        width: 90,
-        child: Column(
-          children: [
-            // Cover
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: _thumbnail != null
-                    ? RawImage(image: _thumbnail, fit: BoxFit.cover)
-                    : Container(
-                        color: colorScheme.primaryContainer
-                            .withValues(alpha: 0.3),
-                        child: Icon(
-                          Icons.menu_book,
-                          color: colorScheme.onPrimaryContainer
-                              .withValues(alpha: 0.5),
+    return Semantics(
+      button: true,
+      label: 'Open ${book.title}',
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 90,
+          child: Column(
+            children: [
+              // Cover
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: _thumbnail != null
+                      ? RawImage(image: _thumbnail, fit: BoxFit.cover)
+                      : Container(
+                          color: colorScheme.primaryContainer
+                              .withValues(alpha: 0.3),
+                          child: Icon(
+                            Icons.menu_book,
+                            color: colorScheme.onPrimaryContainer
+                                .withValues(alpha: 0.5),
+                          ),
                         ),
-                      ),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            // Title only — 1 line
-            Text(
-              book.title,
-              style: Theme.of(context).textTheme.labelSmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 4),
+              // Title only — 1 line
+              Text(
+                book.title,
+                style: Theme.of(context).textTheme.labelSmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

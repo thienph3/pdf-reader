@@ -39,6 +39,8 @@ class BookListUi {
     required Function(Book) onEdit,
     required Function(Book) onDelete,
     Function(Book)? onExportAnnotations,
+    Function(Book)? onLongPress,
+    Set<String>? selectedIds,
   }) {
     final width = MediaQuery.of(context).size.width;
     final crossAxisCount = width > 900 ? 4 : (width >= 600 ? 3 : 2);
@@ -59,6 +61,8 @@ class BookListUi {
           onEdit: () => onEdit(book),
           onDelete: () => onDelete(book),
           onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null,
+          onLongPress: onLongPress != null ? () => onLongPress(book) : null,
+          selected: selectedIds?.contains(book.id) ?? false,
         );
       },
     );
@@ -72,6 +76,8 @@ class BookListUi {
     required Function(Book) onEdit,
     required Function(Book) onDelete,
     Function(Book)? onExportAnnotations,
+    Function(Book)? onLongPress,
+    Set<String>? selectedIds,
   }) {
     final width = MediaQuery.of(context).size.width;
     final crossAxisCount = width > 900 ? 4 : (width >= 600 ? 3 : 2);
@@ -93,6 +99,8 @@ class BookListUi {
               onEdit: () => onEdit(book),
               onDelete: () => onDelete(book),
               onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null,
+              onLongPress: onLongPress != null ? () => onLongPress(book) : null,
+              selected: selectedIds?.contains(book.id) ?? false,
             );
           },
           childCount: books.length,

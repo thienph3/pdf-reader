@@ -9,6 +9,7 @@ class ThumbnailService {
   static const _maxMemCacheSize = 25;
   final Map<String, ui.Image> _memCache = {};
   final List<String> _accessOrder = [];
+  final Map<String, Future<ui.Image?>> _inFlight = {};
   String? _cacheDir;
 
   Future<String> _getCacheDir() async {
@@ -35,6 +36,22 @@ class ThumbnailService {
       _accessOrder.add(cacheKey);
       return _memCache[cacheKey];
     }
+
+    // 2. Deduplicate in-flight requests
+    if (_inFlight.containsKey(cacheKey)) {
+      return _inFlight[cacheKey];
+    }
+
+    final future = _loadThumbnail(cacheKey, bookId, filePath, width);
+    _inFlight[cacheKey] = future;
+    try {
+      return await future;
+    } finally {
+      _inFlight.remove(cacheKey);
+    }
+  }
+
+  Future<ui.Image?> _loadThumbnail(String cacheKey, String bookId, String filePath, double width) async {
 
     try {
       // 2. Disk cache

@@ -59,54 +59,80 @@ class BookServiceScope extends InheritedWidget {
   final BookService bookService;
   const BookServiceScope({super.key, required this.bookService, required super.child});
   static BookService of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<BookServiceScope>()!.bookService;
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.bookService;
   @override
-  bool updateShouldNotify(BookServiceScope oldWidget) => bookService != oldWidget.bookService;
+  bool updateShouldNotify(BookServiceScope oldWidget) => false;
 }
 
 class CategoryServiceScope extends InheritedWidget {
   final CategoryService categoryService;
   const CategoryServiceScope({super.key, required this.categoryService, required super.child});
   static CategoryService of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<CategoryServiceScope>()!.categoryService;
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.categoryService;
   @override
-  bool updateShouldNotify(CategoryServiceScope oldWidget) => categoryService != oldWidget.categoryService;
+  bool updateShouldNotify(CategoryServiceScope oldWidget) => false;
 }
 
 class ThumbnailServiceScope extends InheritedWidget {
   final ThumbnailService thumbnailService;
   const ThumbnailServiceScope({super.key, required this.thumbnailService, required super.child});
   static ThumbnailService of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<ThumbnailServiceScope>()!.thumbnailService;
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.thumbnailService;
   @override
-  bool updateShouldNotify(ThumbnailServiceScope oldWidget) => thumbnailService != oldWidget.thumbnailService;
+  bool updateShouldNotify(ThumbnailServiceScope oldWidget) => false;
 }
 
 class ReadingLogServiceScope extends InheritedWidget {
   final ReadingLogService readingLogService;
   const ReadingLogServiceScope({super.key, required this.readingLogService, required super.child});
   static ReadingLogService of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<ReadingLogServiceScope>()!.readingLogService;
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.readingLogService;
   @override
-  bool updateShouldNotify(ReadingLogServiceScope oldWidget) => readingLogService != oldWidget.readingLogService;
+  bool updateShouldNotify(ReadingLogServiceScope oldWidget) => false;
 }
 
 class TtsServiceScope extends InheritedWidget {
   final TtsService ttsService;
   const TtsServiceScope({super.key, required this.ttsService, required super.child});
   static TtsService of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<TtsServiceScope>()!.ttsService;
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.ttsService;
   @override
-  bool updateShouldNotify(TtsServiceScope oldWidget) => ttsService != oldWidget.ttsService;
+  bool updateShouldNotify(TtsServiceScope oldWidget) => false;
 }
 
 class OcrServiceScope extends InheritedWidget {
   final OcrService ocrService;
   const OcrServiceScope({super.key, required this.ocrService, required super.child});
   static OcrService of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<OcrServiceScope>()!.ocrService;
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.ocrService;
   @override
-  bool updateShouldNotify(OcrServiceScope oldWidget) => ocrService != oldWidget.ocrService;
+  bool updateShouldNotify(OcrServiceScope oldWidget) => false;
+}
+
+/// Single InheritedWidget holding all services, replacing 7 nested ones.
+class ServiceScope extends InheritedWidget {
+  final BookService bookService;
+  final CategoryService categoryService;
+  final ThumbnailService thumbnailService;
+  final ReadingLogService readingLogService;
+  final TtsService ttsService;
+  final OcrService ocrService;
+  final SettingsService settingsService;
+
+  const ServiceScope({
+    super.key,
+    required this.bookService,
+    required this.categoryService,
+    required this.thumbnailService,
+    required this.readingLogService,
+    required this.ttsService,
+    required this.ocrService,
+    required this.settingsService,
+    required super.child,
+  });
+
+  @override
+  bool updateShouldNotify(ServiceScope oldWidget) => false;
 }
 
 class PdfReaderApp extends StatefulWidget {
@@ -152,48 +178,39 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
   Widget build(BuildContext context) {
     final settings = widget.settingsService;
 
-    return BookServiceScope(
+    return ServiceScope(
       bookService: widget.bookService,
-      child: CategoryServiceScope(
-        categoryService: widget.categoryService,
-        child: ThumbnailServiceScope(
-          thumbnailService: widget.thumbnailService,
-          child: ReadingLogServiceScope(
-            readingLogService: widget.readingLogService,
-            child: TtsServiceScope(
-            ttsService: widget.ttsService,
-            child: OcrServiceScope(
-            ocrService: widget.ocrService,
-            child: SettingsScope(
-            settingsService: settings,
-            child: MaterialApp(
-              title: 'PDF Reader',
-              debugShowCheckedModeBanner: false,
-              themeMode: settings.themeMode,
-              theme: ThemeData(
-                colorSchemeSeed: Colors.indigo,
-                brightness: Brightness.light,
-                useMaterial3: true,
-              ),
-              darkTheme: ThemeData(
-                colorSchemeSeed: Colors.indigo,
-                brightness: Brightness.dark,
-                useMaterial3: true,
-              ),
-              locale: settings.locale,
-              supportedLocales: const [Locale('vi'), Locale('en')],
-              localizationsDelegates: const [
-                AppStringsDelegate(),
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              home: const SplashScreen(),
-            ),
+      categoryService: widget.categoryService,
+      thumbnailService: widget.thumbnailService,
+      readingLogService: widget.readingLogService,
+      ttsService: widget.ttsService,
+      ocrService: widget.ocrService,
+      settingsService: settings,
+      child: SettingsScope(
+        settingsService: settings,
+        child: MaterialApp(
+          title: 'PDF Reader',
+          debugShowCheckedModeBanner: false,
+          themeMode: settings.themeMode,
+          theme: ThemeData(
+            colorSchemeSeed: Colors.indigo,
+            brightness: Brightness.light,
+            useMaterial3: true,
           ),
+          darkTheme: ThemeData(
+            colorSchemeSeed: Colors.indigo,
+            brightness: Brightness.dark,
+            useMaterial3: true,
           ),
-          ),
-          ),
+          locale: settings.locale,
+          supportedLocales: const [Locale('vi'), Locale('en')],
+          localizationsDelegates: const [
+            AppStringsDelegate(),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const SplashScreen(),
         ),
       ),
     );

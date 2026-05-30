@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import '../models/book.dart';
 import '../l10n/app_strings.dart';
 import '../main.dart';
+import '../utils/pdf_file_utils.dart';
 
 class BookFormLogic {
   final Book? book;
@@ -58,7 +59,7 @@ class BookFormLogic {
     );
     if (result != null && result.files.single.path != null) {
       final name = result.files.single.name;
-      final path = result.files.single.path!;
+      final path = await copyPdfToAppDir(result.files.single.path!);
       
       onFilePicked(path);
       

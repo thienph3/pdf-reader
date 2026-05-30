@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import '../l10n/app_strings.dart';
 import '../models/book.dart';
 import '../services/book_service.dart';
+import '../utils/pdf_file_utils.dart';
 
 /// Validates a book's file path. If invalid, prompts user to pick a new file.
 Future<String?> validateBookPath(BuildContext context, Book book, BookService bookService) async {
@@ -32,7 +33,7 @@ Future<String?> validateBookPath(BuildContext context, Book book, BookService bo
   final result = await FilePicker.pickFiles(
       type: FileType.custom, allowedExtensions: ['pdf']);
   if (result != null && result.files.single.path != null) {
-    final newPath = result.files.single.path!;
+    final newPath = await copyPdfToAppDir(result.files.single.path!);
     await bookService.update(book.copyWith(filePath: () => newPath));
     return newPath;
   }

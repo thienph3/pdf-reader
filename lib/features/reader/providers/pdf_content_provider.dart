@@ -131,6 +131,7 @@ class PdfContentProvider extends ContentProvider {
     required int currentPage,
     required ValueChanged<int> onPageChanged,
     required VoidCallback onReady,
+    PageController? pageController,
     bool horizontalScroll = false,
     int readingMode = 0,
     int cropMargins = 0,

@@ -106,11 +106,18 @@ class ReaderScreenBody extends StatelessWidget {
   PreferredSizeWidget _buildEpubAppBar(BuildContext context) {
     final title = state.epubProvider?.getChapterTitle(state.currentPage)
         ?? state.widget.fileName;
+    final bookmarked = state.isPageBookmarked(state.currentPage);
     return AppBar(
       leading: IconButton(icon: const Icon(Icons.arrow_back),
           onPressed: state.closeAndPop),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       actions: [
+        if (state.widget.bookId != null)
+          IconButton(
+            icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                color: bookmarked ? Theme.of(context).colorScheme.primary : null),
+            onPressed: () => state.toggleBookmark(state.currentPage),
+          ),
         Center(child: Padding(padding: const EdgeInsets.only(right: 16),
           child: Text('${state.currentPage + 1}/${state.totalPages}'))),
       ],
@@ -133,7 +140,7 @@ class ReaderScreenBody extends StatelessWidget {
 
   Widget _buildContent(BuildContext context) {
     if (state.isEpub) {
-      return state.epubProvider!.buildContent(context,
+      return state.provider.buildContent(context,
         currentPage: state.currentPage,
         onPageChanged: state.onPageChanged,
         onReady: state.onContentReady,

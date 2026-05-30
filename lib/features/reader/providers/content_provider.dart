@@ -19,6 +19,7 @@ abstract class ContentProvider {
     required int currentPage,
     required ValueChanged<int> onPageChanged,
     required VoidCallback onReady,
+    PageController? pageController,
   });
 
   /// Dispose resources.

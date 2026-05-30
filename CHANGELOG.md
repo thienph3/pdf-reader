@@ -3,6 +3,12 @@
 ## Unreleased
 
 ### Added
+- EPUB support with HTML-to-Markdown rendering via flutter_markdown
+- TXT/Markdown file reading with page splitting
+- CBZ/CBR comic book viewer with pinch-to-zoom
+- ContentProvider abstraction for format-agnostic reading
+- Format-agnostic bookmark toggle (works for EPUB, TXT, CBZ)
+- `htmlToMarkdown` utility for EPUB content conversion
 - Night/sepia/dark reading modes
 - "Continue Reading" card on home screen
 - Annotation export as Markdown

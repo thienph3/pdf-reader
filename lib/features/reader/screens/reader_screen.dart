@@ -81,8 +81,8 @@ class ReaderScreenState extends State<ReaderScreen> {
     });
     _currentPage = widget.initialPage;
     _sessionStartPage = widget.initialPage;
-    _isEpub = widget.filePath.toLowerCase().endsWith('.epub');
     final ext = widget.filePath.toLowerCase().split('.').last;
+    _isEpub = ext != 'pdf';
 
     if (ext == 'epub') {
       _epubProvider = EpubContentProvider(filePath: widget.filePath);
@@ -311,6 +311,22 @@ class ReaderScreenState extends State<ReaderScreen> {
     _readingTimer?.cancel();
     _saveProgress();
     if (mounted) Navigator.pop(context);
+  }
+
+  bool isPageBookmarked(int page) {
+    if (widget.bookId == null || _bookService == null) return false;
+    return _bookService!.isBookmarked(widget.bookId!, page);
+  }
+
+  void toggleBookmark(int page) {
+    if (widget.bookId == null || _bookService == null) return;
+    HapticFeedback.lightImpact();
+    if (isPageBookmarked(page)) {
+      _bookService!.removeBookmark(widget.bookId!, page);
+    } else {
+      _bookService!.addBookmark(widget.bookId!, page);
+    }
+    setState(() {});
   }
 
   void showGoToPageDialog() {

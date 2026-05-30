@@ -1,11 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:epub_plus/epub_plus.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import '../../../core/utils/html_to_markdown.dart';
 import 'content_provider.dart';
-
-String _stripHtml(String html) =>
-    html.replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll(RegExp(r'\s+'), ' ').trim();
 
 /// EPUB implementation of [ContentProvider].
 class EpubContentProvider extends ContentProvider {
@@ -47,7 +45,8 @@ class EpubContentProvider extends ContentProvider {
   @override
   Future<String?> getTextForPage(int page) async {
     if (page < 0 || page >= _chapters.length) return null;
-    return _stripHtml(_chapters[page].htmlContent ?? '');
+    final md = htmlToMarkdown(_chapters[page].htmlContent ?? '');
+    return md.replaceAll(RegExp(r'[#*\-]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
   @override
@@ -68,14 +67,8 @@ class EpubContentProvider extends ContentProvider {
       itemCount: _chapters.length,
       onPageChanged: onPageChanged,
       itemBuilder: (context, index) {
-        final text = _stripHtml(_chapters[index].htmlContent ?? '');
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: SelectableText(
-            text,
-            style: const TextStyle(fontSize: 16, height: 1.6),
-          ),
-        );
+        final content = htmlToMarkdown(_chapters[index].htmlContent ?? '');
+        return Markdown(data: content, selectable: true, padding: const EdgeInsets.all(16));
       },
     );
   }

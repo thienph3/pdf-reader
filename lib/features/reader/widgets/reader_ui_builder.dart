@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../../../core/l10n/app_strings.dart';
-import '../controllers/pdf_highlight_manager.dart';
-import '../controllers/pdf_bookmark_manager.dart';
-import './pdf_search_bar_builder.dart';
+import '../controllers/highlight_manager.dart';
+import '../controllers/bookmark_manager.dart';
+import './search_bar_builder.dart';
 
 /// UI builder methods for PDF viewer screen.
 class PdfViewUiBuilder {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../../../core/l10n/app_strings.dart';
-import './pdf_highlight_manager.dart';
+import './highlight_manager.dart';
 import '../../../models/highlight.dart';
 
 /// Manages text selection and context menu functionality for PDF viewer.

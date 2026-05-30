@@ -12,7 +12,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../providers/content_provider.dart';
 import '../providers/pdf_content_provider.dart';
 import '../providers/epub_content_provider.dart';
-import '../controllers/pdf_tts_controller.dart';
+import '../controllers/tts_controller.dart';
 import 'reader_screen_body.dart';
 
 class ReaderScreen extends StatefulWidget {

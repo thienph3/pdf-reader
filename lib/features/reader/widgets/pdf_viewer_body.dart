@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/utils/velocity_aware_scroll_physics.dart';
-import '../controllers/pdf_highlight_manager.dart';
-import '../controllers/pdf_text_selection_manager.dart';
-import '../controllers/pdf_view_highlights_ui.dart';
+import '../controllers/highlight_manager.dart';
+import '../controllers/text_selection_manager.dart';
+import '../controllers/highlights_ui.dart';
 import './pdf_view_search_ui.dart';
-import './pdf_reading_mode.dart';
+import './reading_mode.dart';
 import '../../../models/highlight.dart';
 
 class PdfViewerBody extends StatelessWidget {

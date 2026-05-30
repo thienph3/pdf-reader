@@ -5,7 +5,7 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:uuid/uuid.dart';
 import '../../../services/book_service.dart';
 import '../../../models/highlight.dart';
-import './pdf_text_cache.dart';
+import './text_cache.dart';
 import '../widgets/highlight_color_picker.dart';
 
 const _uuid = Uuid();

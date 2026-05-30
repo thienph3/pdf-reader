@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../widgets/pdf_view_ui_builder.dart';
-import '../controllers/pdf_view_dialogs_manager.dart';
+import '../widgets/reader_ui_builder.dart';
+import '../controllers/reader_dialogs.dart';
 import '../widgets/search_results_bar.dart';
-import '../widgets/pdf_ocr_overlay.dart';
-import '../widgets/pdf_page_thumbnails.dart';
+import '../widgets/ocr_overlay.dart';
+import '../widgets/page_thumbnails.dart';
 import 'reader_screen.dart';
 
 class ReaderScreenBody extends StatelessWidget {

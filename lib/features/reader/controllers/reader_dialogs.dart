@@ -3,8 +3,8 @@ import 'package:pdfrx/pdfrx.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../services/tts_service.dart';
 import '../../../core/utils/dialogs.dart';
-import './pdf_highlight_manager.dart';
-import './pdf_bookmark_manager.dart';
+import './highlight_manager.dart';
+import './bookmark_manager.dart';
 
 /// Manages dialogs and bottom sheets for PDF viewer.
 class PdfViewDialogsManager {

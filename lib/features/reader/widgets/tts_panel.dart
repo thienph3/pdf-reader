@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../services/tts_service.dart';
 import '../../../core/utils/dialogs.dart';
-import './pdf_tts_dialogs.dart';
+import './tts_dialogs.dart';
 
 /// Bottom panel for TTS controls in PDF viewer.
 class PdfTtsPanel extends StatelessWidget {

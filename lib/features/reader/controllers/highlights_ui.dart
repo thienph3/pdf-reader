@@ -3,8 +3,8 @@ import 'package:pdfrx/pdfrx.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../models/highlight.dart';
 import '../../../core/utils/dialogs.dart';
-import './pdf_highlight_manager.dart';
-import '../widgets/pdf_highlight_edit_form.dart';
+import './highlight_manager.dart';
+import '../widgets/highlight_edit_form.dart';
 
 /// UI components for highlights in PDF viewer.
 class PdfViewHighlightsUi {

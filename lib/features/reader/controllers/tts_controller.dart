@@ -3,7 +3,7 @@ import 'package:pdfrx/pdfrx.dart';
 import '../../../app/main.dart';
 import '../../../services/tts_service.dart';
 import '../../../core/utils/pdf_render_utils.dart';
-import './pdf_highlight_manager.dart';
+import './highlight_manager.dart';
 
 class PdfTtsController {
   final TtsService ttsService;

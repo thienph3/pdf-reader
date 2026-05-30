@@ -222,6 +222,26 @@ class AppStrings {
   // PDF error
   String get pdfLoadError => _isVi ? 'Không thể mở file PDF' : 'Failed to open PDF file';
   String get pdfCorruptMessage => _isVi ? 'File PDF bị lỗi hoặc không được hỗ trợ.' : 'The PDF file is corrupted or unsupported.';
+
+  // Reading modes
+  String get readingModeNormal => _isVi ? 'Chế độ bình thường' : 'Normal mode';
+  String get readingModeSepia => _isVi ? 'Chế độ sepia' : 'Sepia mode';
+  String get readingModeDark => _isVi ? 'Chế độ tối' : 'Dark mode';
+
+  // Continue reading card
+  String get continueBtn => _isVi ? 'Tiếp tục' : 'Continue';
+  String progress(int percent) => '$percent%';
+
+  // Annotation export
+  String get exportAnnotations => _isVi ? 'Xuất ghi chú' : 'Export annotations';
+  String get exportAnnotationsSuccess => _isVi ? 'Đã xuất ghi chú' : 'Annotations exported';
+  String get noAnnotations => _isVi ? 'Không có ghi chú để xuất' : 'No annotations to export';
+
+  // Page thumbnails
+  String get pageThumbnails => _isVi ? 'Trang' : 'Pages';
+
+  // Loading
+  String get loadingPdf => _isVi ? 'Đang tải PDF...' : 'Loading PDF...';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

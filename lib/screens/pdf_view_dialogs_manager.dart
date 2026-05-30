@@ -17,6 +17,8 @@ class PdfViewDialogsManager {
   final VoidCallback onShowHighlightsList;
   final ValueChanged<int> onPageSelected;
   final VoidCallback? onTtsSpeedChanged;
+  final VoidCallback? onCycleReadingMode;
+  final int readingMode;
 
   PdfViewDialogsManager({
     required this.highlightManager,
@@ -29,6 +31,8 @@ class PdfViewDialogsManager {
     required this.onShowHighlightsList,
     required this.onPageSelected,
     this.onTtsSpeedChanged,
+    this.onCycleReadingMode,
+    this.readingMode = 0,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -76,11 +80,31 @@ class PdfViewDialogsManager {
                   _showTtsSpeedPicker(context);
                 },
               ),
+            ListTile(
+              leading: Icon(_readingModeIcon()),
+              title: Text(_readingModeLabel(s)),
+              onTap: () {
+                Navigator.pop(ctx);
+                onCycleReadingMode?.call();
+              },
+            ),
           ],
         ),
       ),
     );
   }
+
+  IconData _readingModeIcon() => switch (readingMode) {
+    1 => Icons.wb_sunny_outlined,
+    2 => Icons.dark_mode_outlined,
+    _ => Icons.brightness_auto_outlined,
+  };
+
+  String _readingModeLabel(AppStrings s) => switch (readingMode) {
+    1 => s.readingModeSepia,
+    2 => s.readingModeDark,
+    _ => s.readingModeNormal,
+  };
 
   void _showTtsSpeedPicker(BuildContext context) {
     final s = AppStrings.of(context);

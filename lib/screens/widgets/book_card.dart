@@ -8,6 +8,7 @@ class BookCard extends StatefulWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onExportAnnotations;
 
   const BookCard({
     super.key,
@@ -15,6 +16,7 @@ class BookCard extends StatefulWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    this.onExportAnnotations,
   });
 
   @override
@@ -73,6 +75,7 @@ class _BookCardState extends State<BookCard> {
       onRead: widget.onTap,
       onEdit: widget.onEdit,
       onDelete: widget.onDelete,
+      onExportAnnotations: widget.onExportAnnotations,
     );
   }
 

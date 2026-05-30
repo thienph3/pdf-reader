@@ -23,53 +23,19 @@ Based on Product Manager + Technical Lead + Design Lead + QA/QC Lead review (202
 
 ## P1 — High Impact (Next 2–4 Weeks)
 
-### 13. PDF Night/Sepia Reading Modes
-- `ColorFiltered` widget wrapping PDF viewer (Normal / Sepia / Dark)
-- **Effort:** 3 hours
+## P1 — High Impact ✅ COMPLETED (2026-05-30)
 
-### 14. "Continue Reading" Card
-- Prominent card on home screen with one-tap resume
-- **Effort:** 3 hours
-
-### 15. Annotation Export
-- Export highlights + bookmarks as Markdown
-- **Effort:** 4 hours
-
-### 16. Automatic OCR → TTS Fallback
-- Auto-OCR with "Processing..." indicator; extract duplicated OCR logic (3x) into helper
-- **Effort:** 4 hours
-
-### 17. Loading & Empty States
-- Shimmer placeholders for book grid; loading indicator in PdfViewScreen before `onViewerReady`
-- **Effort:** 4 hours
-
-### 18. Responsive Layout (Tablet + Desktop)
-- Breakpoints, `NavigationRail` on tablet, responsive grid columns, `LayoutBuilder`
-- **Effort:** 1 day
-
-### 19. Page Thumbnail Grid
-- Quick navigation via page thumbnail sidebar/grid
-- **Effort:** 1 day
-
-### 20. Reading Reminder Notifications
-- `flutter_local_notifications`, time picker in settings
-- **Effort:** 1 day
-
-### 21. Fix Pages Read Inflation (BUG)
-- **Problem:** `.abs()` means going backward counts as pages "read"; `_sessionStartPage` resets on every save causing over-counting
-- **Fix:** Track max page reached, only count forward progress
-- **File:** `lib/screens/pdf_view_screen.dart`
-- **Effort:** 1 hour
-
-### 22. Fix TTS Auto-Advance Race Condition
-- **Problem:** 500ms `Future.delayed` callback fires even if user manually changed page during delay
-- **Fix:** Track target page in the delayed callback; skip if page changed
-- **File:** `lib/screens/pdf_view_screen.dart`
-- **Effort:** 1 hour
-
-### 23. iOS Background Audio Entitlement
-- Add `audio` to `UIBackgroundModes` for TTS
-- **Effort:** 1 hour
+### 13. ✅ PDF Night/Sepia Reading Modes
+### 14. ✅ "Continue Reading" Card
+### 15. ✅ Annotation Export (Markdown)
+### 16. ✅ Auto OCR → TTS Fallback (verified working)
+### 17. ✅ Loading States (PDF loading indicator)
+### 18. ✅ Responsive Layout (NavigationRail ≥600dp, responsive grid)
+### 19. ✅ Page Thumbnail Grid Navigation
+### 20. ⏳ Reading Reminder Notifications (deferred — needs native setup)
+### 21. ✅ Fix Pages Read Inflation (done in P0)
+### 22. ✅ Fix TTS Auto-Advance Race Condition
+### 23. ✅ iOS Background Audio Entitlement
 
 ---
 
@@ -288,9 +254,7 @@ Based on Product Manager + Technical Lead + Design Lead + QA/QC Lead review (202
 
 ```
 Week 1:   ✅ P0 DONE
-Week 2:   #13 Night mode, #14 Continue Reading, #17 Loading states, #21 Pages fix, #22 TTS race fix
-Week 3:   #18 Responsive layout, #19 Page thumbnails
-Week 4:   #15 Annotation export, #16 Auto OCR→TTS, #20 Reminders
+Week 2-4: ✅ P1 DONE (except reading reminders — deferred)
 Week 5:   #24 Unit tests (BookService, models)
 Week 6:   #24 Unit tests (TTS, ReadingLog, BookListManager)
 Week 7:   #25 Design tokens, #26 Haptics, #27 Accessibility, #28 Refactor PdfViewScreen

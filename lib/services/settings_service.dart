@@ -71,4 +71,14 @@ class SettingsService extends ChangeNotifier {
     await _box.put('scrollHorizontal', horizontal);
     notifyListeners();
   }
+
+  // --- PDF Reading Mode ---
+
+  /// 0 = normal, 1 = sepia, 2 = dark
+  int get readingMode => _box.get('readingMode', defaultValue: 0) as int;
+
+  Future<void> setReadingMode(int mode) async {
+    await _box.put('readingMode', mode);
+    notifyListeners();
+  }
 }

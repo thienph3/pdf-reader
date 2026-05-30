@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:io' as io;
+import 'package:file_picker/file_picker.dart';
 import '../main.dart';
 import '../models/book.dart';
 import '../services/book_service.dart';
 import '../services/category_service.dart';
 import '../l10n/app_strings.dart';
+import '../utils/annotation_export.dart';
 import 'book_actions.dart';
 import 'book_list_manager.dart';
 import 'book_actions_manager.dart';
@@ -123,6 +126,28 @@ class _BookListScreenState extends State<BookListScreen> {
       importFunction: (context, bookService) => importBooks(context, bookService),
       onRefresh: _refresh,
     );
+  }
+
+  Future<void> _handleExportAnnotations(Book book) async {
+    final s = AppStrings.of(context);
+    if (book.highlights.isEmpty && book.bookmarks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.noAnnotations)),
+      );
+      return;
+    }
+    final md = exportAnnotationsAsMarkdown(book);
+    final path = await FilePicker.saveFile(
+      dialogTitle: s.exportAnnotations,
+      fileName: '${book.title}_annotations.md',
+    );
+    if (path == null) return;
+    await io.File(path).writeAsString(md);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.exportAnnotationsSuccess)),
+      );
+    }
   }
 
   void _handleSmartCollectionTap(String title, int bookCount) {
@@ -322,11 +347,13 @@ class _BookListScreenState extends State<BookListScreen> {
 
     if (!showRecent) {
       return _isGridView
-          ? BookListUi.buildGridView(
+          ? BookListUi.buildResponsiveGridView(
+              context: context,
               books: filtered,
               onTap: (book) => book.canRead ? _handleOpenBook(book) : _handleEditBook(book),
               onEdit: _handleEditBook,
               onDelete: _handleConfirmDeleteBook,
+              onExportAnnotations: _handleExportAnnotations,
             )
           : BookListUi.buildListView(
               books: filtered,
@@ -337,12 +364,21 @@ class _BookListScreenState extends State<BookListScreen> {
             );
     }
 
-    // Show smart collections + recently opened + all books
+    // Show smart collections + continue reading + recently opened + all books
     final s = AppStrings.of(context);
     final collections = _listManager.getSmartCollections();
     
     return CustomScrollView(
       slivers: [
+        // Continue reading card
+        if (recentBooks.isNotEmpty)
+          SliverToBoxAdapter(
+            child: BookListUi.buildContinueReadingCard(
+              context: context,
+              book: recentBooks.first,
+              onContinue: () => _handleOpenBook(recentBooks.first),
+            ),
+          ),
         // Smart collections
         if (showSmartCollections) ...[
           SliverToBoxAdapter(
@@ -383,11 +419,13 @@ class _BookListScreenState extends State<BookListScreen> {
           ),
         ),
         if (_isGridView)
-          BookListUi.buildSliverGrid(
+          BookListUi.buildResponsiveSliverGrid(
+            context: context,
             books: filtered,
             onTap: (book) => book.canRead ? _handleOpenBook(book) : _handleEditBook(book),
             onEdit: _handleEditBook,
             onDelete: _handleConfirmDeleteBook,
+            onExportAnnotations: _handleExportAnnotations,
           )
         else
           BookListUi.buildSliverList(

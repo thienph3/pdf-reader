@@ -177,6 +177,7 @@ class BookCardUiBuilder {
     required VoidCallback onRead,
     required VoidCallback onEdit,
     required VoidCallback onDelete,
+    VoidCallback? onExportAnnotations,
   }) {
     final s = AppStrings.of(context);
     showModalBottomSheet(
@@ -202,6 +203,15 @@ class BookCardUiBuilder {
                 onEdit();
               },
             ),
+            if (onExportAnnotations != null && (book.highlights.isNotEmpty || book.bookmarks.isNotEmpty))
+              ListTile(
+                leading: const Icon(Icons.file_download_outlined),
+                title: Text(s.exportAnnotations),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onExportAnnotations();
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.delete),
               title: Text(s.delete),

@@ -62,6 +62,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   bool _isSearching = false;
   bool _ttsActive = false;
   String? _pdfError;
+  int _readingMode = 0; // 0=normal, 1=sepia, 2=dark
+  bool _pdfLoading = true;
 
   Timer? _saveDebounce;
   int _sessionSeconds = 0;
@@ -122,10 +124,13 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     if (_ttsService.isStopped && _ttsService.currentText == null) {
       if (_currentPage + 1 < _totalPages) {
         _ttsPageAdvancing = true;
-        _viewerController.goToPage(pageNumber: _currentPage + 2);
+        final targetPage = _currentPage + 1;
+        _viewerController.goToPage(pageNumber: targetPage + 1);
         Future.delayed(const Duration(milliseconds: 500), () {
           _ttsPageAdvancing = false;
-          if (mounted && _ttsActive) _speakCurrentPage();
+          if (mounted && _ttsActive && _currentPage == targetPage) {
+            _speakCurrentPage();
+          }
         });
       } else {
         setState(() => _ttsActive = false);
@@ -317,6 +322,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     }
     try {
       _horizontalScroll = SettingsScope.of(context).isHorizontalScroll;
+      _readingMode = SettingsScope.of(context).readingMode;
     } catch (_) {}
   }
 
@@ -337,6 +343,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       isTextViewMode: _textViewMode,
       isTextViewLoading: _textViewMode && !_textViewPages.containsKey(_currentPage),
       onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
+      onShowThumbnails: _totalPages > 0 ? _showPageThumbnails : null,
     );
     
     _dialogsManager = PdfViewDialogsManager(
@@ -352,6 +359,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onTtsSpeedChanged: () {
         if (_ttsActive) _speakCurrentPage();
       },
+      onCycleReadingMode: _cycleReadingMode,
+      readingMode: _readingMode,
     );
     
     _highlightsUi = PdfViewHighlightsUi(
@@ -529,6 +538,82 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     );
   }
 
+  void _showPageThumbnails() {
+    if (_pdfDocument == null || _totalPages == 0) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scrollController) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(AppStrings.of(context).pageThumbnails,
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            Expanded(
+              child: GridView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: _totalPages,
+                itemBuilder: (ctx, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _viewerController.goToPage(pageNumber: index + 1);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: index == _currentPage
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          width: index == _currentPage ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(3),
+                              child: PdfPageView(
+                                document: _pdfDocument!,
+                                pageNumber: index + 1,
+                                alignment: Alignment.center,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Text(
+                              '${index + 1}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _closeAndPop() {
     if (_closed) return;
     _closed = true;
@@ -568,6 +653,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       isTextViewMode: _textViewMode,
       isTextViewLoading: _textViewMode && !_textViewPages.containsKey(_currentPage),
       onToggleBookmark: (page) => _bookmarkManager.toggleBookmark(page),
+      onShowThumbnails: _totalPages > 0 ? _showPageThumbnails : null,
     );
 
     _dialogsManager = PdfViewDialogsManager(
@@ -583,6 +669,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       onTtsSpeedChanged: () {
         if (_ttsActive) _speakCurrentPage();
       },
+      onCycleReadingMode: _cycleReadingMode,
+      readingMode: _readingMode,
     );
 
     return PopScope(
@@ -638,7 +726,9 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                 ),
               )
             else
-              PdfViewer.file(
+              ColorFiltered(
+                colorFilter: _getReadingModeFilter(),
+                child: PdfViewer.file(
                   widget.filePath,
                   controller: _viewerController,
                   params: PdfViewerParams(
@@ -694,6 +784,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                         if (mounted) setState(() {}); // repaint search highlights
                       });
                       setState(() {
+                        _pdfLoading = false;
                         _totalPages = document.pages.length;
                         if (_currentPage >= _totalPages) _currentPage = 0;
                       });
@@ -729,6 +820,10 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
                         : null,
                   ),
                 ),
+              ),
+            // PDF loading indicator
+            if (_pdfLoading && _pdfError == null && !_textViewMode)
+              const Center(child: CircularProgressIndicator()),
             // Search results overlay
             if (_isSearching && _textSearcher != null)
               Positioned(
@@ -785,6 +880,31 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       }
     }
     return null;
+  }
+
+  ColorFilter _getReadingModeFilter() {
+    switch (_readingMode) {
+      case 1: // sepia
+        return const ColorFilter.matrix([
+          0.94, 0.0, 0.0, 0.0, 30.0,
+          0.0, 0.89, 0.0, 0.0, 15.0,
+          0.0, 0.0, 0.79, 0.0, 0.0,
+          0.0, 0.0, 0.0, 1.0, 0.0,
+        ]);
+      case 2: // dark (invert + hue rotate)
+        return const ColorFilter.matrix([
+          -1.0, 0.0, 0.0, 0.0, 255.0,
+          0.0, -1.0, 0.0, 0.0, 255.0,
+          0.0, 0.0, -1.0, 0.0, 255.0,
+          0.0, 0.0, 0.0, 1.0, 0.0,
+        ]);
+      default:
+        return const ColorFilter.mode(Colors.transparent, BlendMode.dst);
+    }
+  }
+
+  void _cycleReadingMode() {
+    setState(() => _readingMode = (_readingMode + 1) % 3);
   }
 
   void _snapToCurrentPage() {

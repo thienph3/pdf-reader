@@ -21,6 +21,7 @@ class PdfViewUiBuilder {
   final bool isTextViewMode;
   final bool isTextViewLoading;
   final ValueChanged<int> onToggleBookmark;
+  final VoidCallback? onShowThumbnails;
 
   PdfViewUiBuilder({
     required this.bookmarkManager,
@@ -38,6 +39,7 @@ class PdfViewUiBuilder {
     this.isTextViewMode = false,
     this.isTextViewLoading = false,
     required this.onToggleBookmark,
+    this.onShowThumbnails,
   });
 
   /// Builds the main app bar for PDF viewer.
@@ -105,6 +107,12 @@ class PdfViewUiBuilder {
                     ),
               tooltip: isTextViewMode ? 'PDF View' : 'Text View',
               onPressed: (isTextViewLoading || isOcrRunning) ? null : onToggleTextView,
+            ),
+          if (onShowThumbnails != null)
+            IconButton(
+              icon: const Icon(Icons.grid_view),
+              tooltip: 'Pages',
+              onPressed: onShowThumbnails,
             ),
           IconButton(
             icon: const Icon(Icons.more_vert),

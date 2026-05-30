@@ -7,6 +7,99 @@ import 'widgets/recent_book_item.dart';
 
 /// UI components for the book list screen.
 class BookListUi {
+  /// Builds a continue reading card for the most recently opened book.
+  static Widget buildContinueReadingCard({
+    required BuildContext context,
+    required Book book,
+    required VoidCallback onContinue,
+  }) {
+    final s = AppStrings.of(context);
+    final percent = (book.progressPercent * 100).toInt();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Card(
+        child: ListTile(
+          leading: const Icon(Icons.auto_stories),
+          title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          subtitle: Text('${s.progress(percent)} ${s.continueReading.toLowerCase()}'),
+          trailing: FilledButton(
+            onPressed: onContinue,
+            child: Text(s.continueBtn),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Builds a responsive grid view of books.
+  static Widget buildResponsiveGridView({
+    required BuildContext context,
+    required List<Book> books,
+    required Function(Book) onTap,
+    required Function(Book) onEdit,
+    required Function(Book) onDelete,
+    Function(Book)? onExportAnnotations,
+  }) {
+    final width = MediaQuery.of(context).size.width;
+    final crossAxisCount = width > 900 ? 4 : (width >= 600 ? 3 : 2);
+    return GridView.builder(
+      padding: const EdgeInsets.all(12).copyWith(bottom: 80),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: 0.58,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: books.length,
+      itemBuilder: (context, index) {
+        final book = books[index];
+        return BookCard(
+          book: book,
+          onTap: () => onTap(book),
+          onEdit: () => onEdit(book),
+          onDelete: () => onDelete(book),
+          onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null,
+        );
+      },
+    );
+  }
+
+  /// Builds a responsive sliver grid for books.
+  static Widget buildResponsiveSliverGrid({
+    required BuildContext context,
+    required List<Book> books,
+    required Function(Book) onTap,
+    required Function(Book) onEdit,
+    required Function(Book) onDelete,
+    Function(Book)? onExportAnnotations,
+  }) {
+    final width = MediaQuery.of(context).size.width;
+    final crossAxisCount = width > 900 ? 4 : (width >= 600 ? 3 : 2);
+    return SliverPadding(
+      padding: const EdgeInsets.all(12).copyWith(bottom: 80),
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: 0.58,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (_, i) {
+            final book = books[i];
+            return BookCard(
+              book: book,
+              onTap: () => onTap(book),
+              onEdit: () => onEdit(book),
+              onDelete: () => onDelete(book),
+              onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null,
+            );
+          },
+          childCount: books.length,
+        ),
+      ),
+    );
+  }
   /// Builds an empty state widget.
   static Widget buildEmptyState({
     required BuildContext context,

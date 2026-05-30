@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pdfrx/pdfrx.dart';
@@ -12,42 +13,53 @@ import '../services/ocr_service.dart';
 import '../services/highlight_service.dart';
 import '../services/streak_service.dart';
 import '../services/book_settings_service.dart';
+import '../services/crash_log_service.dart';
 import 'service_scope.dart';
 import './splash_screen.dart';
 
 export 'service_scope.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  ErrorWidget.builder = (FlutterErrorDetails details) {
-    return Material(child: Center(child: Padding(padding: const EdgeInsets.all(16), child: Text('Something went wrong', style: const TextStyle(fontSize: 16), textAlign: TextAlign.center))));
-  };
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  pdfrxFlutterInitialize();
-  final bookService = BookService();
-  await bookService.init();
-  final categoryService = CategoryService();
-  await categoryService.init();
-  final settingsService = SettingsService();
-  await settingsService.init();
-  final readingLogService = ReadingLogService();
-  await readingLogService.init();
-  final thumbnailService = ThumbnailService();
-  final ttsService = TtsService();
-  await ttsService.init();
-  final ocrService = OcrService();
-  await ocrService.init();
-  final highlightService = HighlightService(bookService);
-  final streakService = StreakService(readingLogService, bookService);
-  final bookSettingsService = BookSettingsService();
-  await bookSettingsService.init();
-  runApp(PdfReaderApp(
-    bookService: bookService, categoryService: categoryService,
-    settingsService: settingsService, readingLogService: readingLogService,
-    thumbnailService: thumbnailService, ttsService: ttsService,
-    ocrService: ocrService, highlightService: highlightService,
-    streakService: streakService, bookSettingsService: bookSettingsService,
-  ));
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      CrashLogService.logCrash(details.exception, details.stack ?? StackTrace.current);
+    };
+
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(child: Center(child: Padding(padding: const EdgeInsets.all(16), child: Text('Something went wrong', style: const TextStyle(fontSize: 16), textAlign: TextAlign.center))));
+    };
+
+    pdfrxFlutterInitialize();
+    final bookService = BookService();
+    await bookService.init();
+    final categoryService = CategoryService();
+    await categoryService.init();
+    final settingsService = SettingsService();
+    await settingsService.init();
+    final readingLogService = ReadingLogService();
+    await readingLogService.init();
+    final thumbnailService = ThumbnailService();
+    final ttsService = TtsService();
+    await ttsService.init();
+    final ocrService = OcrService();
+    await ocrService.init();
+    final highlightService = HighlightService(bookService);
+    final streakService = StreakService(readingLogService, bookService);
+    final bookSettingsService = BookSettingsService();
+    await bookSettingsService.init();
+    runApp(PdfReaderApp(
+      bookService: bookService, categoryService: categoryService,
+      settingsService: settingsService, readingLogService: readingLogService,
+      thumbnailService: thumbnailService, ttsService: ttsService,
+      ocrService: ocrService, highlightService: highlightService,
+      streakService: streakService, bookSettingsService: bookSettingsService,
+    ));
+  }, (error, stack) {
+    CrashLogService.logCrash(error, stack);
+  });
 }
 
 class PdfReaderApp extends StatefulWidget {

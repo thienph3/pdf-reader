@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../app/main.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/tts_service.dart';
+import '../../../services/crash_log_service.dart';
 import '../../../core/utils/dialogs.dart';
 import '../widgets/settings_tts_section.dart';
 
@@ -80,6 +82,23 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
           const Divider(height: 1),
           ListTile(leading: const Icon(Icons.restore), title: const Text('Restore'), subtitle: const Text('Import books from JSON backup'), onTap: () => _handleRestore(context)),
           if (ttsService != null) SettingsTtsSection(ttsService: ttsService!),
+          FutureBuilder<String?>(
+            future: CrashLogService.getFilePath(),
+            builder: (context, snap) {
+              if (!snap.hasData || snap.data == null) return const SizedBox.shrink();
+              return Column(children: [
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.bug_report_outlined),
+                  title: const Text('Export crash log'),
+                  onTap: () async {
+                    final path = await CrashLogService.getFilePath();
+                    if (path != null) await Share.shareXFiles([XFile(path)]);
+                  },
+                ),
+              ]);
+            },
+          ),
         ]),
       ),
     );

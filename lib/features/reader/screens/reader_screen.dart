@@ -75,10 +75,12 @@ class ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
-    WakelockPlus.enable();
-    ScreenBrightness().application.then((v) {
-      if (mounted) setState(() => _brightness = v);
-    });
+    try { WakelockPlus.enable(); } catch (_) {}
+    try {
+      ScreenBrightness().application.then((v) {
+        if (mounted) setState(() => _brightness = v);
+      });
+    } catch (_) {}
     _currentPage = widget.initialPage;
     _sessionStartPage = widget.initialPage;
     final ext = widget.filePath.toLowerCase().split('.').last;
@@ -180,7 +182,7 @@ class ReaderScreenState extends State<ReaderScreen> {
       _cropMargins = bs.cropMargins;
       if (bs.brightness >= 0) {
         _brightness = bs.brightness;
-        ScreenBrightness().setApplicationScreenBrightness(bs.brightness);
+        try { ScreenBrightness().setApplicationScreenBrightness(bs.brightness); } catch (_) {}
       }
     }
   }
@@ -299,7 +301,7 @@ class ReaderScreenState extends State<ReaderScreen> {
   void setCropMargins(int c) { setState(() => _cropMargins = c); _saveBookSettings(); }
   void setBrightness(double v) {
     setState(() { _brightness = v; _showBrightnessIndicator = true; });
-    ScreenBrightness().setApplicationScreenBrightness(v);
+    try { ScreenBrightness().setApplicationScreenBrightness(v); } catch (_) {}
   }
   void hideBrightnessIndicator() =>
       setState(() => _showBrightnessIndicator = false);
@@ -374,8 +376,8 @@ class ReaderScreenState extends State<ReaderScreen> {
     if (!_isEpub) ttsService.removeListener(_onTtsStateChanged);
     if (!_closed) _saveProgress();
     _provider.dispose();
-    WakelockPlus.disable();
-    ScreenBrightness().resetApplicationScreenBrightness();
+    try { WakelockPlus.disable(); } catch (_) {}
+    try { ScreenBrightness().resetApplicationScreenBrightness(); } catch (_) {}
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }

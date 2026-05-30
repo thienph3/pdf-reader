@@ -61,6 +61,7 @@ class PdfTtsController {
     var text = cached?.fullText;
 
     if ((text == null || text.trim().isEmpty) && bookId != null) {
+      if (!context.mounted) return;
       final ocrService = OcrServiceScope.of(context);
       text = ocrService.getCachedText(bookId!, pageNumber);
       if (text == null || text.trim().isEmpty) {
@@ -69,7 +70,7 @@ class PdfTtsController {
           try {
             final page = pdfDocument.pages[pageNumber - 1];
             final pngBytes = await renderPageToPngBytes(page);
-            if (pngBytes != null) {
+            if (pngBytes != null && context.mounted) {
               text = await ocrService.ocrFromPngBytes(
                 bookId: bookId!,
                 pageNumber: pageNumber,
@@ -107,7 +108,7 @@ class PdfTtsController {
     if (ttsActive && ttsService.isPlaying && !_ttsPageAdvancing) {
       ttsService.stop();
       Future.delayed(const Duration(milliseconds: 300), () {
-        if (ttsActive) {
+        if (ttsActive && context.mounted) {
           speakCurrentPage(context, currentPage, pdfDocument, setOcrInProgress);
         }
       });

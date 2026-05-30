@@ -72,7 +72,7 @@ class PdfTtsPanel extends StatelessWidget {
             IconButton(icon: const Icon(Icons.stop), onPressed: ttsService.isStopped ? null : () => ttsService.stop()),
             const SizedBox(width: 16),
             FilledButton.icon(
-              onPressed: hasText ? () { if (ttsService.isPlaying) ttsService.pause(); else onPlay(); } : null,
+              onPressed: hasText ? () { if (ttsService.isPlaying) { ttsService.pause(); } else { onPlay(); } } : null,
               icon: Icon(ttsService.isPlaying ? Icons.pause : Icons.play_arrow),
               label: Text(ttsService.isPlaying ? 'Pause' : 'Read Page'),
               style: FilledButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: colorScheme.onPrimary),

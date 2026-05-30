@@ -1,72 +1,67 @@
-# Phân tích file lớn — PDF Reader
+# PDF Reader — File Size & Complexity Analysis
 
-**Cập nhật:** 30/5/2026
-
----
-
-## Tổng quan
-
-- **Total Dart files:** 48
-- **Total LOC:** 7,849
-- **Files > 300 dòng:** 4
+**Updated:** 2026-05-31
 
 ---
 
-## Files > 200 dòng (cần theo dõi)
+## Summary
 
-| File | Dòng | Trạng thái | Ghi chú |
-|------|------|-----------|---------|
-| `pdf_view_screen.dart` | 815 | ⚠️ Cần refactor tiếp | God Object: TTS + OCR + text view + progress |
-| `book_list_screen.dart` | 402 | ✅ Đã refactor | Đã tách manager + UI |
-| `tts_service.dart` | 353 | ✅ Chấp nhận | Service phức tạp, logic hợp lý |
-| `pdf_highlight_manager.dart` | 315 | ✅ Chấp nhận | Module chuyên biệt |
-| `pdf_view_highlights_ui.dart` | 296 | ✅ Chấp nhận | UI highlights |
-| `pdf_tts_panel.dart` | 291 | ⚠️ Có thể unused | Kiểm tra lại usage |
-| `book_list_manager.dart` | 291 | ✅ Chấp nhận | Filter/sort logic |
-| `book_list_ui.dart` | 288 | ✅ Chấp nhận | UI components |
-| `settings_screen.dart` | 279 | ✅ Chấp nhận | |
-| `book_card_ui_builder.dart` | 256 | ✅ Chấp nhận | Card UI |
-| `stats_screen.dart` | 242 | ✅ Chấp nhận | |
-| `book_service.dart` | 229 | ✅ Chấp nhận | |
-| `category_screen.dart` | 215 | ✅ Chấp nhận | |
-| `pdf_view_ui_builder.dart` | 199 | ✅ Chấp nhận | |
-| `pdf_text_selection_manager.dart` | 182 | ✅ Chấp nhận | |
-| `ocr_service.dart` | 177 | ✅ Chấp nhận | |
-| `pdf_view_dialogs_manager.dart` | 173 | ✅ Chấp nhận | |
-| `book_form_ui_builder.dart` | 170 | ✅ Chấp nhận | |
-| `book_form_screen.dart` | 166 | ✅ Chấp nhận | |
-| `book_form_logic.dart` | 165 | ✅ Chấp nhận | |
+- **Total files:** 79 Dart files
+- **Total LOC:** ~7,100
+- **Average file size:** 90 LOC
+- **Max file size:** 200 LOC (enforced, except app_strings.dart at 263)
+- **Files > 150 LOC:** ~10 (all within limit)
 
 ---
 
-## Ưu tiên refactor tiếp
+## Largest Files (by LOC)
 
-### 1. `pdf_view_screen.dart` (815 dòng) — HIGH
-**Vấn đề:**
-- Vẫn chứa TTS logic (toggle, speak, auto-advance)
-- OCR batch processing + text view mode
-- Progress saving + reading timer
-- 20+ instance variables
-
-**Đề xuất tách:**
-- `PdfTtsController` — TTS toggle, speak page, auto-advance, listener
-- `PdfOcrHelper` — OCR batch, text view loading, render-to-PNG logic
-- Giữ `pdf_view_screen.dart` < 400 dòng
-
-**Prerequisite:** Unit tests cho TTS và OCR logic trước
-
-### 2. `tts_service.dart` (353 dòng) — LOW
-- Logic phức tạp nhưng cohesive (language detection, text cleaning, playback)
-- Chấp nhận được ở kích thước hiện tại
-- Có thể tách `TtsLanguageDetector` nếu cần test riêng
+| File | LOC | Status |
+|------|-----|--------|
+| `core/l10n/app_strings.dart` | 263 | ✅ Exempt (localization) |
+| `features/reader/screens/pdf_view_screen.dart` | ~195 | ✅ OK |
+| `features/reader/controllers/pdf_view_dialogs_manager.dart` | ~197 | ✅ OK |
+| `features/reader/controllers/pdf_highlight_manager.dart` | ~190 | ✅ OK |
+| `features/library/screens/book_list_screen.dart` | ~185 | ✅ OK |
+| `services/book_service.dart` | ~180 | ✅ OK |
+| `features/reader/widgets/pdf_tts_panel.dart` | ~175 | ✅ OK |
 
 ---
 
-## Guideline kích thước file
+## Complexity by Feature
 
-| Kích thước | Đánh giá |
-|-----------|----------|
-| < 200 dòng | ✅ Tốt |
-| 200-400 dòng | ✅ Chấp nhận nếu cohesive |
-| 400-600 dòng | ⚠️ Cần xem xét tách |
-| > 600 dòng | 🔴 Cần refactor |
+| Feature | Files | Screens | Widgets | Controllers |
+|---------|-------|---------|---------|-------------|
+| Library | 18 | 2 | 6 | 10 |
+| Reader | 25 | 1 | 15 | 9 |
+| Stats | 2 | 1 | 1 | 0 |
+| Settings | 4 | 2 | 2 | 0 |
+| **Total** | **49** | **6** | **24** | **19** |
+
+Plus: 4 app files, 8 core files, 5 models, 12 services = 79 total.
+
+---
+
+## File Size Guidelines
+
+| Size | Assessment |
+|------|-----------|
+| < 100 LOC | ✅ Ideal |
+| 100-150 LOC | ✅ Good |
+| 150-200 LOC | ⚠️ Monitor — consider splitting if adding features |
+| > 200 LOC | 🔴 Must split (except localization files) |
+
+---
+
+## When to Split a File
+
+Split when:
+1. File approaches 200 LOC
+2. File has 2+ distinct responsibilities
+3. A section could be reused elsewhere
+4. Testing requires mocking internal parts
+
+Don't split when:
+1. It's a localization/constants file
+2. Splitting would create circular imports
+3. The code is cohesive (single responsibility, just long)

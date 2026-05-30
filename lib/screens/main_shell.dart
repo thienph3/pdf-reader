@@ -8,7 +8,6 @@ import 'book_list_screen.dart';
 import 'category_screen.dart';
 import 'stats_screen.dart';
 import 'settings_screen.dart';
-import 'pdf_view_screen.dart';
 import 'shared_route.dart';
 
 class MainShell extends StatefulWidget {
@@ -34,22 +33,22 @@ class _MainShellState extends State<MainShell> {
       if (path == null || path.isEmpty || !mounted) return;
 
       final bookService = BookServiceScope.of(context);
-      final fileName = path.split('/').last;
+      final fileName = fileNameFromPath(path);
 
       // Check if this file is already in the library
       final existing = bookService.getAll().where((b) =>
-        b.filePath != null && b.filePath!.split('/').last == fileName
+        b.filePath != null && fileNameFromPath(b.filePath!) == fileName
       ).firstOrNull;
 
       if (existing != null) {
         // Existing book — open directly with saved progress
         if (!mounted) return;
-        Navigator.push(context, buildPageRoute(PdfViewScreen(
+        await openPdfViewer(context,
           filePath: existing.filePath!,
           fileName: existing.title,
           bookId: existing.id,
           initialPage: existing.lastPage,
-        )));
+        );
       } else {
         // New PDF — copy to app dir and prompt to add
         final savedPath = await copyPdfToAppDir(path);
@@ -88,11 +87,11 @@ class _MainShellState extends State<MainShell> {
         }
 
         if (!mounted) return;
-        Navigator.push(context, buildPageRoute(PdfViewScreen(
+        await openPdfViewer(context,
           filePath: savedPath,
           fileName: title,
           bookId: bookId,
-        )));
+        );
       }
     } catch (_) {}
   }

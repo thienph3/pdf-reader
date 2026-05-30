@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pdf_view_screen.dart';
 
 /// Shared page transition for all navigation in the app.
 Route<T> buildPageRoute<T>(Widget page) {
@@ -22,4 +23,20 @@ Route<T> buildPageRoute<T>(Widget page) {
       );
     },
   );
+}
+
+/// Opens the PDF viewer with standard parameters.
+Future<void> openPdfViewer(
+  BuildContext context, {
+  required String filePath,
+  required String fileName,
+  String? bookId,
+  int initialPage = 0,
+}) {
+  return Navigator.push(context, buildPageRoute(PdfViewScreen(
+    filePath: filePath,
+    fileName: fileName,
+    bookId: bookId,
+    initialPage: initialPage,
+  )));
 }

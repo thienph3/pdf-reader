@@ -25,3 +25,9 @@ Future<String> copyPdfToAppDir(String sourcePath) async {
   await File(sourcePath).copy(destPath);
   return destPath;
 }
+
+/// Extracts filename from a full path.
+String fileNameFromPath(String path) {
+  final sep = path.contains('\\') ? '\\' : '/';
+  return path.split(sep).last;
+}

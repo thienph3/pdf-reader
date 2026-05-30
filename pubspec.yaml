@@ -24,6 +24,8 @@ dependencies:
   google_mlkit_text_recognition: ^0.14.0
   flutter_markdown: ^0.7.7
   share_plus: ^10.0.0
+  wakelock_plus: ^1.2.8
+  screen_brightness: ^1.0.1
 
 dev_dependencies:
   flutter_test:

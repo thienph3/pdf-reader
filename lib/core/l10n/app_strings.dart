@@ -246,6 +246,12 @@ class AppStrings {
   // Open file intent
   String get addToLibraryPrompt => _isVi ? 'Thêm vào thư viện để lưu tiến độ?' : 'Add to library to save progress?';
   String get readOnly => _isVi ? 'Chỉ đọc' : 'Just read';
+
+  // Power-user features
+  String get goToPage => _isVi ? 'Đi đến trang' : 'Go to page';
+  String get go => _isVi ? 'Đi' : 'Go';
+  String get brightness => _isVi ? 'Độ sáng' : 'Brightness';
+  String get invalidPage => _isVi ? 'Số trang không hợp lệ' : 'Invalid page number';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

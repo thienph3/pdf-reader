@@ -27,6 +27,7 @@ class PdfViewerBody extends StatelessWidget {
   final void Function(PdfDocument, PdfViewerController) onViewerReady;
   final VoidCallback onSnapToPage;
   final Highlight? Function(PdfPageHitTestResult) findTappedHighlight;
+  final VoidCallback? onCenterTap;
 
   const PdfViewerBody({
     super.key,
@@ -47,6 +48,7 @@ class PdfViewerBody extends StatelessWidget {
     required this.onViewerReady,
     required this.onSnapToPage,
     required this.findTappedHighlight,
+    this.onCenterTap,
   });
 
   @override
@@ -98,11 +100,23 @@ class PdfViewerBody extends StatelessWidget {
             if (details.type != PdfViewerGeneralTapType.tap) return false;
             final hit = controller.getPdfPageHitTestResult(
               details.documentPosition, useDocumentLayoutCoordinates: true);
-            if (hit == null) return false;
-            final tapped = findTappedHighlight(hit);
-            if (tapped == null) return false;
-            highlightsUi.showEditMenuForHighlight(context: context, highlight: tapped);
-            return true;
+            if (hit != null) {
+              final tapped = findTappedHighlight(hit);
+              if (tapped != null) {
+                highlightsUi.showEditMenuForHighlight(context: context, highlight: tapped);
+                return true;
+              }
+            }
+            // Center tap toggles fullscreen (only if not horizontal — handled by tap zones)
+            if (!horizontalScroll && onCenterTap != null) {
+              final size = MediaQuery.of(context).size;
+              final dx = details.localPosition.dx;
+              if (dx > size.width * 0.25 && dx < size.width * 0.75) {
+                onCenterTap!();
+                return true;
+              }
+            }
+            return false;
           },
           onViewerReady: onViewerReady,
           scrollPhysics: VelocityAwareScrollPhysics(

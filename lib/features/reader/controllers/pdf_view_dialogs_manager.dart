@@ -20,6 +20,8 @@ class PdfViewDialogsManager {
   final VoidCallback? onTtsSpeedChanged;
   final VoidCallback? onCycleReadingMode;
   final int readingMode;
+  final double brightness;
+  final ValueChanged<double>? onBrightnessChanged;
 
   PdfViewDialogsManager({
     required this.highlightManager,
@@ -34,6 +36,8 @@ class PdfViewDialogsManager {
     this.onTtsSpeedChanged,
     this.onCycleReadingMode,
     this.readingMode = 0,
+    this.brightness = 0.5,
+    this.onBrightnessChanged,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -89,6 +93,15 @@ class PdfViewDialogsManager {
                 onCycleReadingMode?.call();
               },
             ),
+            if (onBrightnessChanged != null)
+              ListTile(
+                leading: const Icon(Icons.brightness_6),
+                title: Text(s.brightness),
+                subtitle: StatefulBuilder(builder: (_, setSt) => Slider(
+                  value: brightness,
+                  onChanged: (v) { setSt(() {}); onBrightnessChanged!(v); },
+                )),
+              ),
           ],
         ),
       ),

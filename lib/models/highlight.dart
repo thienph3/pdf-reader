@@ -1,3 +1,5 @@
+enum AnnotationType { highlight, underline, strikethrough }
+
 /// A persistent text highlight on a specific page.
 class Highlight {
   final String id;
@@ -8,6 +10,7 @@ class Highlight {
   final int colorValue; // highlight color
   final String note;
   final DateTime createdAt;
+  final AnnotationType type;
 
   const Highlight({
     required this.id,
@@ -18,9 +21,10 @@ class Highlight {
     this.colorValue = 0x80FFEB3B, // semi-transparent yellow
     this.note = '',
     required this.createdAt,
+    this.type = AnnotationType.highlight,
   });
 
-  Highlight copyWith({int? colorValue, String? note}) => Highlight(
+  Highlight copyWith({int? colorValue, String? note, AnnotationType? type}) => Highlight(
         id: id,
         page: page,
         startIndex: startIndex,
@@ -29,6 +33,7 @@ class Highlight {
         colorValue: colorValue ?? this.colorValue,
         note: note ?? this.note,
         createdAt: createdAt,
+        type: type ?? this.type,
       );
 
   Map<String, dynamic> toMap() => {
@@ -40,6 +45,7 @@ class Highlight {
         'colorValue': colorValue,
         'note': note,
         'createdAt': createdAt.toIso8601String(),
+        'type': type.index,
       };
 
   factory Highlight.fromMap(Map<dynamic, dynamic> map) => Highlight(
@@ -51,5 +57,6 @@ class Highlight {
         colorValue: map['colorValue'] as int? ?? 0x80FFEB3B,
         note: map['note'] as String? ?? '',
         createdAt: DateTime.parse(map['createdAt'] as String),
+        type: AnnotationType.values[(map['type'] as int?) ?? 0],
       );
 }

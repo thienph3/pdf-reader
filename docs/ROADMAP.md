@@ -57,42 +57,18 @@ Based on Product Manager + Technical Lead + Design Lead + QA/QC Lead review (202
 
 ---
 
-## P3 — Growth Differentiators (2–3 Months)
+## P3 — Growth Differentiators (partially completed 2026-05-31)
 
-### 37. Hive Migration
-- Target: `isar`, `drift`, or `objectbox`
-- **Effort:** 2-3 days
-
-### 38. Separate Highlights Storage
-- Move from `List<Highlight>` inside Book to separate box keyed by `bookId_page`
-- **Effort:** 1 day
-
-### 39. Clean Up Category Orphans on Delete
-- When category deleted, clear `categoryId` on affected books
-- **Effort:** 1 hour
-
-### 40. Reading Log Cleanup
-- Add retention policy (e.g., keep 2 years) or export mechanism
-- **Effort:** 2 hours
-
-### 41. Additional Annotation Types
-- Underline, strikethrough
-- **Effort:** 2-3 days
-
-### 42. Reading Streaks & Achievements
-- **Effort:** 2-3 days
-
-### 43. EPUB Support
-- **Effort:** 1-2 weeks
-
-### 44. Optional Cloud Backup
-- **Effort:** 1 week
-
-### 45. Accessibility Audit (Full)
-- **Effort:** 3-5 days
-
-### 46. Tablet Split View
-- **Effort:** 2-3 days
+### 37. ⏳ Hive Migration (deferred — needs full test coverage first)
+### 38. ✅ Separate Highlights Storage (facade wrapping BookService)
+### 39. ✅ Clean Up Category Orphans on Delete
+### 40. ✅ Reading Log Cleanup (retention policy, keep 2 years)
+### 41. ✅ Additional Annotation Types (underline, strikethrough)
+### 42. ✅ Reading Streaks & Achievements (5 badges + streak display)
+### 43. ⏳ EPUB Support (deferred — 1-2 weeks scope)
+### 44. ⏳ Optional Cloud Backup (deferred — 1 week scope)
+### 45. ⏳ Accessibility Audit Full (deferred)
+### 46. ⏳ Tablet Split View (deferred — needs proper routing/state management)
 
 ---
 

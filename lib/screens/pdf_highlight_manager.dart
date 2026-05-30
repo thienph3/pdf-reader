@@ -65,7 +65,17 @@ class PdfHighlightManager {
         for (var i = h.startIndex; i < h.endIndex; i++) {
           final charRect = text.charRects[i];
           final rect = charRect.toRectInDocument(page: page, pageRect: pageRect);
-          canvas.drawRect(rect, paint);
+          switch (h.type) {
+            case AnnotationType.underline:
+              paint.strokeWidth = 2;
+              canvas.drawLine(rect.bottomLeft, rect.bottomRight, paint);
+            case AnnotationType.strikethrough:
+              paint.strokeWidth = 2;
+              final y = rect.top + rect.height / 2;
+              canvas.drawLine(Offset(rect.left, y), Offset(rect.right, y), paint);
+            case AnnotationType.highlight:
+              canvas.drawRect(rect, paint);
+          }
         }
       } else {
         // Draw approximate highlight rectangle
@@ -130,6 +140,7 @@ class PdfHighlightManager {
     String selectedText,
     VoidCallback? onSuccess, {
     String note = '',
+    AnnotationType type = AnnotationType.highlight,
   }) async {
     debugPrint('createHighlight: bookId=$bookId, bookService=$bookService');
     if (bookId == null || bookService == null) {
@@ -146,6 +157,7 @@ class PdfHighlightManager {
       colorValue: currentHighlightColor,
       note: note,
       createdAt: DateTime.now(),
+      type: type,
     );
     
     debugPrint('createHighlight: adding highlight page=${highlight.page} start=${highlight.startIndex} end=${highlight.endIndex}');

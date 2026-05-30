@@ -59,6 +59,8 @@ class _MainShellState extends State<MainShell> {
       builder: (context, constraints) {
         if (constraints.maxWidth >= 600) {
           // Tablet: NavigationRail on left
+          // TODO(#46): When width >= 900dp and on Library tab, show split view
+          // with book list on left (flex: 2) and PDF reader on right (flex: 3).
           return Scaffold(
             body: Row(
               children: [

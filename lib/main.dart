@@ -9,6 +9,8 @@ import 'services/settings_service.dart';
 import 'services/thumbnail_service.dart';
 import 'services/tts_service.dart';
 import 'services/ocr_service.dart';
+import 'services/highlight_service.dart';
+import 'services/streak_service.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -44,6 +46,8 @@ void main() async {
   await ttsService.init();
   final ocrService = OcrService();
   await ocrService.init();
+  final highlightService = HighlightService(bookService);
+  final streakService = StreakService(readingLogService, bookService);
   runApp(PdfReaderApp(
     bookService: bookService,
     categoryService: categoryService,
@@ -52,6 +56,8 @@ void main() async {
     thumbnailService: thumbnailService,
     ttsService: ttsService,
     ocrService: ocrService,
+    highlightService: highlightService,
+    streakService: streakService,
   ));
 }
 
@@ -109,6 +115,16 @@ class OcrServiceScope extends InheritedWidget {
   bool updateShouldNotify(OcrServiceScope oldWidget) => false;
 }
 
+class HighlightServiceScope {
+  static HighlightService of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.highlightService;
+}
+
+class StreakServiceScope {
+  static StreakService of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.streakService;
+}
+
 /// Single InheritedWidget holding all services, replacing 7 nested ones.
 class ServiceScope extends InheritedWidget {
   final BookService bookService;
@@ -118,6 +134,8 @@ class ServiceScope extends InheritedWidget {
   final TtsService ttsService;
   final OcrService ocrService;
   final SettingsService settingsService;
+  final HighlightService highlightService;
+  final StreakService streakService;
 
   const ServiceScope({
     super.key,
@@ -128,6 +146,8 @@ class ServiceScope extends InheritedWidget {
     required this.ttsService,
     required this.ocrService,
     required this.settingsService,
+    required this.highlightService,
+    required this.streakService,
     required super.child,
   });
 
@@ -143,6 +163,8 @@ class PdfReaderApp extends StatefulWidget {
   final ThumbnailService thumbnailService;
   final TtsService ttsService;
   final OcrService ocrService;
+  final HighlightService highlightService;
+  final StreakService streakService;
 
   const PdfReaderApp({
     super.key,
@@ -153,6 +175,8 @@ class PdfReaderApp extends StatefulWidget {
     required this.thumbnailService,
     required this.ttsService,
     required this.ocrService,
+    required this.highlightService,
+    required this.streakService,
   });
 
   @override
@@ -186,6 +210,8 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
       ttsService: widget.ttsService,
       ocrService: widget.ocrService,
       settingsService: settings,
+      highlightService: widget.highlightService,
+      streakService: widget.streakService,
       child: SettingsScope(
         settingsService: settings,
         child: MaterialApp(

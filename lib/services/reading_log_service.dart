@@ -66,4 +66,18 @@ class ReadingLogService {
     return ReadingLog(
         date: prefix, seconds: totalSeconds, pagesRead: totalPages);
   }
+
+  /// Delete logs older than [days] days. Default: keep 2 years.
+  Future<int> cleanup({int keepDays = 730}) async {
+    final cutoff = DateTime.now().subtract(Duration(days: keepDays));
+    final cutoffKey = '${cutoff.year}-${cutoff.month.toString().padLeft(2, '0')}-${cutoff.day.toString().padLeft(2, '0')}';
+    final keysToDelete = _box.keys.where((k) => (k as String).compareTo(cutoffKey) < 0).toList();
+    for (final key in keysToDelete) {
+      await _box.delete(key);
+    }
+    return keysToDelete.length;
+  }
+
+  /// Total number of log entries stored.
+  int get entryCount => _box.length;
 }

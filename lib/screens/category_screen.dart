@@ -74,6 +74,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
       ),
     );
     if (confirm == true) {
+      // Clean up orphan references
+      if (!mounted) return;
+      final bookService = BookServiceScope.of(context);
+      for (final book in bookService.getAll().where((b) => b.categoryId == cat.id)) {
+        await bookService.update(book.copyWith(categoryId: () => null));
+      }
       await _catService.delete(cat.id);
       _refresh();
     }

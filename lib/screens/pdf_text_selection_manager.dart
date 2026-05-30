@@ -35,13 +35,14 @@ class PdfTextSelectionManager {
         // Show color picker bottom sheet
         _showHighlightColorPicker(
           context,
-          onConfirm: (color, note) async {
+          onConfirm: (color, note, type) async {
             highlightManager!.currentHighlightColor = color;
             await highlightManager!.createHighlightFromSelection(
               range,
               selectedText,
               onHighlightCreated,
               note: note,
+              type: type,
             );
             highlightManager!.viewerController.invalidate();
           },
@@ -62,9 +63,10 @@ class PdfTextSelectionManager {
 
   void _showHighlightColorPicker(
     BuildContext context, {
-    required Future<void> Function(int color, String note) onConfirm,
+    required Future<void> Function(int color, String note, AnnotationType type) onConfirm,
   }) {
     int selectedColor = highlightManager?.currentHighlightColor ?? 0x80FFEB3B;
+    var selectedType = AnnotationType.highlight;
     final noteController = TextEditingController();
 
     showModalBottomSheet(
@@ -110,6 +112,16 @@ class PdfTextSelectionManager {
                 }).toList(),
               ),
               const SizedBox(height: 12),
+              SegmentedButton<AnnotationType>(
+                segments: const [
+                  ButtonSegment(value: AnnotationType.highlight, icon: Icon(Icons.highlight), label: Text('Highlight')),
+                  ButtonSegment(value: AnnotationType.underline, icon: Icon(Icons.format_underline), label: Text('Underline')),
+                  ButtonSegment(value: AnnotationType.strikethrough, icon: Icon(Icons.format_strikethrough), label: Text('Strike')),
+                ],
+                selected: {selectedType},
+                onSelectionChanged: (v) => setSheetState(() => selectedType = v.first),
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: noteController,
                 maxLines: 2,
@@ -125,7 +137,7 @@ class PdfTextSelectionManager {
                 child: FilledButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    onConfirm(selectedColor, noteController.text.trim());
+                    onConfirm(selectedColor, noteController.text.trim(), selectedType);
                   },
                   child: Text(AppStrings.of(context).save),
                 ),

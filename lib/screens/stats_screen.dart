@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
 import '../l10n/app_strings.dart';
+import '../services/streak_service.dart';
 
 class StatsScreen extends StatelessWidget {
   const StatsScreen({super.key});
@@ -11,6 +12,7 @@ class StatsScreen extends StatelessWidget {
     final bookService = BookServiceScope.of(context);
     final settings = SettingsScope.of(context);
     final logService = ReadingLogServiceScope.of(context);
+    final streakService = StreakServiceScope.of(context);
     final books = bookService.getAll();
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -90,6 +92,29 @@ class StatsScreen extends StatelessWidget {
             label: _isVi(context) ? 'Trang đã đọc tháng này' : 'Pages this month',
             value: '${thisMonth.pagesRead}',
           ),
+
+          // Streaks
+          const SizedBox(height: 16),
+          Text(_isVi(context) ? 'Chuỗi đọc' : 'Reading Streaks',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _StatTile(
+            icon: Icons.local_fire_department,
+            label: _isVi(context) ? 'Chuỗi hiện tại' : 'Current streak',
+            value: '${streakService.currentStreak} ${_isVi(context) ? 'ngày' : 'days'}',
+          ),
+          _StatTile(
+            icon: Icons.emoji_events,
+            label: _isVi(context) ? 'Chuỗi dài nhất' : 'Longest streak',
+            value: '${streakService.longestStreak} ${_isVi(context) ? 'ngày' : 'days'}',
+          ),
+
+          // Achievements
+          const SizedBox(height: 16),
+          Text(_isVi(context) ? 'Thành tựu' : 'Achievements',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _AchievementsWrap(achievements: streakService.unlockedAchievements, isVi: _isVi(context)),
         ],
       ),
     );
@@ -237,6 +262,28 @@ class _StatTile extends StatelessWidget {
               .textTheme
               .titleMedium
               ?.copyWith(fontWeight: FontWeight.bold)),
+    );
+  }
+}
+
+class _AchievementsWrap extends StatelessWidget {
+  final List<Achievement> achievements;
+  final bool isVi;
+  const _AchievementsWrap({required this.achievements, required this.isVi});
+
+  @override
+  Widget build(BuildContext context) {
+    if (achievements.isEmpty) {
+      return Text(isVi ? 'Chưa có thành tựu nào' : 'No achievements yet',
+          style: Theme.of(context).textTheme.bodyMedium);
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: achievements.map((a) => Chip(
+        avatar: Text(a.icon),
+        label: Text(isVi ? a.titleVi : a.titleEn),
+      )).toList(),
     );
   }
 }

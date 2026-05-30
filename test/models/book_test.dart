@@ -3,29 +3,41 @@ import 'package:pdf_reader/models/book.dart';
 import 'package:pdf_reader/models/highlight.dart';
 
 void main() {
-  group('Book.fromMap/toMap roundtrip', () {
-    test('basic book roundtrip', () {
-      final now = DateTime(2024, 1, 15, 10, 30);
+  final now = DateTime(2024, 1, 15, 10, 30);
+
+  group('Book serialization', () {
+    test('toMap/fromMap roundtrip preserves all fields', () {
       final book = Book(
         id: 'test-id',
         title: 'Test Book',
         author: 'Author',
-        format: BookFormat.ebook,
+        format: BookFormat.both,
         filePath: '/path/to/file.pdf',
+        categoryId: 'cat-1',
+        notes: 'Some notes',
+        lastPage: 42,
+        totalPages: 200,
+        readingSeconds: 7200,
+        lastOpenedAt: now,
         createdAt: now,
         updatedAt: now,
       );
-      final map = book.toMap();
-      final restored = Book.fromMap(map);
-      expect(restored.id, 'test-id');
-      expect(restored.title, 'Test Book');
-      expect(restored.author, 'Author');
-      expect(restored.format, BookFormat.ebook);
-      expect(restored.filePath, '/path/to/file.pdf');
+      final restored = Book.fromMap(book.toMap());
+
+      expect(restored.id, book.id);
+      expect(restored.title, book.title);
+      expect(restored.author, book.author);
+      expect(restored.format, book.format);
+      expect(restored.filePath, book.filePath);
+      expect(restored.categoryId, book.categoryId);
+      expect(restored.notes, book.notes);
+      expect(restored.lastPage, book.lastPage);
+      expect(restored.totalPages, book.totalPages);
+      expect(restored.readingSeconds, book.readingSeconds);
+      expect(restored.lastOpenedAt, book.lastOpenedAt);
     });
 
-    test('book with highlights roundtrip', () {
-      final now = DateTime(2024, 1, 15);
+    test('roundtrip with highlights', () {
       final book = Book(
         id: 'h-book',
         title: 'Highlighted',
@@ -38,10 +50,10 @@ void main() {
       final restored = Book.fromMap(book.toMap());
       expect(restored.highlights.length, 1);
       expect(restored.highlights.first.text, 'hello');
+      expect(restored.highlights.first.id, 'h1');
     });
 
-    test('book with bookmarks roundtrip', () {
-      final now = DateTime(2024, 1, 15);
+    test('roundtrip with bookmarks', () {
       final book = Book(
         id: 'bm-book',
         title: 'Bookmarked',
@@ -56,32 +68,14 @@ void main() {
     });
   });
 
-  group('Book.progressPercent', () {
-    test('returns 0 when totalPages is 0', () {
-      final book = Book(id: '1', title: 't', createdAt: DateTime.now(), updatedAt: DateTime.now());
-      expect(book.progressPercent, 0.0);
-    });
-
-    test('calculates correct progress', () {
-      final book = Book(
-        id: '1', title: 't', lastPage: 4, totalPages: 10,
-        createdAt: DateTime.now(), updatedAt: DateTime.now(),
-      );
-      expect(book.progressPercent, 0.5);
-    });
-
-    test('clamps to 1.0 when lastPage exceeds totalPages', () {
-      final book = Book(
-        id: '1', title: 't', lastPage: 20, totalPages: 10,
-        createdAt: DateTime.now(), updatedAt: DateTime.now(),
-      );
-      expect(book.progressPercent, 1.0);
-    });
-  });
-
-  group('Book invalid data handling', () {
+  group('Book.fromMap resilience', () {
     test('handles missing optional fields', () {
-      final book = Book.fromMap({'id': 'x', 'title': 'T', 'createdAt': '2024-01-01T00:00:00.000', 'updatedAt': '2024-01-01T00:00:00.000'});
+      final book = Book.fromMap({
+        'id': 'x',
+        'createdAt': '2024-01-01T00:00:00.000',
+        'updatedAt': '2024-01-01T00:00:00.000',
+      });
+      expect(book.title, '');
       expect(book.author, '');
       expect(book.filePath, isNull);
       expect(book.lastPage, 0);
@@ -89,50 +83,86 @@ void main() {
       expect(book.highlights, isEmpty);
     });
 
-    test('handles invalid format index gracefully', () {
+    test('invalid format index defaults to paper', () {
       final book = Book.fromMap({
-        'id': 'x', 'title': 'T', 'format': 99,
-        'createdAt': '2024-01-01T00:00:00.000', 'updatedAt': '2024-01-01T00:00:00.000',
+        'id': 'x',
+        'title': 'T',
+        'format': 99,
+        'createdAt': '2024-01-01T00:00:00.000',
+        'updatedAt': '2024-01-01T00:00:00.000',
       });
       expect(book.format, BookFormat.paper);
     });
 
-    test('handles null title as empty string', () {
+    test('corrupt bookmarks are skipped', () {
       final book = Book.fromMap({
-        'id': 'x', 'createdAt': '2024-01-01T00:00:00.000', 'updatedAt': '2024-01-01T00:00:00.000',
-      });
-      expect(book.title, '');
-    });
-
-    test('handles corrupt bookmark entries', () {
-      final book = Book.fromMap({
-        'id': 'x', 'title': 'T',
-        'bookmarks': [{'invalid': true}, {'page': 1, 'createdAt': '2024-01-01T00:00:00.000'}],
-        'createdAt': '2024-01-01T00:00:00.000', 'updatedAt': '2024-01-01T00:00:00.000',
+        'id': 'x',
+        'title': 'T',
+        'bookmarks': [
+          {'invalid': true},
+          {'page': 1, 'createdAt': '2024-01-01T00:00:00.000'},
+        ],
+        'createdAt': '2024-01-01T00:00:00.000',
+        'updatedAt': '2024-01-01T00:00:00.000',
       });
       expect(book.bookmarks.length, 1);
     });
+
+    test('invalid dates default to now', () {
+      final book = Book.fromMap({
+        'id': 'x',
+        'title': 'T',
+        'createdAt': 'not-a-date',
+        'updatedAt': null,
+      });
+      expect(book.createdAt.year, DateTime.now().year);
+    });
   });
 
-  group('Book properties', () {
-    test('canRead requires ebook format and filePath', () {
-      final book = Book(id: '1', title: 't', format: BookFormat.ebook, filePath: '/f.pdf', createdAt: DateTime.now(), updatedAt: DateTime.now());
-      expect(book.canRead, true);
+  group('Book computed properties', () {
+    test('progressPercent 0 when totalPages is 0', () {
+      final book = Book(id: '1', title: 't', createdAt: now, updatedAt: now);
+      expect(book.progressPercent, 0.0);
     });
 
-    test('canRead false for paper format', () {
-      final book = Book(id: '1', title: 't', format: BookFormat.paper, filePath: '/f.pdf', createdAt: DateTime.now(), updatedAt: DateTime.now());
-      expect(book.canRead, false);
+    test('progressPercent correct at midpoint', () {
+      final book = Book(id: '1', title: 't', lastPage: 4, totalPages: 10, createdAt: now, updatedAt: now);
+      expect(book.progressPercent, 0.5);
     });
 
-    test('readingTimeFormatted shows hours and minutes', () {
-      final book = Book(id: '1', title: 't', readingSeconds: 3661, createdAt: DateTime.now(), updatedAt: DateTime.now());
-      expect(book.readingTimeFormatted, '1h 1m');
+    test('progressPercent clamped to 1.0', () {
+      final book = Book(id: '1', title: 't', lastPage: 20, totalPages: 10, createdAt: now, updatedAt: now);
+      expect(book.progressPercent, 1.0);
     });
 
-    test('readingTimeFormatted shows minutes only', () {
-      final book = Book(id: '1', title: 't', readingSeconds: 120, createdAt: DateTime.now(), updatedAt: DateTime.now());
-      expect(book.readingTimeFormatted, '2m');
+    test('canRead requires ebook format + filePath', () {
+      expect(
+        Book(id: '1', title: 't', format: BookFormat.ebook, filePath: '/f.pdf', createdAt: now, updatedAt: now).canRead,
+        true,
+      );
+      expect(
+        Book(id: '1', title: 't', format: BookFormat.paper, filePath: '/f.pdf', createdAt: now, updatedAt: now).canRead,
+        false,
+      );
+      expect(
+        Book(id: '1', title: 't', format: BookFormat.ebook, createdAt: now, updatedAt: now).canRead,
+        false,
+      );
+    });
+
+    test('readingTimeFormatted', () {
+      expect(
+        Book(id: '1', title: 't', readingSeconds: 3661, createdAt: now, updatedAt: now).readingTimeFormatted,
+        '1h 1m',
+      );
+      expect(
+        Book(id: '1', title: 't', readingSeconds: 120, createdAt: now, updatedAt: now).readingTimeFormatted,
+        '2m',
+      );
+      expect(
+        Book(id: '1', title: 't', readingSeconds: 45, createdAt: now, updatedAt: now).readingTimeFormatted,
+        '45s',
+      );
     });
   });
 }

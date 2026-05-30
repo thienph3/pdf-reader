@@ -8,6 +8,7 @@ import '../services/tts_service.dart';
 import '../services/ocr_service.dart';
 import '../services/highlight_service.dart';
 import '../services/streak_service.dart';
+import '../services/book_settings_service.dart';
 
 class BookServiceScope extends InheritedWidget {
   final BookService bookService;
@@ -73,6 +74,10 @@ class SettingsScope extends InheritedWidget {
   bool updateShouldNotify(SettingsScope oldWidget) => settingsService != oldWidget.settingsService;
 }
 
+class BookSettingsServiceScope {
+  static BookSettingsService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.bookSettingsService;
+}
+
 /// Single InheritedWidget holding all services.
 class ServiceScope extends InheritedWidget {
   final BookService bookService;
@@ -84,13 +89,15 @@ class ServiceScope extends InheritedWidget {
   final SettingsService settingsService;
   final HighlightService highlightService;
   final StreakService streakService;
+  final BookSettingsService bookSettingsService;
 
   const ServiceScope({
     super.key, required this.bookService, required this.categoryService,
     required this.thumbnailService, required this.readingLogService,
     required this.ttsService, required this.ocrService,
     required this.settingsService, required this.highlightService,
-    required this.streakService, required super.child,
+    required this.streakService, required this.bookSettingsService,
+    required super.child,
   });
 
   @override

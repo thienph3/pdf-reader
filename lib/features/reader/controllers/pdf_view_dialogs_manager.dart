@@ -22,6 +22,8 @@ class PdfViewDialogsManager {
   final int readingMode;
   final double brightness;
   final ValueChanged<double>? onBrightnessChanged;
+  final bool cropMargins;
+  final VoidCallback? onToggleCrop;
 
   PdfViewDialogsManager({
     required this.highlightManager,
@@ -38,6 +40,8 @@ class PdfViewDialogsManager {
     this.readingMode = 0,
     this.brightness = 0.5,
     this.onBrightnessChanged,
+    this.cropMargins = false,
+    this.onToggleCrop,
   });
 
   /// Shows the reader actions bottom sheet.
@@ -101,6 +105,13 @@ class PdfViewDialogsManager {
                   value: brightness,
                   onChanged: (v) { setSt(() {}); onBrightnessChanged!(v); },
                 )),
+              ),
+            if (onToggleCrop != null)
+              ListTile(
+                leading: Icon(cropMargins ? Icons.crop : Icons.crop_free),
+                title: Text(s.cropMargins),
+                trailing: Switch(value: cropMargins, onChanged: (_) { Navigator.pop(ctx); onToggleCrop!(); }),
+                onTap: () { Navigator.pop(ctx); onToggleCrop!(); },
               ),
           ],
         ),

@@ -11,6 +11,7 @@ import '../services/tts_service.dart';
 import '../services/ocr_service.dart';
 import '../services/highlight_service.dart';
 import '../services/streak_service.dart';
+import '../services/book_settings_service.dart';
 import 'service_scope.dart';
 import './splash_screen.dart';
 
@@ -38,12 +39,14 @@ void main() async {
   await ocrService.init();
   final highlightService = HighlightService(bookService);
   final streakService = StreakService(readingLogService, bookService);
+  final bookSettingsService = BookSettingsService();
+  await bookSettingsService.init();
   runApp(PdfReaderApp(
     bookService: bookService, categoryService: categoryService,
     settingsService: settingsService, readingLogService: readingLogService,
     thumbnailService: thumbnailService, ttsService: ttsService,
     ocrService: ocrService, highlightService: highlightService,
-    streakService: streakService,
+    streakService: streakService, bookSettingsService: bookSettingsService,
   ));
 }
 
@@ -57,13 +60,14 @@ class PdfReaderApp extends StatefulWidget {
   final OcrService ocrService;
   final HighlightService highlightService;
   final StreakService streakService;
+  final BookSettingsService bookSettingsService;
 
   const PdfReaderApp({
     super.key, required this.bookService, required this.categoryService,
     required this.settingsService, required this.readingLogService,
     required this.thumbnailService, required this.ttsService,
     required this.ocrService, required this.highlightService,
-    required this.streakService,
+    required this.streakService, required this.bookSettingsService,
   });
 
   @override
@@ -85,7 +89,7 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
       thumbnailService: widget.thumbnailService, readingLogService: widget.readingLogService,
       ttsService: widget.ttsService, ocrService: widget.ocrService,
       settingsService: settings, highlightService: widget.highlightService,
-      streakService: widget.streakService,
+      streakService: widget.streakService, bookSettingsService: widget.bookSettingsService,
       child: SettingsScope(
         settingsService: settings,
         child: MaterialApp(

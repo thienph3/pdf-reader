@@ -7,6 +7,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import '../../../services/book_service.dart';
 import '../../../services/reading_log_service.dart';
+import '../../../services/book_settings_service.dart';
 import '../../../app/main.dart';
 import '../../../models/highlight.dart';
 import '../widgets/search_results_bar.dart';
@@ -60,6 +61,8 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   int _totalPages = 0, _currentPage = 0, _readingMode = 0;
   bool _closed = false, _isSearching = false, _pdfLoading = true;
   bool _fullscreen = false;
+  bool _cropMargins = false;
+  bool _showBrightnessIndicator = false;
   double _brightness = 0.5;
   String? _pdfError;
   Timer? _saveDebounce;
@@ -68,6 +71,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   PdfTextSearcher? _textSearcher;
   bool _ttsListenerAdded = false;
+  BookSettingsService? _bookSettingsService;
 
   TtsService get _ttsService => TtsServiceScope.of(context);
 
@@ -98,6 +102,17 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       if (_bookService != s) { _bookService = s; _highlightManager.updateService(s); _bookmarkManager.updateService(s); }
     }
     try { _horizontalScroll = SettingsScope.of(context).isHorizontalScroll; _readingMode = SettingsScope.of(context).readingMode; } catch (_) {}
+    if (_bookSettingsService == null && widget.bookId != null) {
+      _bookSettingsService = BookSettingsServiceScope.of(context);
+      final bs = _bookSettingsService!.getSettings(widget.bookId!);
+      _readingMode = bs.readingMode;
+      _horizontalScroll = bs.horizontalScroll;
+      _cropMargins = bs.cropMargins;
+      if (bs.brightness >= 0) {
+        _brightness = bs.brightness;
+        ScreenBrightness().setScreenBrightness(bs.brightness);
+      }
+    }
   }
 
   void _onTtsStateChanged() {
@@ -125,6 +140,17 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     final p = (_currentPage > _sessionStartPage) ? _currentPage - _sessionStartPage : 0;
     _sessionStartPage = _currentPage;
     if (s > 0 || p > 0) _readingLogService?.logReading(seconds: s, pages: p);
+    _saveBookSettings();
+  }
+
+  void _saveBookSettings() {
+    if (widget.bookId == null || _bookSettingsService == null) return;
+    _bookSettingsService!.saveSettings(widget.bookId!, BookSettings(
+      readingMode: _readingMode,
+      horizontalScroll: _horizontalScroll,
+      cropMargins: _cropMargins,
+      brightness: _brightness,
+    ));
   }
 
   Highlight? _findTappedHighlight(PdfPageHitTestResult hit) {
@@ -192,7 +218,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   @override
   Widget build(BuildContext context) {
     _uiBuilder = PdfViewUiBuilder(bookmarkManager: _bookmarkManager, fileName: widget.fileName, currentPage: _currentPage, totalPages: _totalPages, onClose: _closeAndPop, onStartSearch: () => setState(() => _isSearching = true), onShowReaderActions: () => _dialogsManager.showReaderActions(context), onToggleTts: () => _ttsController.toggle(context, _currentPage, _pdfDocument, _ocrController.setOcrInProgress), isTtsActive: _ttsController.ttsActive, onStartOcr: widget.bookId != null ? () => _ocrController.startOcrBatch(context, _pdfDocument) : null, isOcrRunning: _ocrController.ocrBatchRunning, onToggleTextView: widget.bookId != null ? () { _textViewController.toggle(_currentPage, _totalPages); _textViewController.loadPage(context, _currentPage, _pdfDocument); } : null, isTextViewMode: _textViewController.textViewMode, isTextViewLoading: _textViewController.textViewMode && !_textViewController.pages.containsKey(_currentPage), onToggleBookmark: (p) => _bookmarkManager.toggleBookmark(p), onShowThumbnails: _totalPages > 0 && _pdfDocument != null ? () => showPageThumbnails(context, pdfDocument: _pdfDocument!, totalPages: _totalPages, currentPage: _currentPage, viewerController: _viewerController) : null, onGoToPage: _showGoToPageDialog, onCycleReadingMode: () => setState(() => _readingMode = (_readingMode + 1) % 3), readingMode: _readingMode);
-    _dialogsManager = PdfViewDialogsManager(highlightManager: _highlightManager, bookmarkManager: _bookmarkManager, viewerController: _viewerController, ttsService: _ttsService, currentPage: _currentPage, pdfDocument: _pdfDocument, onShowToc: () => _dialogsManager.showToc(context), onShowHighlightsList: () => _highlightsUi.showHighlightsList(context: context, onPageSelected: (p) => _viewerController.goToPage(pageNumber: p + 1)), onPageSelected: (p) => _viewerController.goToPage(pageNumber: p + 1), onTtsSpeedChanged: () { if (_ttsController.ttsActive) _ttsController.speakCurrentPage(context, _currentPage, _pdfDocument, _ocrController.setOcrInProgress); }, onCycleReadingMode: () => setState(() => _readingMode = (_readingMode + 1) % 3), readingMode: _readingMode, brightness: _brightness, onBrightnessChanged: (v) { setState(() => _brightness = v); ScreenBrightness().setScreenBrightness(v); });
+    _dialogsManager = PdfViewDialogsManager(highlightManager: _highlightManager, bookmarkManager: _bookmarkManager, viewerController: _viewerController, ttsService: _ttsService, currentPage: _currentPage, pdfDocument: _pdfDocument, onShowToc: () => _dialogsManager.showToc(context), onShowHighlightsList: () => _highlightsUi.showHighlightsList(context: context, onPageSelected: (p) => _viewerController.goToPage(pageNumber: p + 1)), onPageSelected: (p) => _viewerController.goToPage(pageNumber: p + 1), onTtsSpeedChanged: () { if (_ttsController.ttsActive) _ttsController.speakCurrentPage(context, _currentPage, _pdfDocument, _ocrController.setOcrInProgress); }, onCycleReadingMode: () => setState(() => _readingMode = (_readingMode + 1) % 3), readingMode: _readingMode, brightness: _brightness, onBrightnessChanged: (v) { setState(() => _brightness = v); ScreenBrightness().setScreenBrightness(v); }, cropMargins: _cropMargins, onToggleCrop: () { setState(() => _cropMargins = !_cropMargins); _saveBookSettings(); });
     _highlightsUi = PdfViewHighlightsUi(highlightManager: _highlightManager, viewerController: _viewerController, currentPage: _currentPage, onRefresh: () { if (mounted) setState(() {}); });
 
     return PopScope(canPop: false, onPopInvokedWithResult: (didPop, _) { if (!didPop) { if (_isSearching) { setState(() => _isSearching = false); _searchCtrl.clear(); _textSearcher?.resetTextSearch(); } else { _closeAndPop(); } } },
@@ -201,6 +227,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
         floatingActionButton: _fullscreen ? null : _uiBuilder.buildHighlightsFAB(highlightManager: _highlightManager, currentPage: _currentPage, onPressed: () => _highlightsUi.showCurrentPageHighlights(context: context, currentPage: _currentPage)),
         body: Stack(children: [
           if (_textViewController.textViewMode) _textViewController.buildTextView(context, horizontalScroll: _horizontalScroll, totalPages: _totalPages, currentPage: _currentPage, onPageChanged: (p) { setState(() => _currentPage = p); _saveDebounce?.cancel(); _saveDebounce = Timer(const Duration(milliseconds: 500), _saveProgress); _textViewController.loadPage(context, p, _pdfDocument); })
+          else if (_cropMargins) ClipRect(child: Transform.scale(scale: 1.2, child: PdfViewerBody(filePath: widget.filePath, viewerController: _viewerController, horizontalScroll: _horizontalScroll, readingMode: _readingMode, currentPage: _currentPage, highlightManager: _highlightManager, textSelectionManager: _textSelectionManager, highlightsUi: _highlightsUi, textSearcher: _textSearcher, isSearching: _isSearching, pdfError: _pdfError, initialPage: widget.initialPage, bookId: widget.bookId, onPageChanged: _onPageChanged, onViewerReady: (doc, ctrl) { _pdfDocument = doc; _textSearcher = PdfTextSearcher(_viewerController); _textSearcher!.addListener(() { if (mounted) setState(() {}); }); setState(() { _pdfLoading = false; _totalPages = doc.pages.length; if (_currentPage >= _totalPages) _currentPage = 0; }); if (widget.bookId != null && _bookService != null) _bookService!.saveProgress(widget.bookId!, _currentPage, totalPages: _totalPages); if (widget.initialPage > 0 && widget.initialPage < _totalPages) ctrl.goToPage(pageNumber: widget.initialPage + 1); if (_horizontalScroll) Future.delayed(const Duration(milliseconds: 100), () { if (!mounted) return; ctrl.goToPage(pageNumber: (widget.initialPage > 0 ? widget.initialPage : _currentPage) + 1); }); _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument); }, onSnapToPage: _snapToCurrentPage, findTappedHighlight: _findTappedHighlight, onCenterTap: _toggleFullscreen)))
           else PdfViewerBody(filePath: widget.filePath, viewerController: _viewerController, horizontalScroll: _horizontalScroll, readingMode: _readingMode, currentPage: _currentPage, highlightManager: _highlightManager, textSelectionManager: _textSelectionManager, highlightsUi: _highlightsUi, textSearcher: _textSearcher, isSearching: _isSearching, pdfError: _pdfError, initialPage: widget.initialPage, bookId: widget.bookId, onPageChanged: _onPageChanged, onViewerReady: (doc, ctrl) { _pdfDocument = doc; _textSearcher = PdfTextSearcher(_viewerController); _textSearcher!.addListener(() { if (mounted) setState(() {}); }); setState(() { _pdfLoading = false; _totalPages = doc.pages.length; if (_currentPage >= _totalPages) _currentPage = 0; }); if (widget.bookId != null && _bookService != null) _bookService!.saveProgress(widget.bookId!, _currentPage, totalPages: _totalPages); if (widget.initialPage > 0 && widget.initialPage < _totalPages) ctrl.goToPage(pageNumber: widget.initialPage + 1); if (_horizontalScroll) Future.delayed(const Duration(milliseconds: 100), () { if (!mounted) return; ctrl.goToPage(pageNumber: (widget.initialPage > 0 ? widget.initialPage : _currentPage) + 1); }); _highlightManager.preloadTextAroundCurrentPage(_currentPage, _pdfDocument); }, onSnapToPage: _snapToCurrentPage, findTappedHighlight: _findTappedHighlight, onCenterTap: _toggleFullscreen),
           // Tap zones for horizontal mode
           if (_horizontalScroll && !_textViewController.textViewMode) ...[
@@ -209,6 +236,25 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
             Positioned(left: MediaQuery.of(context).size.width * 0.25, top: 0, bottom: 0, width: MediaQuery.of(context).size.width * 0.5, child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggleFullscreen)),
           ],
           if (_pdfLoading && _pdfError == null && !_textViewController.textViewMode) const Center(child: CircularProgressIndicator()),
+          // Brightness gesture on left edge
+          Positioned(left: 0, top: 0, bottom: 0, width: 40, child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onVerticalDragUpdate: (d) {
+              final delta = -d.delta.dy / MediaQuery.of(context).size.height;
+              setState(() { _brightness = (_brightness + delta).clamp(0.0, 1.0); _showBrightnessIndicator = true; });
+              ScreenBrightness().setScreenBrightness(_brightness);
+            },
+            onVerticalDragEnd: (_) => setState(() => _showBrightnessIndicator = false),
+          )),
+          if (_showBrightnessIndicator) Positioned(left: 16, top: MediaQuery.of(context).size.height * 0.3, child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.brightness_6, color: Colors.white, size: 20),
+              const SizedBox(height: 4),
+              Text('${(_brightness * 100).round()}%', style: const TextStyle(color: Colors.white, fontSize: 12)),
+            ]),
+          )),
           if (_isSearching && _textSearcher != null) Positioned(bottom: 0, left: 0, right: 0, child: SearchResultsBar(textSearcher: _textSearcher!)),
           // Page slider at bottom
           if (!_fullscreen && _totalPages > 1 && !_isSearching) Positioned(bottom: 0, left: 16, right: 16, child: Slider(value: _currentPage.toDouble(), min: 0, max: (_totalPages - 1).toDouble(), divisions: _totalPages > 1 ? _totalPages - 1 : null, onChanged: (v) { final p = v.round(); _viewerController.goToPage(pageNumber: p + 1); })),

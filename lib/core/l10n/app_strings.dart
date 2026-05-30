@@ -252,6 +252,7 @@ class AppStrings {
   String get go => _isVi ? 'Đi' : 'Go';
   String get brightness => _isVi ? 'Độ sáng' : 'Brightness';
   String get invalidPage => _isVi ? 'Số trang không hợp lệ' : 'Invalid page number';
+  String get cropMargins => _isVi ? 'Cắt lề' : 'Crop Margins';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

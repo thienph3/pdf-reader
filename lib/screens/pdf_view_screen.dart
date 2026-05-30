@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' as io;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
@@ -60,6 +61,7 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   bool _closed = false;
   bool _isSearching = false;
   bool _ttsActive = false;
+  String? _pdfError;
 
   Timer? _saveDebounce;
   int _sessionSeconds = 0;
@@ -74,6 +76,11 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
     super.initState();
     _currentPage = widget.initialPage;
     _sessionStartPage = widget.initialPage;
+    
+    // Check file exists
+    if (!io.File(widget.filePath).existsSync()) {
+      _pdfError = 'File not found';
+    }
     
     // Initialize managers
     _highlightManager = PdfHighlightManager(
@@ -297,36 +304,16 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
       _ttsService.addListener(_onTtsStateChanged);
     }
     if (widget.bookId != null) {
-      _bookService = BookServiceScope.of(context);
+      final newBookService = BookServiceScope.of(context);
       _readingLogService = ReadingLogServiceScope.of(context);
       
-      // Update managers with services
-      _highlightManager = PdfHighlightManager(
-        bookService: _bookService,
-        bookId: widget.bookId,
-        viewerController: _viewerController,
-        onHighlightsUpdated: () {
-          if (mounted) setState(() {});
-        },
-      );
-      
-      _bookmarkManager = PdfBookmarkManager(
-        bookService: _bookService,
-        bookId: widget.bookId,
-        onBookmarksUpdated: () {
-          if (mounted) setState(() {});
-        },
-      );
-      
-      _textSelectionManager = PdfTextSelectionManager(
-        highlightManager: _highlightManager,
-        onHighlightCreated: () {
-          if (mounted) setState(() {});
-        },
-      );
-      
-      // Reinitialize UI managers with updated services
-      _initializeUiManagers();
+      // Only recreate managers if service instance actually changed
+      if (_bookService != newBookService) {
+        _bookService = newBookService;
+        _highlightManager.updateService(newBookService);
+        _bookmarkManager.updateService(newBookService);
+        _initializeUiManagers();
+      }
     }
     try {
       _horizontalScroll = SettingsScope.of(context).isHorizontalScroll;
@@ -402,12 +389,17 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
   void _saveProgress() {
     if (widget.bookId == null || _bookService == null) return;
     final flushSec = _flushSessionSeconds();
+    if (flushSec == 0 && _currentPage == _sessionStartPage) return;
     _bookService!.saveProgress(widget.bookId!, _currentPage,
-        totalPages: _totalPages, addSeconds: flushSec);
-    // Log daily reading
-    final pagesRead = (_currentPage - _sessionStartPage).abs();
+        totalPages: _totalPages, addSeconds: flushSec > 0 ? flushSec : null);
+    // Log daily reading — only count forward progress
+    final pagesRead = (_currentPage > _sessionStartPage)
+        ? _currentPage - _sessionStartPage
+        : 0;
     _sessionStartPage = _currentPage;
-    _readingLogService?.logReading(seconds: flushSec, pages: pagesRead);
+    if (flushSec > 0 || pagesRead > 0) {
+      _readingLogService?.logReading(seconds: flushSec, pages: pagesRead);
+    }
   }
 
   int _flushSessionSeconds() {
@@ -629,6 +621,22 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
           children: [
             if (_textViewMode)
               _buildTextView()
+            else if (_pdfError != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
+                      const SizedBox(height: 16),
+                      Text(AppStrings.of(context).pdfLoadError, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      Text(AppStrings.of(context).pdfCorruptMessage, textAlign: TextAlign.center),
+                    ],
+                  ),
+                ),
+              )
             else
               PdfViewer.file(
                   widget.filePath,

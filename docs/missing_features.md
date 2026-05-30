@@ -1,130 +1,126 @@
-# PDF Reader - Tính năng và trạng thái phát triển
+# PDF Reader — Tính năng và trạng thái
 
-## 📊 Tổng quan
-
-Ứng dụng PDF Reader offline với trọng tâm vào trải nghiệm đọc và quản lý thư viện cá nhân.
-
-**Trạng thái hiện tại:** ✅ Các tính năng cốt lõi đã hoạt động
-**Ngày cập nhật:** 3/5/2026
+**Cập nhật:** 30/5/2026  
+**Tổng quan:** Ứng dụng đọc PDF offline, quản lý thư viện cá nhân, hỗ trợ TTS + OCR.  
+**Package:** `com.thienph3.pdfreader`  
+**Codebase:** 48 Dart files, ~7,849 dòng code
 
 ---
 
 ## ✅ TÍNH NĂNG ĐÃ HOÀN THÀNH
 
 ### 📖 Đọc PDF
-- **✅ PDF rendering**: pdfrx 2.2.24 engine
-- **✅ Cuộn dọc & cuộn ngang**: Toggle trong settings, snap-to-page khi cuộn ngang
-- **✅ Velocity-aware scroll**: Tốc độ scroll tăng theo velocity user (ClampingScrollPhysics)
-- **✅ Page centering**: Page center đúng khi cuộn ngang (PdfPageAnchor.all)
-- **✅ Navigation**: Chuyển trang, table of contents (TOC)
-- **✅ Search trong PDF**: Tìm kiếm văn bản, auto-search khi gõ, TextInputAction.search
-- **✅ Bookmark**: Đánh dấu trang (thêm/xóa), danh sách bookmarks
-- **✅ Text selection**: Chọn văn bản, copy, select all
-- **✅ Pinch-to-zoom**: Zoom bằng 2 ngón tay (native pdfrx)
+- PDF rendering (pdfrx 2.2.24)
+- Cuộn dọc & cuộn ngang (snap-to-page)
+- Velocity-aware scroll physics
+- Pinch-to-zoom
+- Table of Contents (TOC)
+- Tìm kiếm văn bản trong PDF
+- Text selection + copy
+- Auto-save progress (debounced)
 
-### ✏️ Highlight
-- **✅ Tạo highlight**: Select text → context menu "Highlight" → chọn màu + ghi chú → Save
-- **✅ 6 màu highlight**: Yellow, green, blue, red, purple, orange
-- **✅ Highlight drawing chính xác**: charRects + PdfPageText
-- **✅ Tap on highlight**: Tap trực tiếp lên highlight → hiện form edit (màu + ghi chú + Save + Delete)
-- **✅ Danh sách highlights theo page**: FAB badge hiển thị số highlights, tap → danh sách
-- **✅ Danh sách highlights toàn bộ**: Menu ba chấm → Highlights
-- **✅ Edit highlight**: Đổi màu, sửa ghi chú, xóa
-- **✅ Persistent**: Lưu vào Hive, giữ qua restart app
+### ✏️ Highlight & Bookmark
+- Tạo highlight từ text selection (6 màu)
+- Tap on highlight → edit (đổi màu, ghi chú, xóa)
+- FAB badge hiển thị số highlights trên page
+- Danh sách highlights toàn bộ sách
+- Bookmark trang (thêm/xóa/ghi chú)
+- Persistent trong Hive
 
 ### 📚 Quản lý thư viện
-- **✅ Book management**: Thêm, xóa, chỉnh sửa sách
-- **✅ Category management**: Quản lý danh mục với màu sắc
-- **✅ Category badge**: Bookmark ribbon badge trên book card
-- **✅ Category filter**: Filter chips theo category (hoạt động đúng)
-- **✅ Smart collections**: Recently Added, Unread, Almost Finished, Frequently Read
-  - Filter books khi tap vào collection
-  - Nút back (←) để clear filter
-- **✅ Progress tracking**: Theo dõi tiến độ đọc (trang, thời gian)
-- **✅ Reading statistics**: Thống kê đọc
-- **✅ Reading goals**: Mục tiêu đọc (cycle toggle)
-- **✅ Import/export**: Nhập/xuất sách và dữ liệu
-- **✅ Thumbnail**: Hiển thị trang bìa PDF trên book card
+- CRUD sách (title, author, format, notes)
+- Category với màu sắc + filter chips
+- Smart collections: Recently Added, Unread, Almost Finished, Frequently Read
+- Grid/list view toggle
+- Sort: recently updated, title A-Z, recently added
+- Search by title/author
+- Import/export JSON
+- Thumbnail trang bìa (3-tier cache: memory → disk → render)
+- Recently opened carousel
+- Copy PDF vào app directory khi import (tránh invalid path)
 
-### 🔊 Text-to-Speech (TTS)
-- **✅ Offline TTS**: flutter_tts + native TTS engine (Google TTS trên Android)
-- **✅ Foreground service**: Tiếp tục đọc khi app ở background (flutter_foreground_task)
-- **✅ Per-page reading**: Đọc từng page, hết page tự chuyển + đọc tiếp
-- **✅ Manual page change**: User vuốt page khi đang đọc → stop cũ, đọc page mới
-- **✅ Toggle button**: Nút trên app bar đổi icon (🎙️ idle / ⏹️ đang đọc), tap toggle
-- **✅ Speed control**: Menu ba chấm → TTS Speed (0.5x / 1x / 1.5x / 2x), đổi speed khi đang đọc sẽ restart với speed mới
-- **✅ Language auto-detect**: Rule-based detect Vietnamese, Chinese, Japanese, Korean, Thai, fallback English
-- **✅ Auto language switch**: Tự chuyển TTS language theo nội dung PDF
-- **✅ Text cleaning**: Nối dòng bị ngắt do PDF layout, giữ paragraph break
-- **✅ Voice install check**: Kiểm tra voice đã cài chưa, hướng dẫn download
-- **✅ Settings TTS info**: Hiển thị trạng thái TTS + danh sách language packs (installed/not)
-- **✅ Open TTS Settings**: Tap language chưa installed → mở Android TTS Settings (platform channel)
-- **✅ Auto refresh**: Tự cập nhật trạng thái installed khi quay lại app
-- **✅ Scanned PDF detection**: Hiện thông báo khi page không có text
+### 🔊 Text-to-Speech
+- Offline TTS (flutter_tts + native engine)
+- Foreground service cho background playback (Android)
+- Auto language detection (vi, en, zh, ja, ko, th)
+- Speed control (0.5x – 2x)
+- Per-page reading + auto-advance
+- Text cleaning (nối dòng bị ngắt)
+- Voice install check + hướng dẫn download
+- Open TTS Settings (platform channel)
+
+### 🔍 OCR
+- Google ML Kit text recognition
+- Cache kết quả trong Hive (plain text + markdown)
+- OCR batch processing (toàn bộ sách)
+- Text view mode (hiển thị OCR text dạng Markdown)
+- Fallback cho TTS khi page không có text layer
+
+### 📊 Thống kê
+- Thời gian đọc hàng ngày
+- Biểu đồ tuần
+- Mục tiêu ngày (phút) + tháng (số sách)
+- Tổng thời gian, sách hoàn thành, trang đã đọc
 
 ### ⚙️ Cài đặt
-- **✅ Settings toggle UX**: Cycle/toggle thay vì dropdown
-- **✅ Theme**: System / Light / Dark (cycle)
-- **✅ Language**: Tiếng Việt ↔ English (toggle)
-- **✅ Scroll direction**: Cuộn ngang ↔ Cuộn dọc
-- **✅ Localization**: Đa ngôn ngữ
+- Theme: System / Light / Dark
+- Language: Tiếng Việt ↔ English
+- Scroll direction
+- Reading goals
+- TTS language pack status
 
 ---
 
-## 🔧 CẦN HOÀN THIỆN (Ưu tiên cao)
+## 🔜 ĐÃ LÊN KẾ HOẠCH (xem ROADMAP.md)
 
-### Annotation tools (mở rộng từ highlight)
-- Text annotation (ghi chú văn bản trực tiếp lên PDF)
-- Drawing/pen tool (vẽ tự do)
-- Shape tools (hình chữ nhật, hình tròn, mũi tên)
+### P0 — Sửa trước khi release
+- Fix release signing (debug key)
+- Fix package name (com.example.pdf_reader)
+- Fix bugs: double-save, manager recreation, non-atomic highlight op
+- Schema resilience, error handling
+- Unbounded thumbnail cache fix
 
-### Quản lý sách nâng cao
-- **Advanced search**: Tìm theo tag, rating, metadata
-- **Ratings**: Đánh giá sách
-- **Reading lists**: Danh sách đọc tùy chỉnh
-- **Tags/labels**: Tag cho sách (ngoài category)
+### P1 — Tính năng ưu tiên cao
+- Night/sepia reading mode
+- "Continue Reading" card
+- Annotation export (Markdown)
+- Page thumbnail grid navigation
+- Responsive layout (tablet/desktop)
+- Reading reminders
 
-### Trải nghiệm người dùng
-- **Accessibility**: Screen reader, high contrast
-- **Custom themes**: Màu sắc, font chữ
-- **Gesture customization**: Swipe, tap zones
+### P2 — Tính năng ưu tiên trung bình
+- Unit tests (60%+ coverage)
+- Share highlights
+- Batch operations
+- Backup/restore
+- DI migration (InheritedWidget → Provider/Riverpod)
 
----
-
-## 📋 ĐỀ XUẤT THÊM (Ưu tiên trung bình)
-
-- **Reading streaks**: Chuỗi ngày đọc liên tiếp
-- **Achievements/badges**: Thành tích
-- **Local backup/restore**: Sao lưu cục bộ
-- **Batch operations**: Thao tác hàng loạt
-- **Reading reminders**: Nhắc nhở đọc sách
-- **Offline dictionary**: Tra từ trong PDF
-
----
-
-## 🚀 TƯƠNG LAI (Ưu tiên thấp)
-
-- **App lock**: PIN/biometric
-- **PDF manipulation**: Gộp, trích xuất, nén PDF
-- **OCR**: Nhận dạng văn bản từ hình ảnh
-- **Cloud backup**: Sao lưu cloud (tùy chọn)
+### P3 — Tương lai
+- Hive migration (→ Isar/Drift)
+- Additional annotation types (underline, strikethrough)
+- Reading streaks & achievements
+- EPUB support
+- Cloud backup
+- Tablet split view
 
 ---
 
 ## 📝 Ghi chú kỹ thuật
 
-- **pdfrx 2.2.24**: PDF rendering, text selection, scrollPhysics, onGeneralTap
-- **flutter_tts 4.2.x**: Offline TTS với native engine
-- **flutter_foreground_task 8.x**: Foreground service cho TTS background
-- **Hive**: Local storage cho books, highlights, bookmarks, settings
-- **Material Design 3**: Giao diện
-- **Hoàn toàn offline**: Không yêu cầu internet
+| Dependency | Version | Mục đích |
+|-----------|---------|----------|
+| pdfrx | ^2.2.24 | PDF rendering |
+| flutter_tts | ^4.2.0 | Text-to-speech |
+| flutter_foreground_task | ^8.13.4 | Background TTS |
+| google_mlkit_text_recognition | ^0.14.0 | OCR |
+| hive / hive_flutter | ^2.2.3 / ^1.1.0 | Local storage |
+| file_picker | ^11.0.2 | File selection |
+| path_provider | ^2.1.5 | App directory |
+| uuid | ^4.5.1 | ID generation |
+| crypto | ^3.0.6 | File hash (pdf copy) |
+| flutter_markdown | ^0.7.7 | OCR text display |
 
-### Đã xóa (không cần)
-- Night mode (chế độ tối riêng cho PDF viewer)
-- Zoom controls overlay (pinch-to-zoom đủ dùng)
-- Bookmark notes (ghi chú theo bookmark)
-
----
-
-*Cập nhật: 3/5/2026*
+**Architecture:** InheritedWidget DI, StatefulWidget + managers pattern  
+**Storage:** Hive (unencrypted)  
+**Platforms:** Android, iOS, macOS, Linux, Windows  
+**Localization:** Vietnamese (default) + English

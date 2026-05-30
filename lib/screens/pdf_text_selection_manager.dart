@@ -47,7 +47,7 @@ class PdfTextSelectionManager {
           },
         );
       },
-      label: 'Highlight',
+      label: AppStrings.of(context).highlight,
     );
   }
 

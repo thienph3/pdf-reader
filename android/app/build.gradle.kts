@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.pdf_reader"
+    namespace = "com.thienph3.pdfreader"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,19 +20,33 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.pdf_reader"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        applicationId = "com.thienph3.pdfreader"
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("../keystore.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("KEY_ALIAS") ?: "release"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            val releaseKeystore = file("../keystore.jks")
+            signingConfig = if (releaseKeystore.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

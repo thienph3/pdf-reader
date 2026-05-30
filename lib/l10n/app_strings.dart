@@ -198,6 +198,30 @@ class AppStrings {
   String get androidTtsHint => _isVi
       ? 'Vào Cài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói để tải.'
       : 'Go to Settings → System → Language → Text-to-Speech to download.';
+
+  // Search results
+  String searchResults(int count) => _isVi ? '$count kết quả' : '$count ${count == 1 ? 'result' : 'results'}';
+
+  // Smart collection titles
+  String get recentlyAdded => _isVi ? 'Mới thêm gần đây' : 'Recently Added';
+  String get unreadBooks => _isVi ? 'Chưa đọc' : 'Unread Books';
+  String get almostFinished => _isVi ? 'Sắp đọc xong' : 'Almost Finished';
+  String get frequentlyRead => _isVi ? 'Đọc thường xuyên' : 'Frequently Read';
+  String nBooks(int n) => _isVi ? '$n sách' : '$n books';
+
+  // Week days
+  String get mon => _isVi ? 'T2' : 'Mon';
+  String get tue => _isVi ? 'T3' : 'Tue';
+  String get wed => _isVi ? 'T4' : 'Wed';
+  String get thu => _isVi ? 'T5' : 'Thu';
+  String get fri => _isVi ? 'T6' : 'Fri';
+  String get sat => _isVi ? 'T7' : 'Sat';
+  String get sun => _isVi ? 'CN' : 'Sun';
+  List<String> get weekDays => [mon, tue, wed, thu, fri, sat, sun];
+
+  // PDF error
+  String get pdfLoadError => _isVi ? 'Không thể mở file PDF' : 'Failed to open PDF file';
+  String get pdfCorruptMessage => _isVi ? 'File PDF bị lỗi hoặc không được hỗ trợ.' : 'The PDF file is corrupted or unsupported.';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

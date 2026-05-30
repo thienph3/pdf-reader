@@ -33,7 +33,7 @@ class SearchResultsBar extends StatelessWidget {
                   ],
                 )
               : Text(
-                  '$count ${count == 1 ? 'result' : 'results'}',
+                  AppStrings.of(context).searchResults(count),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),

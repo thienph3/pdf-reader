@@ -122,7 +122,7 @@ class BookActionsManager {
   ) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$title: $bookCount books'),
+        content: Text('$title: ${AppStrings.of(context).nBooks(bookCount)}'),
         duration: const Duration(seconds: 2),
       ),
     );

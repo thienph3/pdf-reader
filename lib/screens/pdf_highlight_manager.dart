@@ -10,7 +10,7 @@ const _uuid = Uuid();
 
 /// Manages highlight-related functionality for PDF viewer.
 class PdfHighlightManager {
-  final BookService? bookService;
+  BookService? bookService;
   final String? bookId;
   final PdfViewerController viewerController;
   final VoidCallback? onHighlightsUpdated;
@@ -35,6 +35,10 @@ class PdfHighlightManager {
     required this.viewerController,
     this.onHighlightsUpdated,
   });
+
+  void updateService(BookService? service) {
+    bookService = service;
+  }
 
   /// Paints highlights on a PDF page.
   void paintHighlights(ui.Canvas canvas, Rect pageRect, PdfPage page, PdfDocument? pdfDocument) {
@@ -177,13 +181,7 @@ class PdfHighlightManager {
     int newColor,
   ) async {
     if (bookId == null || bookService == null) return;
-    
-    // Create updated highlight with new color
-    final updatedHighlight = highlight.copyWith(colorValue: newColor);
-    
-    // Remove old highlight and add new one
-    await bookService!.removeHighlight(bookId!, highlight.id);
-    await bookService!.addHighlight(bookId!, updatedHighlight);
+    await bookService!.updateHighlightColor(bookId!, highlight.id, newColor);
   }
 
   /// Deletes a highlight.

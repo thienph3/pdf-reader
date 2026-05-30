@@ -6,7 +6,9 @@ import 'package:pdfrx/pdfrx.dart';
 
 /// Generates, caches (memory + disk), and serves PDF thumbnail images.
 class ThumbnailService {
+  static const _maxMemCacheSize = 25;
   final Map<String, ui.Image> _memCache = {};
+  final List<String> _accessOrder = [];
   String? _cacheDir;
 
   Future<String> _getCacheDir() async {
@@ -28,7 +30,11 @@ class ThumbnailService {
     final cacheKey = '${bookId}_${width.toInt()}';
 
     // 1. Memory cache
-    if (_memCache.containsKey(cacheKey)) return _memCache[cacheKey];
+    if (_memCache.containsKey(cacheKey)) {
+      _accessOrder.remove(cacheKey);
+      _accessOrder.add(cacheKey);
+      return _memCache[cacheKey];
+    }
 
     try {
       // 2. Disk cache
@@ -40,6 +46,8 @@ class ThumbnailService {
         final image = await _decodeImage(bytes);
         if (image != null) {
           _memCache[cacheKey] = image;
+          _accessOrder.add(cacheKey);
+          _evictIfNeeded();
           return image;
         }
       }
@@ -89,6 +97,8 @@ class ThumbnailService {
       }
 
       _memCache[cacheKey] = image;
+      _accessOrder.add(cacheKey);
+      _evictIfNeeded();
       return image;
     } catch (e) {
       debugPrint('ThumbnailService error for $bookId: $e');
@@ -107,10 +117,18 @@ class ThumbnailService {
     }
   }
 
+  void _evictIfNeeded() {
+    while (_memCache.length > _maxMemCacheSize && _accessOrder.isNotEmpty) {
+      final lruKey = _accessOrder.removeAt(0);
+      _memCache.remove(lruKey)?.dispose();
+    }
+  }
+
   void evict(String bookId) {
     _memCache.removeWhere((key, img) {
       if (key.startsWith(bookId)) {
         img.dispose();
+        _accessOrder.remove(key);
         return true;
       }
       return false;
@@ -127,5 +145,6 @@ class ThumbnailService {
       img.dispose();
     }
     _memCache.clear();
+    _accessOrder.clear();
   }
 }

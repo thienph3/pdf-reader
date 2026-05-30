@@ -91,7 +91,7 @@ class BookListUi {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  '$bookCount books',
+                  AppStrings.of(context).nBooks(bookCount),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),

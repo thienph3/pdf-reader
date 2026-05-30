@@ -128,11 +128,15 @@ class Book {
         'updatedAt': updatedAt.toIso8601String(),
       };
 
-  factory Book.fromMap(Map<dynamic, dynamic> map) => Book(
+  factory Book.fromMap(Map<dynamic, dynamic> map) {
+    final formatIndex = map['format'] as int? ?? 0;
+    return Book(
         id: map['id'] as String,
-        title: map['title'] as String,
+        title: map['title'] as String? ?? '',
         author: map['author'] as String? ?? '',
-        format: BookFormat.values[map['format'] as int? ?? 0],
+        format: formatIndex < BookFormat.values.length
+            ? BookFormat.values[formatIndex]
+            : BookFormat.paper,
         filePath: map['filePath'] as String?,
         categoryId: map['categoryId'] as String?,
         notes: map['notes'] as String? ?? '',
@@ -140,19 +144,28 @@ class Book {
         totalPages: map['totalPages'] as int? ?? 0,
         readingSeconds: map['readingSeconds'] as int? ?? 0,
         bookmarks: (map['bookmarks'] as List?)
-                ?.map((b) => Bookmark.fromMap(b as Map))
+                ?.map((b) {
+                  try { return Bookmark.fromMap(b as Map); }
+                  catch (_) { return null; }
+                })
+                .whereType<Bookmark>()
                 .toList() ??
             [],
         highlights: (map['highlights'] as List?)
-                ?.map((h) => Highlight.fromMap(h as Map))
+                ?.map((h) {
+                  try { return Highlight.fromMap(h as Map); }
+                  catch (_) { return null; }
+                })
+                .whereType<Highlight>()
                 .toList() ??
             [],
         lastOpenedAt: map['lastOpenedAt'] != null
-            ? DateTime.parse(map['lastOpenedAt'] as String)
+            ? DateTime.tryParse(map['lastOpenedAt'] as String)
             : null,
-        createdAt: DateTime.parse(map['createdAt'] as String),
-        updatedAt: DateTime.parse(map['updatedAt'] as String),
-      );
+        createdAt: DateTime.tryParse(map['createdAt'] as String? ?? '') ?? DateTime.now(),
+        updatedAt: DateTime.tryParse(map['updatedAt'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
 
   String toJson() => jsonEncode(toMap());
   factory Book.fromJson(String json) =>

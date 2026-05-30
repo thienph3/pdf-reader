@@ -1,4 +1,4 @@
-package com.example.pdf_reader
+package com.thienph3.pdfreader
 
 import android.content.Intent
 import android.provider.Settings
@@ -9,7 +9,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.pdf_reader/tts")
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.thienph3.pdfreader/tts")
             .setMethodCallHandler { call, result ->
                 if (call.method == "openTtsSettings") {
                     try {
@@ -18,7 +18,6 @@ class MainActivity : FlutterActivity() {
                         startActivity(intent)
                         result.success(true)
                     } catch (e: Exception) {
-                        // Fallback: open general settings
                         try {
                             startActivity(Intent(Settings.ACTION_SETTINGS))
                             result.success(true)

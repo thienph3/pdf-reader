@@ -6,7 +6,7 @@ import 'widgets/bookmark_sheet.dart';
 
 /// Manages bookmark-related functionality for PDF viewer.
 class PdfBookmarkManager {
-  final BookService? bookService;
+  BookService? bookService;
   final String? bookId;
   final VoidCallback? onBookmarksUpdated;
 
@@ -15,6 +15,10 @@ class PdfBookmarkManager {
     required this.bookId,
     this.onBookmarksUpdated,
   });
+
+  void updateService(BookService? service) {
+    bookService = service;
+  }
 
   /// Checks if the current page is bookmarked.
   bool isBookmarked(int currentPage) {

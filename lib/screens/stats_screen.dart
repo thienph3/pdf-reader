@@ -168,7 +168,7 @@ class _WeekChart extends StatelessWidget {
     final now = DateTime.now();
     final dayLabels = List.generate(logs.length, (i) {
       final date = now.subtract(Duration(days: logs.length - 1 - i));
-      return ['', 'M', 'T', 'W', 'T', 'F', 'S', 'S'][date.weekday];
+      return ['', ...AppStrings.of(context).weekDays][date.weekday];
     });
 
     return Row(

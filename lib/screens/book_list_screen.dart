@@ -161,13 +161,13 @@ class _BookListScreenState extends State<BookListScreen> {
     final query = _searchCtrl.text.toLowerCase();
     
     if (query == 'added:recent') {
-      return 'Recently Added';
+      return s.recentlyAdded;
     } else if (query == 'status:unread') {
-      return 'Unread Books';
+      return s.unreadBooks;
     } else if (query == 'status:almost-finished') {
-      return 'Almost Finished';
+      return s.almostFinished;
     } else if (query == 'status:frequently-read') {
-      return 'Frequently Read';
+      return s.frequentlyRead;
     } else if (_listManager.getFilterCategoryId() != null) {
       final catId = _listManager.getFilterCategoryId();
       if (catId != null) {

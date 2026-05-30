@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/book.dart';
@@ -21,8 +22,16 @@ class BookService {
 
   List<Book> getAll() {
     if (_sortedCache != null) return _sortedCache!;
-    _sortedCache = _box.values.map((m) => Book.fromMap(m)).toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final books = <Book>[];
+    for (final m in _box.values) {
+      try {
+        books.add(Book.fromMap(m));
+      } catch (e) {
+        debugPrint('BookService: skipping corrupt book entry: $e');
+      }
+    }
+    books.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    _sortedCache = books;
     return _sortedCache!;
   }
 
@@ -171,6 +180,21 @@ class BookService {
     final updated = book.copyWith(
       highlights: book.highlights
           .map((h) => h.id == highlightId ? h.copyWith(note: note) : h)
+          .toList(),
+      updatedAt: DateTime.now(),
+    );
+    await _box.put(updated.id, updated.toMap());
+    _invalidateCache();
+    return updated;
+  }
+
+  Future<Book> updateHighlightColor(
+      String bookId, String highlightId, int colorValue) async {
+    final book = getById(bookId);
+    if (book == null) throw StateError('Book not found: $bookId');
+    final updated = book.copyWith(
+      highlights: book.highlights
+          .map((h) => h.id == highlightId ? h.copyWith(colorValue: colorValue) : h)
           .toList(),
       updatedAt: DateTime.now(),
     );

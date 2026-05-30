@@ -258,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
               onPressed: () {
                 Navigator.pop(ctx);
                 // Open Android TTS settings via intent
-                const channel = MethodChannel('com.example.pdf_reader/tts');
+                const channel = MethodChannel('com.thienph3.pdfreader/tts');
                 channel.invokeMethod('openTtsSettings').catchError((_) {});
               },
               child: Text(s.openTtsSettings),

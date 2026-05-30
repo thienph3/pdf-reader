@@ -218,7 +218,7 @@ class PdfViewHighlightsUi {
     required List<Highlight> highlights,
     required bool showPage,
     ValueChanged<int>? onPageSelected,
-    String title = 'Highlights',
+    String? title,
   }) {
     showModalBottomSheet(
       context: context,
@@ -232,7 +232,7 @@ class PdfViewHighlightsUi {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+              child: Text(title ?? AppStrings.of(context).highlights, style: Theme.of(context).textTheme.titleMedium),
             ),
             Expanded(
               child: ListView.builder(

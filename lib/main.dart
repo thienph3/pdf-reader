@@ -13,7 +13,24 @@ import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  pdfrxFlutterInitialize(); // Initialize pdfrx for thumbnail rendering
+  
+  // Global error handler — prevents red error screens in release
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Something went wrong',
+            style: const TextStyle(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  };
+
+  pdfrxFlutterInitialize();
   final bookService = BookService();
   await bookService.init();
   final categoryService = CategoryService();

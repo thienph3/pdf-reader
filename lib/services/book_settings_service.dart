@@ -5,12 +5,14 @@ class BookSettings {
   final bool horizontalScroll;
   final int cropMargins; // 0=off, 10, 15, 20, 25 percent
   final double brightness; // -1 = use system
+  final double lastZoom; // 1.0 = default
 
   const BookSettings({
     this.readingMode = 0,
     this.horizontalScroll = false,
     this.cropMargins = 0,
     this.brightness = -1,
+    this.lastZoom = 1.0,
   });
 
   BookSettings copyWith({
@@ -18,12 +20,14 @@ class BookSettings {
     bool? horizontalScroll,
     int? cropMargins,
     double? brightness,
+    double? lastZoom,
   }) =>
       BookSettings(
         readingMode: readingMode ?? this.readingMode,
         horizontalScroll: horizontalScroll ?? this.horizontalScroll,
         cropMargins: cropMargins ?? this.cropMargins,
         brightness: brightness ?? this.brightness,
+        lastZoom: lastZoom ?? this.lastZoom,
       );
 
   Map<String, dynamic> toMap() => {
@@ -31,6 +35,7 @@ class BookSettings {
         'horizontalScroll': horizontalScroll,
         'cropMargins': cropMargins,
         'brightness': brightness,
+        'lastZoom': lastZoom,
       };
 
   factory BookSettings.fromMap(Map map) {
@@ -40,6 +45,7 @@ class BookSettings {
       horizontalScroll: map['horizontalScroll'] as bool? ?? false,
       cropMargins: crop is int ? crop : (crop == true ? 20 : 0),
       brightness: (map['brightness'] as num?)?.toDouble() ?? -1,
+      lastZoom: (map['lastZoom'] as num?)?.toDouble() ?? 1.0,
     );
   }
 }

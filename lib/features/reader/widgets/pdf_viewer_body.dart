@@ -97,6 +97,14 @@ class PdfViewerBody extends StatelessWidget {
             }
           },
           onGeneralTap: (ctx, controller, details) {
+            if (details.type == PdfViewerGeneralTapType.doubleTap) {
+              if (controller.currentZoom > 1.5) {
+                controller.setZoom(details.documentPosition, 1.0);
+              } else {
+                controller.setZoom(details.documentPosition, 2.5);
+              }
+              return true;
+            }
             if (details.type != PdfViewerGeneralTapType.tap) return false;
             final hit = controller.getPdfPageHitTestResult(
               details.documentPosition, useDocumentLayoutCoordinates: true);

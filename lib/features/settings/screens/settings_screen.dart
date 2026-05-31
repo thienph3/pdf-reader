@@ -93,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
                   title: const Text('Export crash log'),
                   onTap: () async {
                     final path = await CrashLogService.getFilePath();
-                    if (path != null) await Share.shareXFiles([XFile(path)]);
+                    if (path != null) await SharePlus.instance.share(ShareParams(files: [XFile(path)]));
                   },
                 ),
               ]);

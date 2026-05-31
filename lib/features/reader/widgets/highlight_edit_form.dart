@@ -55,7 +55,7 @@ void showHighlightEditForm(
             Row(children: [
               Expanded(child: FilledButton(onPressed: () async { Navigator.pop(ctx); await onSave(selectedColor, noteCtrl.text.trim()); }, child: Text(AppStrings.of(context).save))),
               const SizedBox(width: 12),
-              IconButton(onPressed: () { final text = highlight.note.isNotEmpty ? '${highlight.text}\n\n${highlight.note}' : highlight.text; Share.share(text); }, icon: const Icon(Icons.share), tooltip: 'Share'),
+              IconButton(onPressed: () { final text = highlight.note.isNotEmpty ? '${highlight.text}\n\n${highlight.note}' : highlight.text; SharePlus.instance.share(ShareParams(text: text)); }, icon: const Icon(Icons.share), tooltip: 'Share'),
               IconButton(onPressed: () async { Navigator.pop(ctx); await onDelete(); }, icon: const Icon(Icons.delete_outline, color: Colors.red), tooltip: 'Delete'),
             ]),
             const SizedBox(height: 8),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/book_service.dart';
 import '../services/category_service.dart';
 import '../services/reading_log_service.dart';
@@ -12,107 +13,50 @@ import '../services/book_settings_service.dart';
 import '../services/page_notes_service.dart';
 import '../services/reading_queue_service.dart';
 
-class BookServiceScope extends InheritedWidget {
-  final BookService bookService;
-  const BookServiceScope({super.key, required this.bookService, required super.child});
-  static BookService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.bookService;
-  @override
-  bool updateShouldNotify(BookServiceScope oldWidget) => false;
+class BookServiceScope {
+  static BookService of(BuildContext context) => Provider.of<BookService>(context, listen: false);
 }
 
-class CategoryServiceScope extends InheritedWidget {
-  final CategoryService categoryService;
-  const CategoryServiceScope({super.key, required this.categoryService, required super.child});
-  static CategoryService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.categoryService;
-  @override
-  bool updateShouldNotify(CategoryServiceScope oldWidget) => false;
+class CategoryServiceScope {
+  static CategoryService of(BuildContext context) => Provider.of<CategoryService>(context, listen: false);
 }
 
-class ThumbnailServiceScope extends InheritedWidget {
-  final ThumbnailService thumbnailService;
-  const ThumbnailServiceScope({super.key, required this.thumbnailService, required super.child});
-  static ThumbnailService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.thumbnailService;
-  @override
-  bool updateShouldNotify(ThumbnailServiceScope oldWidget) => false;
+class ThumbnailServiceScope {
+  static ThumbnailService of(BuildContext context) => Provider.of<ThumbnailService>(context, listen: false);
 }
 
-class ReadingLogServiceScope extends InheritedWidget {
-  final ReadingLogService readingLogService;
-  const ReadingLogServiceScope({super.key, required this.readingLogService, required super.child});
-  static ReadingLogService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.readingLogService;
-  @override
-  bool updateShouldNotify(ReadingLogServiceScope oldWidget) => false;
+class ReadingLogServiceScope {
+  static ReadingLogService of(BuildContext context) => Provider.of<ReadingLogService>(context, listen: false);
 }
 
-class TtsServiceScope extends InheritedWidget {
-  final TtsService ttsService;
-  const TtsServiceScope({super.key, required this.ttsService, required super.child});
-  static TtsService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.ttsService;
-  @override
-  bool updateShouldNotify(TtsServiceScope oldWidget) => false;
+class TtsServiceScope {
+  static TtsService of(BuildContext context) => Provider.of<TtsService>(context, listen: false);
 }
 
-class OcrServiceScope extends InheritedWidget {
-  final OcrService ocrService;
-  const OcrServiceScope({super.key, required this.ocrService, required super.child});
-  static OcrService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.ocrService;
-  @override
-  bool updateShouldNotify(OcrServiceScope oldWidget) => false;
+class OcrServiceScope {
+  static OcrService of(BuildContext context) => Provider.of<OcrService>(context, listen: false);
 }
 
 class HighlightServiceScope {
-  static HighlightService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.highlightService;
+  static HighlightService of(BuildContext context) => Provider.of<HighlightService>(context, listen: false);
 }
 
 class StreakServiceScope {
-  static StreakService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.streakService;
+  static StreakService of(BuildContext context) => Provider.of<StreakService>(context, listen: false);
 }
 
-class SettingsScope extends InheritedWidget {
-  final SettingsService settingsService;
-  const SettingsScope({super.key, required this.settingsService, required super.child});
-  static SettingsService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<SettingsScope>()!.settingsService;
-  @override
-  bool updateShouldNotify(SettingsScope oldWidget) => settingsService != oldWidget.settingsService;
+class SettingsScope {
+  static SettingsService of(BuildContext context) => Provider.of<SettingsService>(context);
 }
 
 class BookSettingsServiceScope {
-  static BookSettingsService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.bookSettingsService;
+  static BookSettingsService of(BuildContext context) => Provider.of<BookSettingsService>(context, listen: false);
 }
 
 class PageNotesServiceScope {
-  static PageNotesService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.pageNotesService;
+  static PageNotesService of(BuildContext context) => Provider.of<PageNotesService>(context, listen: false);
 }
 
 class ReadingQueueServiceScope {
-  static ReadingQueueService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.readingQueueService;
-}
-
-/// Single InheritedWidget holding all services.
-class ServiceScope extends InheritedWidget {
-  final BookService bookService;
-  final CategoryService categoryService;
-  final ThumbnailService thumbnailService;
-  final ReadingLogService readingLogService;
-  final TtsService ttsService;
-  final OcrService ocrService;
-  final SettingsService settingsService;
-  final HighlightService highlightService;
-  final StreakService streakService;
-  final BookSettingsService bookSettingsService;
-  final PageNotesService pageNotesService;
-  final ReadingQueueService readingQueueService;
-
-  const ServiceScope({
-    super.key, required this.bookService, required this.categoryService,
-    required this.thumbnailService, required this.readingLogService,
-    required this.ttsService, required this.ocrService,
-    required this.settingsService, required this.highlightService,
-    required this.streakService, required this.bookSettingsService,
-    required this.pageNotesService, required this.readingQueueService,
-    required super.child,
-  });
-
-  @override
-  bool updateShouldNotify(ServiceScope oldWidget) => false;
+  static ReadingQueueService of(BuildContext context) => Provider.of<ReadingQueueService>(context, listen: false);
 }

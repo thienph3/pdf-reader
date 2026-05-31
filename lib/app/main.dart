@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:provider/provider.dart';
 import '../core/l10n/app_strings.dart';
 import '../services/book_service.dart';
 import '../services/category_service.dart';
@@ -15,7 +16,6 @@ import '../services/book_settings_service.dart';
 import '../services/crash_log_service.dart';
 import '../services/page_notes_service.dart';
 import '../services/reading_queue_service.dart';
-import 'service_scope.dart';
 import './splash_screen.dart';
 
 export 'service_scope.dart';
@@ -71,7 +71,7 @@ void main() async {
   });
 }
 
-class PdfReaderApp extends StatefulWidget {
+class PdfReaderApp extends StatelessWidget {
   final BookService bookService;
   final CategoryService categoryService;
   final SettingsService settingsService;
@@ -95,29 +95,25 @@ class PdfReaderApp extends StatefulWidget {
   });
 
   @override
-  State<PdfReaderApp> createState() => _PdfReaderAppState();
-}
-
-class _PdfReaderAppState extends State<PdfReaderApp> {
-  @override
-  void initState() { super.initState(); widget.settingsService.addListener(_onSettingsChanged); }
-  @override
-  void dispose() { widget.settingsService.removeListener(_onSettingsChanged); super.dispose(); }
-  void _onSettingsChanged() => setState(() {});
-
-  @override
   Widget build(BuildContext context) {
-    final settings = widget.settingsService;
-    return ServiceScope(
-      bookService: widget.bookService, categoryService: widget.categoryService,
-      thumbnailService: widget.thumbnailService, readingLogService: widget.readingLogService,
-      ttsService: widget.ttsService, ocrService: widget.ocrService,
-      settingsService: settings, highlightService: widget.highlightService,
-      streakService: widget.streakService, bookSettingsService: widget.bookSettingsService,
-      pageNotesService: widget.pageNotesService, readingQueueService: widget.readingQueueService,
-      child: SettingsScope(
-        settingsService: settings,
-        child: MaterialApp(
+    return MultiProvider(
+      providers: [
+        Provider<BookService>.value(value: bookService),
+        Provider<CategoryService>.value(value: categoryService),
+        Provider<ThumbnailService>.value(value: thumbnailService),
+        Provider<ReadingLogService>.value(value: readingLogService),
+        ChangeNotifierProvider<TtsService>.value(value: ttsService),
+        ChangeNotifierProvider<OcrService>.value(value: ocrService),
+        ChangeNotifierProvider<SettingsService>.value(value: settingsService),
+        Provider<HighlightService>.value(value: highlightService),
+        Provider<StreakService>.value(value: streakService),
+        Provider<BookSettingsService>.value(value: bookSettingsService),
+        Provider<PageNotesService>.value(value: pageNotesService),
+        Provider<ReadingQueueService>.value(value: readingQueueService),
+      ],
+      child: Builder(builder: (context) {
+        final settings = context.watch<SettingsService>();
+        return MaterialApp(
           title: 'PDF Reader', debugShowCheckedModeBanner: false,
           themeMode: settings.themeMode,
           theme: ThemeData(colorSchemeSeed: Colors.indigo, brightness: Brightness.light, useMaterial3: true),
@@ -129,8 +125,8 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
             ...AppLocalizations.localizationsDelegates,
           ],
           home: const SplashScreen(),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

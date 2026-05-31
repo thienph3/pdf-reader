@@ -46,6 +46,7 @@ class ReaderScreenState extends State<ReaderScreen> {
   int _currentPage = 0, _totalPages = 0;
   bool _closed = false, _fullscreen = false, _pdfLoading = true;
   bool _isSearching = false, _showBrightnessIndicator = false;
+  bool _showTimer = false;
   double _brightness = 0.5;
   int _readingMode = 0, _cropMargins = 0;
   bool _horizontalScroll = false;
@@ -298,6 +299,9 @@ class ReaderScreenState extends State<ReaderScreen> {
 
   void setSearching(bool v) => setState(() => _isSearching = v);
   void setReadingMode(int m) => setState(() => _readingMode = m);
+  void toggleTimer() => setState(() => _showTimer = !_showTimer);
+  bool get showTimer => _showTimer;
+  int get sessionSeconds => _sessionSeconds;
   void setCropMargins(int c) { setState(() => _cropMargins = c); _saveBookSettings(); }
   void setBrightness(double v) {
     setState(() { _brightness = v; _showBrightnessIndicator = true; });
@@ -384,4 +388,31 @@ class ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) => ReaderScreenBody(state: this);
+
+  void showPageNoteSheet() {
+    if (widget.bookId == null) return;
+    final notesService = PageNotesServiceScope.of(context);
+    final s = AppStrings.of(context);
+    final existing = notesService.getNote(widget.bookId!, _currentPage);
+    final ctrl = TextEditingController(text: existing ?? '');
+    showModalBottomSheet(
+      context: context, isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: ctrl, autofocus: true, maxLines: 4,
+            decoration: InputDecoration(hintText: s.noteHint, border: const OutlineInputBorder())),
+          const SizedBox(height: 8),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+            if (existing != null)
+              TextButton(onPressed: () { notesService.deleteNote(widget.bookId!, _currentPage); Navigator.pop(ctx); }, child: Text(s.delete)),
+            const Spacer(),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(s.cancel)),
+            TextButton(onPressed: () { notesService.saveNote(widget.bookId!, _currentPage, ctrl.text); Navigator.pop(ctx); }, child: Text(s.save)),
+          ]),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+  }
 }

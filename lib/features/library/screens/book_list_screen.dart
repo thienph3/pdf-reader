@@ -5,6 +5,7 @@ import '../../../app/main.dart';
 import '../../../models/book.dart';
 import '../../../services/book_service.dart';
 import '../../../services/category_service.dart';
+import '../../../services/reading_queue_service.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/utils/annotation_export.dart';
 import '../../../core/utils/dialogs.dart';
@@ -14,6 +15,7 @@ import '../controllers/book_actions_manager.dart';
 import '../controllers/book_list_ui.dart';
 import '../controllers/book_list_selection.dart';
 import '../controllers/book_list_content.dart';
+import 'cross_book_search_screen.dart';
 
 class BookListScreen extends StatefulWidget {
   const BookListScreen({super.key});
@@ -30,6 +32,7 @@ class _BookListScreenState extends State<BookListScreen> {
 
   BookService get _bookService => BookServiceScope.of(context);
   CategoryService get _catService => CategoryServiceScope.of(context);
+  ReadingQueueService get _queueService => ReadingQueueServiceScope.of(context);
 
   @override
   void didChangeDependencies() {
@@ -57,11 +60,12 @@ class _BookListScreenState extends State<BookListScreen> {
 
   Future<void> _handleExportAnnotations(Book book) async {
     final s = AppStrings.of(context);
-    if (book.highlights.isEmpty && book.bookmarks.isEmpty) {
+    final pageNotes = PageNotesServiceScope.of(context).getAllForBook(book.id);
+    if (book.highlights.isEmpty && book.bookmarks.isEmpty && pageNotes.isEmpty) {
       showAppSnackBar(context, s.noAnnotations);
       return;
     }
-    final md = exportAnnotationsAsMarkdown(book);
+    final md = exportAnnotationsAsMarkdown(book, pageNotes: pageNotes);
     final path = await FilePicker.saveFile(dialogTitle: s.exportAnnotations, fileName: '${book.title}_annotations.md');
     if (path == null) return;
     await io.File(path).writeAsString(md);
@@ -96,6 +100,19 @@ class _BookListScreenState extends State<BookListScreen> {
 
   bool get _hasActiveFilter => _listManager.smartFilter != SmartFilter.none || _listManager.getFilterCategoryId() != null;
   void _clearFilter() { setState(() { _searchCtrl.clear(); _listManager.setFilterCategoryId(null); _listManager.setSmartFilter(SmartFilter.none); }); }
+
+  void _showReadingQueue() {
+    final s = AppStrings.of(context);
+    final queue = _queueService.getQueue();
+    final books = queue.map((id) => _bookService.getById(id)).whereType<Book>().toList();
+    showModalBottomSheet(context: context, builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setSheetState) => Column(mainAxisSize: MainAxisSize.min, children: [
+        Padding(padding: const EdgeInsets.all(16), child: Text(s.readingQueue, style: Theme.of(ctx).textTheme.titleMedium)),
+        if (books.isEmpty) Padding(padding: const EdgeInsets.all(32), child: Text(s.queueEmpty)),
+        ...books.map((b) => ListTile(title: Text(b.title), trailing: IconButton(icon: const Icon(Icons.remove_circle_outline), onPressed: () { _queueService.removeFromQueue(b.id); setSheetState(() => books.remove(b)); }))),
+      ]),
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +164,7 @@ class _BookListScreenState extends State<BookListScreen> {
         if (!_isSearching) ...[
           IconButton(icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view), tooltip: _isGridView ? s.listView : s.gridView, onPressed: () => setState(() => _isGridView = !_isGridView)),
           PopupMenuButton<SortMode>(icon: const Icon(Icons.sort), tooltip: s.sort, onSelected: (m) { _listManager.setSortMode(m); setState(() {}); }, itemBuilder: (_) => [_listManager.buildSortMenuItem(context, SortMode.updatedDesc, s.sortUpdated), _listManager.buildSortMenuItem(context, SortMode.titleAsc, s.sortTitle), _listManager.buildSortMenuItem(context, SortMode.createdDesc, s.sortCreated)]),
-          PopupMenuButton<String>(icon: const Icon(Icons.more_vert), onSelected: (v) { if (v == 'export') _handleExport(); if (v == 'import') _handleImport(); }, itemBuilder: (_) => [PopupMenuItem(value: 'export', child: Text(s.exportLib)), PopupMenuItem(value: 'import', child: Text(s.importLib))]),
+          PopupMenuButton<String>(icon: const Icon(Icons.more_vert), onSelected: (v) { if (v == 'export') _handleExport(); if (v == 'import') _handleImport(); if (v == 'crossSearch') Navigator.push(context, MaterialPageRoute(builder: (_) => const CrossBookSearchScreen())); if (v == 'queue') _showReadingQueue(); }, itemBuilder: (_) => [PopupMenuItem(value: 'crossSearch', child: Text(s.searchHint)), PopupMenuItem(value: 'queue', child: Text(s.readingQueue)), PopupMenuItem(value: 'export', child: Text(s.exportLib)), PopupMenuItem(value: 'import', child: Text(s.importLib))]),
         ],
       ],
     );

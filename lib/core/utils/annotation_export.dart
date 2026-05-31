@@ -1,7 +1,7 @@
 import '../../models/book.dart';
 
-/// Exports a book's annotations (highlights + bookmarks) as Markdown.
-String exportAnnotationsAsMarkdown(Book book) {
+/// Exports a book's annotations (highlights + bookmarks + page notes) as Markdown.
+String exportAnnotationsAsMarkdown(Book book, {Map<int, String>? pageNotes}) {
   final buf = StringBuffer('# ${book.title}\n');
 
   if (book.highlights.isNotEmpty) {
@@ -17,6 +17,14 @@ String exportAnnotationsAsMarkdown(Book book) {
     for (final b in book.bookmarks..sort((a, b) => a.page.compareTo(b.page))) {
       final note = b.note.isNotEmpty ? ': ${b.note}' : '';
       buf.writeln('- Page ${b.page + 1}$note');
+    }
+  }
+
+  if (pageNotes != null && pageNotes.isNotEmpty) {
+    buf.writeln('\n## Page Notes');
+    final sorted = pageNotes.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+    for (final e in sorted) {
+      buf.writeln('- Page ${e.key + 1}: ${e.value}');
     }
   }
 

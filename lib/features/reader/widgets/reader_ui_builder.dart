@@ -26,6 +26,9 @@ class PdfViewUiBuilder {
   final VoidCallback? onGoToPage;
   final VoidCallback? onCycleReadingMode;
   final int readingMode;
+  final VoidCallback? onToggleTimer;
+  final bool showTimer;
+  final VoidCallback? onShowPageNote;
 
   PdfViewUiBuilder({
     required this.bookmarkManager, required this.fileName,
@@ -36,7 +39,8 @@ class PdfViewUiBuilder {
     this.onToggleTextView, this.isTextViewMode = false,
     this.isTextViewLoading = false, required this.onToggleBookmark,
     this.onShowThumbnails, this.onGoToPage, this.onCycleReadingMode,
-    this.readingMode = 0,
+    this.readingMode = 0, this.onToggleTimer, this.showTimer = false,
+    this.onShowPageNote,
   });
 
   PreferredSizeWidget buildAppBar(BuildContext context) {
@@ -52,6 +56,11 @@ class PdfViewUiBuilder {
       actions: [
         if (totalPages > 0) ...[
           IconButton(
+            icon: Icon(showTimer ? Icons.timer : Icons.timer_outlined,
+                color: showTimer ? Theme.of(context).colorScheme.primary : null),
+            onPressed: onToggleTimer,
+          ),
+          IconButton(
             icon: Icon(_readingModeIcon()),
             tooltip: _readingModeLabel(context),
             onPressed: onCycleReadingMode,
@@ -60,6 +69,8 @@ class PdfViewUiBuilder {
             icon: Icon(bookmarkManager.isBookmarked(currentPage) ? Icons.bookmark : Icons.bookmark_border, color: bookmarkManager.isBookmarked(currentPage) ? Theme.of(context).colorScheme.primary : null),
             onPressed: () => onToggleBookmark(currentPage),
           ),
+          if (onShowPageNote != null)
+            IconButton(icon: const Icon(Icons.note_add_outlined), onPressed: onShowPageNote),
           IconButton(icon: const Icon(Icons.search), onPressed: onStartSearch),
           IconButton(
             icon: Icon(isTtsActive ? Icons.stop_circle : Icons.record_voice_over, color: isTtsActive ? Theme.of(context).colorScheme.primary : null),

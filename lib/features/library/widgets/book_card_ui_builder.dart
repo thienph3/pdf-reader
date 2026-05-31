@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../../../models/book.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../app/service_scope.dart';
 import './book_card_cover.dart';
 
 class BookCardUiBuilder {
@@ -46,6 +47,7 @@ class BookCardUiBuilder {
     required BuildContext context, required Book book,
     required VoidCallback onRead, required VoidCallback onEdit,
     required VoidCallback onDelete, VoidCallback? onExportAnnotations,
+    VoidCallback? onAddToQueue,
   }) {
     final s = AppStrings.of(context);
     showModalBottomSheet(
@@ -56,6 +58,10 @@ class BookCardUiBuilder {
           ListTile(leading: const Icon(Icons.edit), title: Text(s.edit), onTap: () { Navigator.pop(ctx); onEdit(); }),
           if (onExportAnnotations != null && (book.highlights.isNotEmpty || book.bookmarks.isNotEmpty))
             ListTile(leading: const Icon(Icons.file_download_outlined), title: Text(s.exportAnnotations), onTap: () { Navigator.pop(ctx); onExportAnnotations(); }),
+          ListTile(leading: const Icon(Icons.queue), title: Text(s.addToQueue), onTap: () {
+            Navigator.pop(ctx);
+            ReadingQueueServiceScope.of(context).addToQueue(book.id);
+          }),
           ListTile(leading: const Icon(Icons.delete), title: Text(s.delete), onTap: () { Navigator.pop(ctx); onDelete(); }),
         ]),
       ),

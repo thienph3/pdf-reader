@@ -258,6 +258,14 @@ class AppStrings {
   String get epubChapter => _isVi ? 'Chương' : 'Chapter';
   String get epubLoading => _isVi ? 'Đang tải EPUB...' : 'Loading EPUB...';
   String get epubError => _isVi ? 'Không thể mở file EPUB' : 'Failed to open EPUB file';
+
+  // Reading queue
+  String get readingQueue => _isVi ? 'Hàng đợi đọc' : 'Reading Queue';
+  String get addToQueue => _isVi ? 'Thêm vào hàng đợi' : 'Add to Queue';
+  String get queueEmpty => _isVi ? 'Chưa có sách trong hàng đợi' : 'Queue is empty';
+
+  // Focus timer
+  String get focusTimer => _isVi ? 'Bộ đếm thời gian' : 'Focus Timer';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

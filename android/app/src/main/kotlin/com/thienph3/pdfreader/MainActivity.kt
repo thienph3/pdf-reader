@@ -48,9 +48,12 @@ class MainActivity : FlutterActivity() {
 
     private fun handleIntent(intent: Intent?): String? {
         if (intent == null) return null
-        if (intent.action != Intent.ACTION_VIEW) return null
-
-        val uri = intent.data ?: return null
+        
+        val uri = when (intent.action) {
+            Intent.ACTION_VIEW -> intent.data
+            Intent.ACTION_SEND -> intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM) ?: intent.data
+            else -> return null
+        } ?: return null
 
         // If it's a file:// URI, return path directly
         if (uri.scheme == "file") {
@@ -60,7 +63,14 @@ class MainActivity : FlutterActivity() {
         // For content:// URIs, copy to app cache
         try {
             val inputStream = contentResolver.openInputStream(uri) ?: return null
-            val fileName = "opened_${System.currentTimeMillis()}.pdf"
+            val ext = contentResolver.getType(uri)?.let {
+                when {
+                    it.contains("pdf") -> ".pdf"
+                    it.contains("epub") -> ".epub"
+                    else -> ".txt"
+                }
+            } ?: ".pdf"
+            val fileName = "opened_${System.currentTimeMillis()}$ext"
             val outFile = File(cacheDir, fileName)
             FileOutputStream(outFile).use { output ->
                 inputStream.copyTo(output)

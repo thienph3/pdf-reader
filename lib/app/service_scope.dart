@@ -9,6 +9,8 @@ import '../services/ocr_service.dart';
 import '../services/highlight_service.dart';
 import '../services/streak_service.dart';
 import '../services/book_settings_service.dart';
+import '../services/page_notes_service.dart';
+import '../services/reading_queue_service.dart';
 
 class BookServiceScope extends InheritedWidget {
   final BookService bookService;
@@ -78,6 +80,14 @@ class BookSettingsServiceScope {
   static BookSettingsService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.bookSettingsService;
 }
 
+class PageNotesServiceScope {
+  static PageNotesService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.pageNotesService;
+}
+
+class ReadingQueueServiceScope {
+  static ReadingQueueService of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<ServiceScope>()!.readingQueueService;
+}
+
 /// Single InheritedWidget holding all services.
 class ServiceScope extends InheritedWidget {
   final BookService bookService;
@@ -90,6 +100,8 @@ class ServiceScope extends InheritedWidget {
   final HighlightService highlightService;
   final StreakService streakService;
   final BookSettingsService bookSettingsService;
+  final PageNotesService pageNotesService;
+  final ReadingQueueService readingQueueService;
 
   const ServiceScope({
     super.key, required this.bookService, required this.categoryService,
@@ -97,6 +109,7 @@ class ServiceScope extends InheritedWidget {
     required this.ttsService, required this.ocrService,
     required this.settingsService, required this.highlightService,
     required this.streakService, required this.bookSettingsService,
+    required this.pageNotesService, required this.readingQueueService,
     required super.child,
   });
 

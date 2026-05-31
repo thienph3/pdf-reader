@@ -93,6 +93,9 @@ class ReaderScreenBody extends StatelessWidget {
       onGoToPage: state.showGoToPageDialog,
       onCycleReadingMode: () => state.setReadingMode((state.readingMode + 1) % 3),
       readingMode: state.readingMode,
+      onToggleTimer: state.toggleTimer,
+      showTimer: state.showTimer,
+      onShowPageNote: state.widget.bookId != null ? state.showPageNoteSheet : null,
     );
     if (state.isSearching) {
       return uiBuilder.buildSearchBar(context: context,
@@ -112,6 +115,13 @@ class ReaderScreenBody extends StatelessWidget {
           onPressed: state.closeAndPop),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       actions: [
+        IconButton(
+          icon: Icon(state.showTimer ? Icons.timer : Icons.timer_outlined,
+              color: state.showTimer ? Theme.of(context).colorScheme.primary : null),
+          onPressed: state.toggleTimer,
+        ),
+        if (state.widget.bookId != null)
+          IconButton(icon: const Icon(Icons.note_add_outlined), onPressed: state.showPageNoteSheet),
         if (state.widget.bookId != null)
           IconButton(
             icon: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border,
@@ -238,7 +248,21 @@ class ReaderScreenBody extends StatelessWidget {
           child: LinearProgressIndicator(
             value: (state.currentPage + 1) / state.totalPages,
             minHeight: 2, backgroundColor: Colors.transparent)),
+      // Focus timer chip
+      if (state.showTimer)
+        Positioned(top: 8, left: 0, right: 0,
+          child: Center(child: Chip(
+            avatar: const Icon(Icons.timer, size: 16),
+            label: Text(_formatTimer(state.sessionSeconds)),
+          ))),
     ];
+  }
+
+  static String _formatTimer(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   void _showReaderActions(BuildContext context) {

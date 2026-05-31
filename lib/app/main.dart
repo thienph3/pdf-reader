@@ -14,6 +14,8 @@ import '../services/highlight_service.dart';
 import '../services/streak_service.dart';
 import '../services/book_settings_service.dart';
 import '../services/crash_log_service.dart';
+import '../services/page_notes_service.dart';
+import '../services/reading_queue_service.dart';
 import 'service_scope.dart';
 import './splash_screen.dart';
 
@@ -35,28 +37,35 @@ void main() async {
 
     pdfrxFlutterInitialize();
     final bookService = BookService();
-    await bookService.init();
     final categoryService = CategoryService();
-    await categoryService.init();
     final settingsService = SettingsService();
-    await settingsService.init();
     final readingLogService = ReadingLogService();
-    await readingLogService.init();
-    final thumbnailService = ThumbnailService();
     final ttsService = TtsService();
-    await ttsService.init();
     final ocrService = OcrService();
-    await ocrService.init();
+    final bookSettingsService = BookSettingsService();
+    final pageNotesService = PageNotesService();
+    final readingQueueService = ReadingQueueService();
+    await Future.wait([
+      bookService.init(),
+      categoryService.init(),
+      settingsService.init(),
+      readingLogService.init(),
+      ttsService.init(),
+      ocrService.init(),
+      bookSettingsService.init(),
+      pageNotesService.init(),
+      readingQueueService.init(),
+    ]);
+    final thumbnailService = ThumbnailService();
     final highlightService = HighlightService(bookService);
     final streakService = StreakService(readingLogService, bookService);
-    final bookSettingsService = BookSettingsService();
-    await bookSettingsService.init();
     runApp(PdfReaderApp(
       bookService: bookService, categoryService: categoryService,
       settingsService: settingsService, readingLogService: readingLogService,
       thumbnailService: thumbnailService, ttsService: ttsService,
       ocrService: ocrService, highlightService: highlightService,
       streakService: streakService, bookSettingsService: bookSettingsService,
+      pageNotesService: pageNotesService, readingQueueService: readingQueueService,
     ));
   }, (error, stack) {
     CrashLogService.logCrash(error, stack);
@@ -74,6 +83,8 @@ class PdfReaderApp extends StatefulWidget {
   final HighlightService highlightService;
   final StreakService streakService;
   final BookSettingsService bookSettingsService;
+  final PageNotesService pageNotesService;
+  final ReadingQueueService readingQueueService;
 
   const PdfReaderApp({
     super.key, required this.bookService, required this.categoryService,
@@ -81,6 +92,7 @@ class PdfReaderApp extends StatefulWidget {
     required this.thumbnailService, required this.ttsService,
     required this.ocrService, required this.highlightService,
     required this.streakService, required this.bookSettingsService,
+    required this.pageNotesService, required this.readingQueueService,
   });
 
   @override
@@ -103,6 +115,7 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
       ttsService: widget.ttsService, ocrService: widget.ocrService,
       settingsService: settings, highlightService: widget.highlightService,
       streakService: widget.streakService, bookSettingsService: widget.bookSettingsService,
+      pageNotesService: widget.pageNotesService, readingQueueService: widget.readingQueueService,
       child: SettingsScope(
         settingsService: settings,
         child: MaterialApp(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../app/main.dart';
 import '../../../core/l10n/app_strings.dart';
@@ -13,6 +14,7 @@ class CrossBookSearchScreen extends StatefulWidget {
 class _CrossBookSearchScreenState extends State<CrossBookSearchScreen> {
   final _ctrl = TextEditingController();
   List<_SearchResult> _results = [];
+  Timer? _debounce;
 
   void _search(String query) {
     if (query.trim().isEmpty) { setState(() => _results = []); return; }
@@ -44,7 +46,11 @@ class _CrossBookSearchScreenState extends State<CrossBookSearchScreen> {
       appBar: AppBar(title: TextField(
         controller: _ctrl, autofocus: true,
         decoration: InputDecoration(hintText: s.searchHint, border: InputBorder.none),
-        onSubmitted: _search, onChanged: _search,
+        onSubmitted: (q) { _debounce?.cancel(); _search(q); },
+        onChanged: (q) {
+          _debounce?.cancel();
+          _debounce = Timer(const Duration(milliseconds: 300), () => _search(q));
+        },
       )),
       body: _results.isEmpty
           ? Center(child: Text(s.noResults))
@@ -70,7 +76,7 @@ class _CrossBookSearchScreenState extends State<CrossBookSearchScreen> {
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() { _debounce?.cancel(); _ctrl.dispose(); super.dispose(); }
 }
 
 class _SearchResult {

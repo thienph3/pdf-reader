@@ -12,6 +12,8 @@ String htmlToMarkdown(String html) {
   // Italic
   s = s.replaceAllMapped(RegExp('<(em|i)>(.*?)</\\1>', dotAll: true),
       (m) => '*${m[2]}*');
+  // Images
+  s = s.replaceAll(RegExp(r'<img[^>]*>', dotAll: true), '[Image]');
   // List items
   s = s.replaceAllMapped(RegExp('<li[^>]*>(.*?)</li>', dotAll: true),
       (m) => '- ${m[1]!.trim()}\n');

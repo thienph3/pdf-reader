@@ -27,6 +27,8 @@ class ReadingQueueService {
 
   Future<void> reorder(int oldIndex, int newIndex) async {
     final q = getQueue();
+    if (oldIndex < 0 || oldIndex >= q.length) return;
+    if (newIndex < 0 || newIndex > q.length) return;
     if (newIndex > oldIndex) newIndex--;
     final item = q.removeAt(oldIndex);
     q.insert(newIndex, item);

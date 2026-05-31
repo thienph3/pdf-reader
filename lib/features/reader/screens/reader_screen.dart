@@ -15,6 +15,7 @@ import '../providers/epub_content_provider.dart';
 import '../providers/text_content_provider.dart';
 import '../providers/cbz_content_provider.dart';
 import '../controllers/tts_controller.dart';
+import '../controllers/reader_ui_state.dart';
 import 'reader_screen_body.dart';
 
 class ReaderScreen extends StatefulWidget {
@@ -42,6 +43,9 @@ class ReaderScreenState extends State<ReaderScreen> {
   BookService? _bookService;
   ReadingLogService? _readingLogService;
   BookSettingsService? _bookSettingsService;
+
+  // ignore: unused_field
+  final _ui = ReaderUiState();
 
   int _currentPage = 0, _totalPages = 0;
   bool _closed = false, _fullscreen = false, _pdfLoading = true;

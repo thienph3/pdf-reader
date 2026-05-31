@@ -49,6 +49,8 @@ class EpubContentProvider extends ContentProvider {
     return md.replaceAll(RegExp(r'[#*\-]'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  double fontSize = 16;
+
   @override
   Widget buildContent(BuildContext context, {
     required int currentPage,
@@ -68,7 +70,18 @@ class EpubContentProvider extends ContentProvider {
       onPageChanged: onPageChanged,
       itemBuilder: (context, index) {
         final content = htmlToMarkdown(_chapters[index].htmlContent ?? '');
-        return Markdown(data: content, selectable: true, padding: const EdgeInsets.all(16));
+        return Markdown(
+          data: content,
+          selectable: true,
+          padding: const EdgeInsets.all(16),
+          styleSheet: MarkdownStyleSheet(
+            p: TextStyle(fontSize: fontSize, height: 1.8),
+            h1: TextStyle(fontSize: fontSize * 1.5, fontWeight: FontWeight.bold),
+            h2: TextStyle(fontSize: fontSize * 1.25, fontWeight: FontWeight.bold),
+            listBullet: TextStyle(fontSize: fontSize),
+            listIndent: 24,
+          ),
+        );
       },
     );
   }

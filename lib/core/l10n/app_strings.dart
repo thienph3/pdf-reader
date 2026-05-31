@@ -1,271 +1,268 @@
 import 'package:flutter/material.dart';
+import 'app_localizations.dart';
 
+export 'app_localizations.dart' show AppLocalizations;
+
+/// Compatibility shim — delegates to generated AppLocalizations.
 class AppStrings {
-  final Locale locale;
-  const AppStrings(this.locale);
+  final AppLocalizations _l;
+  AppStrings._(this._l);
 
-  static AppStrings of(BuildContext context) {
-    return Localizations.of<AppStrings>(context, AppStrings) ??
-        const AppStrings(Locale('vi'));
-  }
+  /// Create from locale (for tests and delegate).
+  factory AppStrings.fromLocale(Locale locale) =>
+      AppStrings._(lookupAppLocalizations(locale));
 
-  bool get _isVi => locale.languageCode == 'vi';
+  static AppStrings of(BuildContext context) =>
+      AppStrings._(AppLocalizations.of(context));
 
   // General
-  String get appName => 'PDF Reader';
-  String get cancel => _isVi ? 'Huỷ' : 'Cancel';
-  String get save => _isVi ? 'Lưu' : 'Save';
-  String get delete => _isVi ? 'Xoá' : 'Delete';
-  String get edit => _isVi ? 'Sửa' : 'Edit';
-  String get undo => _isVi ? 'Hoàn tác' : 'Undo';
+  String get appName => _l.appName;
+  String get cancel => _l.cancel;
+  String get save => _l.save;
+  String get delete => _l.delete;
+  String get edit => _l.edit;
+  String get undo => _l.undo;
 
   // Splash
-  String get splashSubtitle => _isVi ? 'Thư viện sách của bạn' : 'Your book library';
+  String get splashSubtitle => _l.splashSubtitle;
 
   // Book list
-  String get library => _isVi ? 'Thư viện sách' : 'Library';
-  String get searchHint => _isVi ? 'Tìm theo tên hoặc tác giả...' : 'Search by title or author...';
-  String get noBooks => _isVi ? 'Chưa có sách nào.' : 'No books yet.';
-  String get addBookHint => _isVi ? 'Bấm + để thêm sách mới' : 'Tap + to add a book';
-  String get noResults => _isVi ? 'Không tìm thấy sách.' : 'No books found.';
-  String get sortUpdated => _isVi ? 'Mới cập nhật' : 'Recently updated';
-  String get sortTitle => _isVi ? 'Tên A-Z' : 'Title A-Z';
-  String get sortCreated => _isVi ? 'Mới thêm' : 'Recently added';
-  String get listView => _isVi ? 'Xem danh sách' : 'List view';
-  String get gridView => _isVi ? 'Xem lưới' : 'Grid view';
-  String get exportLib => _isVi ? 'Xuất thư viện' : 'Export library';
-  String get importLib => _isVi ? 'Nhập thư viện' : 'Import library';
-  String get exportSuccess => _isVi ? 'Đã xuất thư viện thành công' : 'Library exported successfully';
-  String importSuccess(int n) => _isVi ? 'Đã nhập $n sách mới' : 'Imported $n new books';
-  String bookDeleted(String title) => _isVi ? '"$title" đã xoá' : '"$title" deleted';
-  String get all => _isVi ? 'Tất cả' : 'All';
-  String get readBook => _isVi ? 'Đọc sách' : 'Read';
-  String get sort => _isVi ? 'Sắp xếp' : 'Sort';
-  String error(String msg) => _isVi ? 'Lỗi: $msg' : 'Error: $msg';
+  String get library => _l.library;
+  String get searchHint => _l.searchHint;
+  String get noBooks => _l.noBooks;
+  String get addBookHint => _l.addBookHint;
+  String get noResults => _l.noResults;
+  String get sortUpdated => _l.sortUpdated;
+  String get sortTitle => _l.sortTitle;
+  String get sortCreated => _l.sortCreated;
+  String get listView => _l.listView;
+  String get gridView => _l.gridView;
+  String get exportLib => _l.exportLib;
+  String get importLib => _l.importLib;
+  String get exportSuccess => _l.exportSuccess;
+  String importSuccess(int n) => _l.importSuccess(n);
+  String bookDeleted(String title) => _l.bookDeleted(title);
+  String get all => _l.all;
+  String get readBook => _l.readBook;
+  String get sort => _l.sort;
+  String error(String msg) => _l.error(msg);
 
   // Book form
-  String get addBook => _isVi ? 'Thêm sách' : 'Add book';
-  String get editBook => _isVi ? 'Sửa sách' : 'Edit book';
-  String get bookTitle => _isVi ? 'Tên sách *' : 'Title *';
-  String get bookTitleRequired => _isVi ? 'Vui lòng nhập tên sách' : 'Please enter a title';
-  String get author => _isVi ? 'Tác giả' : 'Author';
-  String get bookType => _isVi ? 'Loại sách' : 'Book type';
-  String get paper => _isVi ? 'Giấy' : 'Paper';
-  String get ebook => 'Ebook';
-  String get both => _isVi ? 'Cả hai' : 'Both';
-  String get category => _isVi ? 'Danh mục' : 'Category';
-  String get noCategory => _isVi ? 'Không có' : 'None';
-  String get selectCategory => _isVi ? 'Chọn danh mục' : 'Select category';
-  String get pdfFile => 'File PDF';
-  String get pickFile => _isVi ? 'Chọn file PDF' : 'Pick PDF file';
-  String get changeFile => _isVi ? 'Đổi file' : 'Change file';
-  String get notes => _isVi ? 'Ghi chú' : 'Notes';
-  String get saveChanges => _isVi ? 'Lưu thay đổi' : 'Save changes';
-  String get discardTitle => _isVi ? 'Huỷ thay đổi?' : 'Discard changes?';
-  String get discardMessage => _isVi ? 'Bạn có thay đổi chưa lưu. Muốn huỷ bỏ?' : 'You have unsaved changes. Discard?';
-  String get continueEditing => _isVi ? 'Tiếp tục sửa' : 'Keep editing';
-  String get discard => _isVi ? 'Huỷ bỏ' : 'Discard';
+  String get addBook => _l.addBook;
+  String get editBook => _l.editBook;
+  String get bookTitle => _l.bookTitle;
+  String get bookTitleRequired => _l.bookTitleRequired;
+  String get author => _l.author;
+  String get bookType => _l.bookType;
+  String get paper => _l.paper;
+  String get ebook => _l.ebook;
+  String get both => _l.both;
+  String get category => _l.category;
+  String get noCategory => _l.noCategory;
+  String get selectCategory => _l.selectCategory;
+  String get pdfFile => _l.pdfFile;
+  String get pickFile => _l.pickFile;
+  String get changeFile => _l.changeFile;
+  String get notes => _l.notes;
+  String get saveChanges => _l.saveChanges;
+  String get discardTitle => _l.discardTitle;
+  String get discardMessage => _l.discardMessage;
+  String get continueEditing => _l.continueEditing;
+  String get discard => _l.discard;
 
   // Format labels
-  String get paperBook => _isVi ? 'Sách giấy' : 'Paper book';
-  String get ebookLabel => 'Ebook';
-  String get paperAndEbook => _isVi ? 'Giấy + Ebook' : 'Paper + Ebook';
+  String get paperBook => _l.paperBook;
+  String get ebookLabel => _l.ebookLabel;
+  String get paperAndEbook => _l.paperAndEbook;
 
   // PDF viewer
-  String get openingPdf => _isVi ? 'Đang mở file PDF...' : 'Opening PDF...';
-  String get noBookmarks => _isVi ? 'Chưa có bookmark nào' : 'No bookmarks yet';
-  String get addBookmark => _isVi ? 'Thêm bookmark' : 'Add bookmark';
-  String get removeBookmark => _isVi ? 'Bỏ bookmark' : 'Remove bookmark';
-  String get bookmarkList => _isVi ? 'Danh sách bookmark' : 'Bookmarks';
-  String page(int n) => _isVi ? 'Trang $n' : 'Page $n';
+  String get openingPdf => _l.openingPdf;
+  String get noBookmarks => _l.noBookmarks;
+  String get addBookmark => _l.addBookmark;
+  String get removeBookmark => _l.removeBookmark;
+  String get bookmarkList => _l.bookmarkList;
+  String page(int n) => _l.page(n);
 
   // Categories
-  String get categories => _isVi ? 'Danh mục' : 'Categories';
-  String get manageCategories => _isVi ? 'Quản lý danh mục' : 'Manage categories';
-  String get addCategory => _isVi ? 'Thêm danh mục' : 'Add category';
-  String get editCategory => _isVi ? 'Sửa danh mục' : 'Edit category';
-  String get deleteCategory => _isVi ? 'Xoá danh mục' : 'Delete category';
-  String get categoryName => _isVi ? 'Tên danh mục' : 'Category name';
-  String get noCategoriesYet => _isVi ? 'Chưa có danh mục nào.\nBấm + để thêm.' : 'No categories yet.\nTap + to add.';
-  String deleteCategoryConfirm(String name) =>
-      _isVi ? 'Bạn muốn xoá "$name"?\nSách thuộc danh mục này sẽ không bị xoá.' : 'Delete "$name"?\nBooks in this category won\'t be deleted.';
+  String get categories => _l.categories;
+  String get manageCategories => _l.manageCategories;
+  String get addCategory => _l.addCategory;
+  String get editCategory => _l.editCategory;
+  String get deleteCategory => _l.deleteCategory;
+  String get categoryName => _l.categoryName;
+  String get noCategoriesYet => _l.noCategoriesYet;
+  String deleteCategoryConfirm(String name) => _l.deleteCategoryConfirm(name);
 
   // Settings
-  String get settings => _isVi ? 'Cài đặt' : 'Settings';
-  String get theme => _isVi ? 'Giao diện' : 'Theme';
-  String get themeSystem => _isVi ? 'Theo hệ thống' : 'System';
-  String get themeLight => _isVi ? 'Sáng' : 'Light';
-  String get themeDark => _isVi ? 'Tối' : 'Dark';
-  String get language => _isVi ? 'Ngôn ngữ' : 'Language';
-  String get langVi => 'Tiếng Việt';
-  String get langEn => 'English';
-  String get scrollDirection => _isVi ? 'Hướng cuộn PDF' : 'PDF scroll direction';
-  String get scrollVertical => _isVi ? 'Cuộn dọc' : 'Vertical';
-  String get scrollHorizontal => _isVi ? 'Cuộn ngang' : 'Horizontal';
+  String get settings => _l.settings;
+  String get theme => _l.theme;
+  String get themeSystem => _l.themeSystem;
+  String get themeLight => _l.themeLight;
+  String get themeDark => _l.themeDark;
+  String get language => _l.language;
+  String get langVi => _l.langVi;
+  String get langEn => _l.langEn;
+  String get scrollDirection => _l.scrollDirection;
+  String get scrollVertical => _l.scrollVertical;
+  String get scrollHorizontal => _l.scrollHorizontal;
 
   // Delete confirm
-  String get deleteBook => _isVi ? 'Xoá sách' : 'Delete book';
-  String deleteBookConfirm(String title) => _isVi ? 'Bạn muốn xoá "$title"?' : 'Delete "$title"?';
+  String get deleteBook => _l.deleteBook;
+  String deleteBookConfirm(String title) => _l.deleteBookConfirm(title);
 
   // File validation
-  String get fileNotFound => _isVi ? 'File không tồn tại' : 'File not found';
-  String get fileInvalidMessage => _isVi ? 'Đường dẫn ebook không hợp lệ. Chọn lại file?' : 'Ebook path is invalid. Pick a new file?';
-  String get repick => _isVi ? 'Chọn lại' : 'Pick again';
+  String get fileNotFound => _l.fileNotFound;
+  String get fileInvalidMessage => _l.fileInvalidMessage;
+  String get repick => _l.repick;
 
   // Recently opened
-  String get recentlyOpened => _isVi ? 'Đọc gần đây' : 'Recently opened';
-  String get continueReading => _isVi ? 'Tiếp tục đọc' : 'Continue reading';
+  String get recentlyOpened => _l.recentlyOpened;
+  String get continueReading => _l.continueReading;
 
   // Page notes
-  String get addNote => _isVi ? 'Thêm ghi chú' : 'Add note';
-  String get editNote => _isVi ? 'Sửa ghi chú' : 'Edit note';
-  String get noteHint => _isVi ? 'Ghi chú cho trang này...' : 'Note for this page...';
+  String get addNote => _l.addNote;
+  String get editNote => _l.editNote;
+  String get noteHint => _l.noteHint;
 
   // Reading goals
-  String get readingGoals => _isVi ? 'Mục tiêu đọc' : 'Reading goals';
-  String get dailyGoal => _isVi ? 'Mục tiêu hàng ngày' : 'Daily goal';
-  String get monthlyGoal => _isVi ? 'Mục tiêu hàng tháng' : 'Monthly goal';
-  String minutesPerDay(int n) => _isVi ? '$n phút/ngày' : '$n min/day';
-  String booksPerMonth(int n) => _isVi ? '$n sách/tháng' : '$n books/month';
-  String get todayReading => _isVi ? 'Hôm nay' : 'Today';
-  String get thisMonth => _isVi ? 'Tháng này' : 'This month';
+  String get readingGoals => _l.readingGoals;
+  String get dailyGoal => _l.dailyGoal;
+  String get monthlyGoal => _l.monthlyGoal;
+  String minutesPerDay(int n) => _l.minutesPerDay(n);
+  String booksPerMonth(int n) => _l.booksPerMonth(n);
+  String get todayReading => _l.todayReading;
+  String get thisMonth => _l.thisMonth;
 
   // Stats
-  String get statistics => _isVi ? 'Thống kê' : 'Statistics';
-  String get totalReadingTime => _isVi ? 'Tổng thời gian đọc' : 'Total reading time';
-  String get booksRead => _isVi ? 'Sách đã đọc' : 'Books read';
-  String get avgPerDay => _isVi ? 'Trung bình/ngày' : 'Avg/day';
+  String get statistics => _l.statistics;
+  String get totalReadingTime => _l.totalReadingTime;
+  String get booksRead => _l.booksRead;
+  String get avgPerDay => _l.avgPerDay;
 
   // TOC
-  String get tableOfContents => _isVi ? 'Mục lục' : 'Table of contents';
-  String get noToc => _isVi ? 'File PDF không có mục lục' : 'This PDF has no table of contents';
+  String get tableOfContents => _l.tableOfContents;
+  String get noToc => _l.noToc;
 
   // Text search
-  String get searchInPdf => _isVi ? 'Tìm trong PDF' : 'Search in PDF';
-  String get searchHintPdf => _isVi ? 'Nhập từ khoá...' : 'Enter keyword...';
-  String noSearchResults(String q) => _isVi ? 'Không tìm thấy "$q"' : 'No results for "$q"';
+  String get searchInPdf => _l.searchInPdf;
+  String get searchHintPdf => _l.searchHintPdf;
+  String noSearchResults(String q) => _l.noSearchResults(q);
 
   // Highlights
-  String get highlight => _isVi ? 'Đánh dấu' : 'Highlight';
-  String get highlights => _isVi ? 'Đánh dấu' : 'Highlights';
-  String get addHighlight => _isVi ? 'Đánh dấu văn bản' : 'Highlight text';
-  String get removeHighlight => _isVi ? 'Bỏ đánh dấu' : 'Remove highlight';
-  String get highlightNote => _isVi ? 'Ghi chú cho đánh dấu...' : 'Note for highlight...';
-  String get noHighlights => _isVi ? 'Chưa có đánh dấu nào' : 'No highlights yet';
-  String get selectTextToHighlight => _isVi ? 'Chọn văn bản để đánh dấu' : 'Select text to highlight';
-  String get noHighlightsFound => _isVi ? 'Không có đánh dấu nào' : 'No highlights found';
-  String get noHighlightsOnPage => _isVi ? 'Trang này chưa có đánh dấu' : 'No highlights on this page';
-  String get selectHighlightColor => _isVi ? 'Chọn màu đánh dấu' : 'Select Highlight Color';
-  String get changeColor => _isVi ? 'Đổi màu' : 'Change Color';
-  String get deleteHighlight => _isVi ? 'Xoá đánh dấu' : 'Delete Highlight';
-  String get deleteHighlightConfirm => _isVi ? 'Xoá đánh dấu này?' : 'Delete this highlight?';
-  String get addNoteOptional => _isVi ? 'Thêm ghi chú (tuỳ chọn)' : 'Add a note (optional)';
-  String highlightsOnPage(int n) => _isVi ? 'Đánh dấu trang $n' : 'Highlights on Page $n';
+  String get highlight => _l.highlight;
+  String get highlights => _l.highlights;
+  String get addHighlight => _l.addHighlight;
+  String get removeHighlight => _l.removeHighlight;
+  String get highlightNote => _l.highlightNote;
+  String get noHighlights => _l.noHighlights;
+  String get selectTextToHighlight => _l.selectTextToHighlight;
+  String get noHighlightsFound => _l.noHighlightsFound;
+  String get noHighlightsOnPage => _l.noHighlightsOnPage;
+  String get selectHighlightColor => _l.selectHighlightColor;
+  String get changeColor => _l.changeColor;
+  String get deleteHighlight => _l.deleteHighlight;
+  String get deleteHighlightConfirm => _l.deleteHighlightConfirm;
+  String get addNoteOptional => _l.addNoteOptional;
+  String highlightsOnPage(int n) => _l.highlightsOnPage(n);
 
   // Smart collections
-  String get smartCollections => _isVi ? 'Bộ sưu tập' : 'Smart Collections';
+  String get smartCollections => _l.smartCollections;
 
   // TTS
-  String get tts => _isVi ? 'Đọc to' : 'Text-to-Speech';
-  String get ttsNotAvailable => _isVi ? 'TTS không khả dụng' : 'TTS not available';
-  String get ttsHowToEnable => _isVi ? 'Cách bật TTS' : 'How to enable TTS';
-  String get ttsSpeed => _isVi ? 'Tốc độ đọc' : 'TTS Speed';
-  String get readingSpeed => _isVi ? 'Tốc độ đọc' : 'Reading Speed';
-  String get stopReading => _isVi ? 'Dừng đọc' : 'Stop Reading';
-  String get readAloud => _isVi ? 'Đọc to' : 'Read Aloud';
-  String get selectLanguage => _isVi ? 'Chọn ngôn ngữ' : 'Select Language';
-  String get voiceSettings => _isVi ? 'Cài đặt giọng đọc' : 'Voice Settings';
-  String get ttsAvailable => _isVi ? 'TTS khả dụng' : 'TTS Available';
-  String get noTtsEngine => _isVi ? 'Không tìm thấy TTS engine' : 'No TTS engine found';
-  String languagesAvailable(int n) => _isVi ? '$n ngôn ngữ' : '$n languages';
-  String get downloadVoice => _isVi ? 'Tải giọng đọc' : 'Download Voice';
-  String get downloadVoiceHint => _isVi
-      ? 'Để tải giọng đọc, mở cài đặt TTS trên thiết bị.\n\nCài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói'
-      : 'To download this voice, open your device\'s TTS settings.\n\nSettings → System → Language → Text-to-Speech → Install voice data';
-  String get openTtsSettings => _isVi ? 'Mở cài đặt TTS' : 'Open TTS Settings';
-  String get iosVoiceHint => _isVi
-      ? 'Vào Cài đặt → Trợ năng → Nội dung được đọc → Giọng đọc'
-      : 'Go to Settings → Accessibility → Spoken Content → Voices';
-  String get searching => _isVi ? 'Đang tìm...' : 'Searching...';
-  String get ocrProcessing => _isVi ? 'Đang nhận dạng văn bản...' : 'Recognizing text...';
-  String get ocrAlreadyDone => _isVi ? 'Tất cả trang đã được nhận dạng' : 'All pages already recognized';
-  String get ocrComplete => _isVi ? 'Nhận dạng văn bản hoàn tất' : 'Text recognition complete';
-  String ocrProgress(int done, int total) => _isVi ? 'OCR: $done/$total trang' : 'OCR: $done/$total pages';
-  String get switchToPdfView => _isVi ? 'Xem PDF' : 'PDF View';
-  String get switchToTextView => _isVi ? 'Xem văn bản' : 'Text View';
-  String get noTextOnPage => _isVi ? 'Trang này không có văn bản (PDF scan?)' : 'No text found on this page (scanned PDF?)';
-  String voiceNotInstalled(String lang) => _isVi ? 'Giọng đọc "$lang" chưa được cài.' : 'Voice for "$lang" not installed.';
-  String get androidTtsHint => _isVi
-      ? 'Vào Cài đặt → Hệ thống → Ngôn ngữ → Chuyển văn bản thành giọng nói để tải.'
-      : 'Go to Settings → System → Language → Text-to-Speech to download.';
+  String get tts => _l.tts;
+  String get ttsNotAvailable => _l.ttsNotAvailable;
+  String get ttsHowToEnable => _l.ttsHowToEnable;
+  String get ttsSpeed => _l.ttsSpeed;
+  String get readingSpeed => _l.readingSpeed;
+  String get stopReading => _l.stopReading;
+  String get readAloud => _l.readAloud;
+  String get selectLanguage => _l.selectLanguage;
+  String get voiceSettings => _l.voiceSettings;
+  String get ttsAvailable => _l.ttsAvailable;
+  String get noTtsEngine => _l.noTtsEngine;
+  String languagesAvailable(int n) => _l.languagesAvailable(n);
+  String get downloadVoice => _l.downloadVoice;
+  String get downloadVoiceHint => _l.downloadVoiceHint;
+  String get openTtsSettings => _l.openTtsSettings;
+  String get iosVoiceHint => _l.iosVoiceHint;
+  String get searching => _l.searching;
+  String get ocrProcessing => _l.ocrProcessing;
+  String get ocrAlreadyDone => _l.ocrAlreadyDone;
+  String get ocrComplete => _l.ocrComplete;
+  String ocrProgress(int done, int total) => _l.ocrProgress(done, total);
+  String get switchToPdfView => _l.switchToPdfView;
+  String get switchToTextView => _l.switchToTextView;
+  String get noTextOnPage => _l.noTextOnPage;
+  String voiceNotInstalled(String lang) => _l.voiceNotInstalled(lang);
+  String get androidTtsHint => _l.androidTtsHint;
 
   // Search results
-  String searchResults(int count) => _isVi ? '$count kết quả' : '$count ${count == 1 ? 'result' : 'results'}';
+  String searchResults(int count) => _l.searchResults(count);
 
   // Smart collection titles
-  String get recentlyAdded => _isVi ? 'Mới thêm gần đây' : 'Recently Added';
-  String get unreadBooks => _isVi ? 'Chưa đọc' : 'Unread Books';
-  String get almostFinished => _isVi ? 'Sắp đọc xong' : 'Almost Finished';
-  String get frequentlyRead => _isVi ? 'Đọc thường xuyên' : 'Frequently Read';
-  String nBooks(int n) => _isVi ? '$n sách' : '$n books';
+  String get recentlyAdded => _l.recentlyAdded;
+  String get unreadBooks => _l.unreadBooks;
+  String get almostFinished => _l.almostFinished;
+  String get frequentlyRead => _l.frequentlyRead;
+  String nBooks(int n) => _l.nBooks(n);
 
-  // Week days
-  String get mon => _isVi ? 'T2' : 'Mon';
-  String get tue => _isVi ? 'T3' : 'Tue';
-  String get wed => _isVi ? 'T4' : 'Wed';
-  String get thu => _isVi ? 'T5' : 'Thu';
-  String get fri => _isVi ? 'T6' : 'Fri';
-  String get sat => _isVi ? 'T7' : 'Sat';
-  String get sun => _isVi ? 'CN' : 'Sun';
+  // Week days (List<String> not supported in ARB, computed here)
+  String get mon => _l.mon;
+  String get tue => _l.tue;
+  String get wed => _l.wed;
+  String get thu => _l.thu;
+  String get fri => _l.fri;
+  String get sat => _l.sat;
+  String get sun => _l.sun;
   List<String> get weekDays => [mon, tue, wed, thu, fri, sat, sun];
 
   // PDF error
-  String get pdfLoadError => _isVi ? 'Không thể mở file PDF' : 'Failed to open PDF file';
-  String get pdfCorruptMessage => _isVi ? 'File PDF bị lỗi hoặc không được hỗ trợ.' : 'The PDF file is corrupted or unsupported.';
+  String get pdfLoadError => _l.pdfLoadError;
+  String get pdfCorruptMessage => _l.pdfCorruptMessage;
 
   // Reading modes
-  String get readingModeNormal => _isVi ? 'Chế độ bình thường' : 'Normal mode';
-  String get readingModeSepia => _isVi ? 'Chế độ sepia' : 'Sepia mode';
-  String get readingModeDark => _isVi ? 'Chế độ tối' : 'Dark mode';
+  String get readingModeNormal => _l.readingModeNormal;
+  String get readingModeSepia => _l.readingModeSepia;
+  String get readingModeDark => _l.readingModeDark;
 
   // Continue reading card
-  String get continueBtn => _isVi ? 'Tiếp tục' : 'Continue';
-  String progress(int percent) => '$percent%';
+  String get continueBtn => _l.continueBtn;
+  String progress(int percent) => _l.progress(percent);
 
   // Annotation export
-  String get exportAnnotations => _isVi ? 'Xuất ghi chú' : 'Export annotations';
-  String get exportAnnotationsSuccess => _isVi ? 'Đã xuất ghi chú' : 'Annotations exported';
-  String get noAnnotations => _isVi ? 'Không có ghi chú để xuất' : 'No annotations to export';
+  String get exportAnnotations => _l.exportAnnotations;
+  String get exportAnnotationsSuccess => _l.exportAnnotationsSuccess;
+  String get noAnnotations => _l.noAnnotations;
 
   // Page thumbnails
-  String get pageThumbnails => _isVi ? 'Trang' : 'Pages';
+  String get pageThumbnails => _l.pageThumbnails;
 
   // Loading
-  String get loadingPdf => _isVi ? 'Đang tải PDF...' : 'Loading PDF...';
+  String get loadingPdf => _l.loadingPdf;
 
   // Open file intent
-  String get addToLibraryPrompt => _isVi ? 'Thêm vào thư viện để lưu tiến độ?' : 'Add to library to save progress?';
-  String get readOnly => _isVi ? 'Chỉ đọc' : 'Just read';
+  String get addToLibraryPrompt => _l.addToLibraryPrompt;
+  String get readOnly => _l.readOnly;
 
   // Power-user features
-  String get goToPage => _isVi ? 'Đi đến trang' : 'Go to page';
-  String get go => _isVi ? 'Đi' : 'Go';
-  String get brightness => _isVi ? 'Độ sáng' : 'Brightness';
-  String get invalidPage => _isVi ? 'Số trang không hợp lệ' : 'Invalid page number';
-  String get cropMargins => _isVi ? 'Cắt lề' : 'Crop Margins';
+  String get goToPage => _l.goToPage;
+  String get go => _l.go;
+  String get brightness => _l.brightness;
+  String get invalidPage => _l.invalidPage;
+  String get cropMargins => _l.cropMargins;
 
   // EPUB
-  String get epubChapter => _isVi ? 'Chương' : 'Chapter';
-  String get epubLoading => _isVi ? 'Đang tải EPUB...' : 'Loading EPUB...';
-  String get epubError => _isVi ? 'Không thể mở file EPUB' : 'Failed to open EPUB file';
+  String get epubChapter => _l.epubChapter;
+  String get epubLoading => _l.epubLoading;
+  String get epubError => _l.epubError;
 
   // Reading queue
-  String get readingQueue => _isVi ? 'Hàng đợi đọc' : 'Reading Queue';
-  String get addToQueue => _isVi ? 'Thêm vào hàng đợi' : 'Add to Queue';
-  String get queueEmpty => _isVi ? 'Chưa có sách trong hàng đợi' : 'Queue is empty';
+  String get readingQueue => _l.readingQueue;
+  String get addToQueue => _l.addToQueue;
+  String get queueEmpty => _l.queueEmpty;
 
   // Focus timer
-  String get focusTimer => _isVi ? 'Bộ đếm thời gian' : 'Focus Timer';
+  String get focusTimer => _l.focusTimer;
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {
@@ -276,7 +273,8 @@ class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {
       ['vi', 'en'].contains(locale.languageCode);
 
   @override
-  Future<AppStrings> load(Locale locale) async => AppStrings(locale);
+  Future<AppStrings> load(Locale locale) async =>
+      AppStrings._(lookupAppLocalizations(locale));
 
   @override
   bool shouldReload(AppStringsDelegate old) => false;

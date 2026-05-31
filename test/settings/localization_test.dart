@@ -5,7 +5,7 @@ import 'package:pdf_reader/core/l10n/app_strings.dart';
 void main() {
   group('App supports Vietnamese and English', () {
     test('Vietnamese locale shows Vietnamese text', () {
-      const strings = AppStrings(Locale('vi'));
+      final strings = AppStrings.fromLocale(const Locale('vi'));
       expect(strings.library, 'Thư viện sách');
       expect(strings.cancel, 'Huỷ');
       expect(strings.save, 'Lưu');
@@ -15,7 +15,7 @@ void main() {
     });
 
     test('English locale shows English text', () {
-      const strings = AppStrings(Locale('en'));
+      final strings = AppStrings.fromLocale(const Locale('en'));
       expect(strings.library, 'Library');
       expect(strings.cancel, 'Cancel');
       expect(strings.save, 'Save');
@@ -25,7 +25,7 @@ void main() {
     });
 
     test('all key strings are non-empty in Vietnamese', () {
-      const strings = AppStrings(Locale('vi'));
+      final strings = AppStrings.fromLocale(const Locale('vi'));
       expect(strings.library.isNotEmpty, isTrue);
       expect(strings.searchHint.isNotEmpty, isTrue);
       expect(strings.noBooks.isNotEmpty, isTrue);
@@ -39,7 +39,7 @@ void main() {
     });
 
     test('all key strings are non-empty in English', () {
-      const strings = AppStrings(Locale('en'));
+      final strings = AppStrings.fromLocale(const Locale('en'));
       expect(strings.library.isNotEmpty, isTrue);
       expect(strings.searchHint.isNotEmpty, isTrue);
       expect(strings.noBooks.isNotEmpty, isTrue);
@@ -53,8 +53,8 @@ void main() {
     });
 
     test('parameterized strings work correctly', () {
-      const vi = AppStrings(Locale('vi'));
-      const en = AppStrings(Locale('en'));
+      final vi = AppStrings.fromLocale(const Locale('vi'));
+      final en = AppStrings.fromLocale(const Locale('en'));
       expect(vi.importSuccess(5), contains('5'));
       expect(en.importSuccess(5), contains('5'));
       expect(vi.page(10), contains('10'));

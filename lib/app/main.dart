@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../core/l10n/app_strings.dart';
 import '../services/book_service.dart';
@@ -125,11 +124,9 @@ class _PdfReaderAppState extends State<PdfReaderApp> {
           darkTheme: ThemeData(colorSchemeSeed: Colors.indigo, brightness: Brightness.dark, useMaterial3: true),
           locale: settings.locale,
           supportedLocales: const [Locale('vi'), Locale('en')],
-          localizationsDelegates: const [
-            AppStringsDelegate(),
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
+          localizationsDelegates: [
+            const AppStringsDelegate(),
+            ...AppLocalizations.localizationsDelegates,
           ],
           home: const SplashScreen(),
         ),

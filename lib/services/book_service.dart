@@ -19,7 +19,6 @@ class BookService with BookServiceAnnotations {
   void invalidateCache() => _sortedCache = null;
 
   Future<void> init() async {
-    await Hive.initFlutter();
     _box = await Hive.openBox<Map>(_boxName);
   }
 

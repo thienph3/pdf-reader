@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:provider/provider.dart';
 import '../core/l10n/app_strings.dart';
@@ -36,6 +37,7 @@ void main() async {
     };
 
     pdfrxFlutterInitialize();
+    await Hive.initFlutter();
     debugPrint('=== INIT START ===');
     final bookService = BookService();
     final categoryService = CategoryService();

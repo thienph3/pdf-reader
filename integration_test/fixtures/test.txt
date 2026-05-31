@@ -1,0 +1,5 @@
+This is a test document for integration testing.
+It contains multiple lines of text.
+Line 3: Vietnamese text - Đây là văn bản tiếng Việt.
+Line 4: More content for reading.
+Line 5: Final line of the test document.

@@ -1,9 +1,13 @@
 /// Cleans raw PDF text for TTS consumption.
+/// Removes noise (headers, footers, page numbers) and joins broken lines.
 class TtsTextCleaner {
   static String cleanPdfText(String raw) {
-    final lines = raw.split('\n');
-    final buffer = StringBuffer();
+    var lines = raw.split('\n');
 
+    // Remove likely headers/footers (short lines at start/end that are page numbers or repeated)
+    lines = _removeHeadersFooters(lines);
+
+    final buffer = StringBuffer();
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i].trimRight();
       if (line.isEmpty) { buffer.write('\n\n'); continue; }
@@ -24,5 +28,29 @@ class TtsTextCleaner {
         .replaceAll(RegExp(r'\n{3,}'), '\n\n')
         .replaceAll(RegExp(r' {2,}'), ' ')
         .trim();
+  }
+
+  /// Remove lines that look like page numbers, headers, or footers.
+  static List<String> _removeHeadersFooters(List<String> lines) {
+    if (lines.length < 5) return lines;
+    final result = <String>[];
+    for (final line in lines) {
+      final trimmed = line.trim();
+      // Skip standalone page numbers
+      if (RegExp(r'^\d{1,4}$').hasMatch(trimmed)) continue;
+      // Skip lines that are just "Page X" or "- X -"
+      if (RegExp(r'^[-–—]\s*\d+\s*[-–—]$').hasMatch(trimmed)) continue;
+      if (RegExp(r'^(Page|Trang)\s+\d+', caseSensitive: false).hasMatch(trimmed)) continue;
+      result.add(line);
+    }
+    return result;
+  }
+
+  /// Split text into sentences for per-sentence language detection.
+  static List<String> splitSentences(String text) {
+    return text
+        .split(RegExp(r'(?<=[.!?。！？])\s+'))
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
   }
 }

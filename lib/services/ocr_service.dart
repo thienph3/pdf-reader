@@ -7,16 +7,21 @@ import 'package:path_provider/path_provider.dart';
 
 /// OCR service for scanned PDF pages.
 /// Results cached in Hive: plain text + markdown.
+/// Supports multiple scripts: Latin, Chinese, Japanese, Korean.
 class OcrService extends ChangeNotifier {
   late Box<String> _textBox;
   late Box<String> _mdBox;
-  final _recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+  final Map<TextRecognitionScript, TextRecognizer> _recognizers = {};
 
   bool _isProcessing = false;
   int _currentPage = -1;
 
   bool get isProcessing => _isProcessing;
   int get currentPage => _currentPage;
+
+  TextRecognizer _getRecognizer(TextRecognitionScript script) {
+    return _recognizers.putIfAbsent(script, () => TextRecognizer(script: script));
+  }
 
   Future<void> init() async {
     _textBox = await Hive.openBox<String>('ocr_text');
@@ -36,11 +41,12 @@ class OcrService extends ChangeNotifier {
   bool hasOcrText(String bookId, int pageNumber) =>
       _textBox.containsKey(_key(bookId, pageNumber));
 
-  /// OCR a page from PNG bytes. Returns plain text.
+  /// OCR a page from PNG bytes. Tries Latin first, then CJK if result is poor.
   Future<String> ocrFromPngBytes({
     required String bookId,
     required int pageNumber,
     required Uint8List pngBytes,
+    TextRecognitionScript? preferredScript,
   }) async {
     final cached = getCachedText(bookId, pageNumber);
     if (cached != null) return cached;
@@ -50,13 +56,23 @@ class OcrService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Write PNG to temp file (ML Kit needs file path for PNG)
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/ocr_page_$pageNumber.png');
       await tempFile.writeAsBytes(pngBytes);
-
       final inputImage = InputImage.fromFilePath(tempFile.path);
-      final result = await _recognizer.processImage(inputImage);
+
+      // Determine which script to use
+      final script = preferredScript ?? TextRecognitionScript.latin;
+      var result = await _getRecognizer(script).processImage(inputImage);
+
+      // If Latin yields very little text, try Chinese (covers CJK)
+      if (script == TextRecognitionScript.latin && result.text.trim().length < 10) {
+        final cjkResult = await _getRecognizer(TextRecognitionScript.chinese).processImage(inputImage);
+        if (cjkResult.text.trim().length > result.text.trim().length) {
+          result = cjkResult;
+        }
+      }
+
       final plainText = result.text;
       final markdown = _toMarkdown(result);
 
@@ -64,9 +80,7 @@ class OcrService extends ChangeNotifier {
       await _textBox.put(key, plainText);
       await _mdBox.put(key, markdown);
 
-      // Clean up temp file
       try { await tempFile.delete(); } catch (_) {}
-
       return plainText;
     } catch (e) {
       debugPrint('OCR error page $pageNumber: $e');
@@ -171,7 +185,9 @@ class OcrService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _recognizer.close();
+    for (final r in _recognizers.values) {
+      r.close();
+    }
     super.dispose();
   }
 }

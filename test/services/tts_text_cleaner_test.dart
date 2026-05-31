@@ -35,5 +35,21 @@ void main() {
     test('trims whitespace', () {
       expect(TtsTextCleaner.cleanPdfText('  hello  '), 'hello');
     });
+
+    test('Vietnamese text with diacritics preserved', () {
+      final result = TtsTextCleaner.cleanPdfText('Xin chào thế giới.\nĐây là tiếng Việt.');
+      expect(result, 'Xin chào thế giới.\nĐây là tiếng Việt.');
+    });
+
+    test('text ending with hyphenated word break joins words', () {
+      final result = TtsTextCleaner.cleanPdfText('this is a hyph-\nenated word');
+      expect(result, 'this is a hyph- enated word');
+    });
+
+    test('all-caps lines treated as starting uppercase', () {
+      final result = TtsTextCleaner.cleanPdfText('CHAPTER ONE\nThe story begins.');
+      expect(result, contains('CHAPTER ONE\n'));
+      expect(result, contains('The story begins.'));
+    });
   });
 }

@@ -6,6 +6,8 @@ import '../../../core/utils/dialogs.dart';
 import './highlight_manager.dart';
 import './bookmark_manager.dart';
 
+part 'reader_toc.dart';
+
 /// Manages dialogs and bottom sheets for PDF viewer.
 class PdfViewDialogsManager {
   final PdfHighlightManager highlightManager;
@@ -66,36 +68,24 @@ class PdfViewDialogsManager {
             ListTile(
               leading: const Icon(Icons.toc),
               title: Text(s.tableOfContents),
-              onTap: () {
-                Navigator.pop(ctx);
-                showToc(context);
-              },
+              onTap: () { Navigator.pop(ctx); showToc(context); },
             ),
             ListTile(
               leading: const Icon(Icons.highlight),
               title: Text(s.highlights),
-              onTap: () {
-                Navigator.pop(ctx);
-                onShowHighlightsList();
-              },
+              onTap: () { Navigator.pop(ctx); onShowHighlightsList(); },
             ),
             if (ttsService != null && ttsService!.isAvailable)
               ListTile(
                 leading: const Icon(Icons.speed),
                 title: Text(s.ttsSpeed),
                 subtitle: Text('${(ttsService!.speed * 2).toStringAsFixed(1)}x'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showTtsSpeedPicker(context);
-                },
+                onTap: () { Navigator.pop(ctx); _showTtsSpeedPicker(context); },
               ),
             ListTile(
               leading: Icon(_readingModeIcon()),
               title: Text(_readingModeLabel(s)),
-              onTap: () {
-                Navigator.pop(ctx);
-                onCycleReadingMode?.call();
-              },
+              onTap: () { Navigator.pop(ctx); onCycleReadingMode?.call(); },
             ),
             if (onBrightnessChanged != null)
               ListTile(
@@ -155,64 +145,9 @@ class PdfViewDialogsManager {
               onTap: () {
                 ttsService!.setSpeed(speeds[i]);
                 Navigator.pop(ctx);
-                if (wasPlaying) {
-                  ttsService!.stop();
-                  onTtsSpeedChanged?.call();
-                }
+                if (wasPlaying) { ttsService!.stop(); onTtsSpeedChanged?.call(); }
               },
             )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Shows the table of contents.
-  void showToc(BuildContext context) async {
-    final s = AppStrings.of(context);
-    if (pdfDocument == null) return;
-    final outline = await pdfDocument!.loadOutline();
-    if (!context.mounted) return;
-    if (outline.isEmpty) {
-      showAppSnackBar(context, s.noToc);
-      return;
-    }
-    if (!context.mounted) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        maxChildSize: 0.8,
-        minChildSize: 0.3,
-        expand: false,
-        builder: (_, scrollCtrl) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(s.tableOfContents,
-                  style: Theme.of(context).textTheme.titleMedium),
-            ),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollCtrl,
-                itemCount: outline.length,
-                itemBuilder: (_, i) {
-                  final item = outline[i];
-                  return ListTile(
-                    contentPadding: EdgeInsets.only(
-                        left: 16.0 + (item.children.isNotEmpty ? 0 : 16)),
-                    title: Text(item.title),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      if (item.dest != null) {
-                        viewerController.goToDest(item.dest);
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
           ],
         ),
       ),

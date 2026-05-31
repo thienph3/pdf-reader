@@ -197,5 +197,7 @@
   "readingQueue": "Reading Queue",
   "addToQueue": "Add to Queue",
   "queueEmpty": "Queue is empty",
-  "focusTimer": "Focus Timer"
+  "focusTimer": "Focus Timer",
+  "readingReminder": "Reading reminder",
+  "reminderTime": "Reminder time"
 }

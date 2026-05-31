@@ -14,6 +14,7 @@ import 'package:pdf_reader/services/streak_service.dart';
 import 'package:pdf_reader/services/book_settings_service.dart';
 import 'package:pdf_reader/services/page_notes_service.dart';
 import 'package:pdf_reader/services/reading_queue_service.dart';
+import 'package:pdf_reader/services/reminder_service.dart';
 
 class TestServices {
   final BookService bookService;
@@ -28,6 +29,7 @@ class TestServices {
   final BookSettingsService bookSettingsService;
   final PageNotesService pageNotesService;
   final ReadingQueueService readingQueueService;
+  final ReminderService reminderService;
 
   TestServices._({
     required this.bookService,
@@ -42,6 +44,7 @@ class TestServices {
     required this.bookSettingsService,
     required this.pageNotesService,
     required this.readingQueueService,
+    required this.reminderService,
   });
 }
 
@@ -75,6 +78,8 @@ Future<Widget> createTestApp() async {
   final thumbnailService = ThumbnailService();
   final highlightService = HighlightService(bookService);
   final streakService = StreakService(readingLogService, bookService);
+  final reminderService = ReminderService();
+  await reminderService.init();
 
   _services = TestServices._(
     bookService: bookService,
@@ -89,6 +94,7 @@ Future<Widget> createTestApp() async {
     bookSettingsService: bookSettingsService,
     pageNotesService: pageNotesService,
     readingQueueService: readingQueueService,
+    reminderService: reminderService,
   );
 
   return PdfReaderApp(
@@ -104,6 +110,7 @@ Future<Widget> createTestApp() async {
     bookSettingsService: bookSettingsService,
     pageNotesService: pageNotesService,
     readingQueueService: readingQueueService,
+    reminderService: reminderService,
   );
 }
 

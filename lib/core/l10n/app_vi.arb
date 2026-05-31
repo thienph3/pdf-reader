@@ -181,5 +181,7 @@
   "readingQueue": "Hàng đợi đọc",
   "addToQueue": "Thêm vào hàng đợi",
   "queueEmpty": "Chưa có sách trong hàng đợi",
-  "focusTimer": "Bộ đếm thời gian"
+  "focusTimer": "Bộ đếm thời gian",
+  "readingReminder": "Nhắc nhở đọc sách",
+  "reminderTime": "Thời gian nhắc"
 }

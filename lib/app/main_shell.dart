@@ -149,6 +149,7 @@ class _MainShellState extends State<MainShell> {
         SettingsScreen(
           settingsService: SettingsScope.of(context),
           ttsService: TtsServiceScope.of(context),
+          reminderService: ReminderServiceScope.of(context),
         ),
       ],
     );

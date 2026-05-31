@@ -5,6 +5,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../app/main.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/tts_service.dart';
+import '../../../services/reminder_service.dart';
 import '../../../services/crash_log_service.dart';
 import '../../../core/utils/dialogs.dart';
 import '../widgets/settings_tts_section.dart';
@@ -12,7 +13,8 @@ import '../widgets/settings_tts_section.dart';
 class SettingsScreen extends StatefulWidget {
   final SettingsService settingsService;
   final TtsService? ttsService;
-  const SettingsScreen({super.key, required this.settingsService, this.ttsService});
+  final ReminderService? reminderService;
+  const SettingsScreen({super.key, required this.settingsService, this.ttsService, this.reminderService});
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -20,6 +22,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObserver {
   SettingsService get settingsService => widget.settingsService;
   TtsService? get ttsService => widget.ttsService;
+  ReminderService? get reminderService => widget.reminderService;
 
   @override
   void initState() { super.initState(); WidgetsBinding.instance.addObserver(this); }
@@ -78,6 +81,22 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
             onTap: _cycleMonthlyGoal,
           ),
           const Divider(height: 1),
+          if (reminderService != null) ...[
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: Text(s.readingReminder),
+              trailing: Switch(value: settingsService.reminderEnabled, onChanged: (v) => _toggleReminder(v)),
+              onTap: () => _toggleReminder(!settingsService.reminderEnabled),
+            ),
+            if (settingsService.reminderEnabled)
+              ListTile(
+                leading: const SizedBox(width: 24),
+                title: Text(s.reminderTime),
+                subtitle: Text('${settingsService.reminderHour.toString().padLeft(2, '0')}:${settingsService.reminderMinute.toString().padLeft(2, '0')}'),
+                onTap: _pickReminderTime,
+              ),
+            const Divider(height: 1),
+          ],
           ListTile(leading: const Icon(Icons.backup_outlined), title: const Text('Backup'), subtitle: const Text('Export all books as JSON'), onTap: () => _handleBackup(context)),
           const Divider(height: 1),
           ListTile(leading: const Icon(Icons.restore), title: const Text('Restore'), subtitle: const Text('Import books from JSON backup'), onTap: () => _handleRestore(context)),
@@ -128,6 +147,26 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
     const options = [1, 2, 3, 4, 5, 8, 10, 12];
     final i = options.indexOf(settingsService.monthlyGoalBooks);
     settingsService.setMonthlyGoalBooks(options[(i + 1) % options.length]);
+  }
+
+  Future<void> _toggleReminder(bool enabled) async {
+    await settingsService.setReminderEnabled(enabled);
+    if (enabled) {
+      await reminderService!.scheduleDaily(settingsService.reminderHour, settingsService.reminderMinute);
+    } else {
+      await reminderService!.cancelAll();
+    }
+  }
+
+  Future<void> _pickReminderTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: settingsService.reminderHour, minute: settingsService.reminderMinute),
+    );
+    if (time == null) return;
+    await settingsService.setReminderHour(time.hour);
+    await settingsService.setReminderMinute(time.minute);
+    await reminderService!.scheduleDaily(time.hour, time.minute);
   }
 
   Future<void> _handleBackup(BuildContext context) async {

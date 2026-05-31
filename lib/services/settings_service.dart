@@ -81,4 +81,29 @@ class SettingsService extends ChangeNotifier {
     await _box.put('readingMode', mode);
     notifyListeners();
   }
+
+  // --- Reading Reminder ---
+
+  bool get reminderEnabled =>
+      _box.get('reminderEnabled', defaultValue: false) as bool;
+
+  Future<void> setReminderEnabled(bool enabled) async {
+    await _box.put('reminderEnabled', enabled);
+    notifyListeners();
+  }
+
+  int get reminderHour => _box.get('reminderHour', defaultValue: 20) as int;
+
+  Future<void> setReminderHour(int hour) async {
+    await _box.put('reminderHour', hour);
+    notifyListeners();
+  }
+
+  int get reminderMinute =>
+      _box.get('reminderMinute', defaultValue: 0) as int;
+
+  Future<void> setReminderMinute(int minute) async {
+    await _box.put('reminderMinute', minute);
+    notifyListeners();
+  }
 }

@@ -16,6 +16,7 @@ import '../services/book_settings_service.dart';
 import '../services/crash_log_service.dart';
 import '../services/page_notes_service.dart';
 import '../services/reading_queue_service.dart';
+import '../services/reminder_service.dart';
 import './splash_screen.dart';
 
 export 'service_scope.dart';
@@ -44,6 +45,7 @@ void main() async {
     final bookSettingsService = BookSettingsService();
     final pageNotesService = PageNotesService();
     final readingQueueService = ReadingQueueService();
+    final reminderService = ReminderService();
     await Future.wait([
       bookService.init(),
       categoryService.init(),
@@ -54,7 +56,11 @@ void main() async {
       bookSettingsService.init(),
       pageNotesService.init(),
       readingQueueService.init(),
+      reminderService.init(),
     ]);
+    if (settingsService.reminderEnabled) {
+      reminderService.scheduleDaily(settingsService.reminderHour, settingsService.reminderMinute);
+    }
     final thumbnailService = ThumbnailService();
     final highlightService = HighlightService(bookService);
     final streakService = StreakService(readingLogService, bookService);
@@ -65,6 +71,7 @@ void main() async {
       ocrService: ocrService, highlightService: highlightService,
       streakService: streakService, bookSettingsService: bookSettingsService,
       pageNotesService: pageNotesService, readingQueueService: readingQueueService,
+      reminderService: reminderService,
     ));
   }, (error, stack) {
     CrashLogService.logCrash(error, stack);
@@ -84,6 +91,7 @@ class PdfReaderApp extends StatelessWidget {
   final BookSettingsService bookSettingsService;
   final PageNotesService pageNotesService;
   final ReadingQueueService readingQueueService;
+  final ReminderService reminderService;
 
   const PdfReaderApp({
     super.key, required this.bookService, required this.categoryService,
@@ -92,6 +100,7 @@ class PdfReaderApp extends StatelessWidget {
     required this.ocrService, required this.highlightService,
     required this.streakService, required this.bookSettingsService,
     required this.pageNotesService, required this.readingQueueService,
+    required this.reminderService,
   });
 
   @override
@@ -110,6 +119,7 @@ class PdfReaderApp extends StatelessWidget {
         Provider<BookSettingsService>.value(value: bookSettingsService),
         Provider<PageNotesService>.value(value: pageNotesService),
         Provider<ReadingQueueService>.value(value: readingQueueService),
+        Provider<ReminderService>.value(value: reminderService),
       ],
       child: Builder(builder: (context) {
         final settings = context.watch<SettingsService>();

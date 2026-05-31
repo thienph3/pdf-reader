@@ -33,6 +33,8 @@ dependencies:
   html2md: ^1.3.2
   provider: ^6.1.5+1
   lru: ^1.0.3
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
 
 dev_dependencies:
   flutter_test:

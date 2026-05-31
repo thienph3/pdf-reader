@@ -589,4 +589,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get focusTimer => 'Bộ đếm thời gian';
+
+  @override
+  String get readingReminder => 'Nhắc nhở đọc sách';
+
+  @override
+  String get reminderTime => 'Thời gian nhắc';
 }

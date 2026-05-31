@@ -12,6 +12,7 @@ import '../services/streak_service.dart';
 import '../services/book_settings_service.dart';
 import '../services/page_notes_service.dart';
 import '../services/reading_queue_service.dart';
+import '../services/reminder_service.dart';
 
 class BookServiceScope {
   static BookService of(BuildContext context) => Provider.of<BookService>(context, listen: false);
@@ -59,4 +60,8 @@ class PageNotesServiceScope {
 
 class ReadingQueueServiceScope {
   static ReadingQueueService of(BuildContext context) => Provider.of<ReadingQueueService>(context, listen: false);
+}
+
+class ReminderServiceScope {
+  static ReminderService of(BuildContext context) => Provider.of<ReminderService>(context, listen: false);
 }

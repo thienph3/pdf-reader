@@ -1189,6 +1189,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Focus Timer'**
   String get focusTimer;
+
+  /// No description provided for @readingReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading reminder'**
+  String get readingReminder;
+
+  /// No description provided for @reminderTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder time'**
+  String get reminderTime;
 }
 
 class _AppLocalizationsDelegate

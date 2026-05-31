@@ -594,4 +594,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get focusTimer => 'Focus Timer';
+
+  @override
+  String get readingReminder => 'Reading reminder';
+
+  @override
+  String get reminderTime => 'Reminder time';
 }

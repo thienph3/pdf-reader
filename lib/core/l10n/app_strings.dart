@@ -263,6 +263,10 @@ class AppStrings {
 
   // Focus timer
   String get focusTimer => _l.focusTimer;
+
+  // Reading reminder
+  String get readingReminder => _l.readingReminder;
+  String get reminderTime => _l.reminderTime;
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

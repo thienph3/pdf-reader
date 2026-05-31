@@ -25,6 +25,13 @@ class ReminderService {
 
   Future<void> scheduleDaily(int hour, int minute) async {
     try {
+      // Request permission on Android 13+
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        await android.requestNotificationsPermission();
+      }
+
       await cancelAll();
       final now = tz.TZDateTime.now(tz.local);
       var scheduled =

@@ -36,6 +36,7 @@ void main() async {
     };
 
     pdfrxFlutterInitialize();
+    debugPrint('=== INIT START ===');
     final bookService = BookService();
     final categoryService = CategoryService();
     final settingsService = SettingsService();
@@ -46,24 +47,32 @@ void main() async {
     final pageNotesService = PageNotesService();
     final readingQueueService = ReadingQueueService();
     final reminderService = ReminderService();
-    await Future.wait([
-      bookService.init(),
-      categoryService.init(),
-      settingsService.init(),
-      readingLogService.init(),
-      ttsService.init(),
-      ocrService.init(),
-      bookSettingsService.init(),
-      pageNotesService.init(),
-      readingQueueService.init(),
-      reminderService.init(),
-    ]);
+    try {
+      await Future.wait([
+        bookService.init().then((_) => debugPrint('  ✓ bookService')),
+        categoryService.init().then((_) => debugPrint('  ✓ categoryService')),
+        settingsService.init().then((_) => debugPrint('  ✓ settingsService')),
+        readingLogService.init().then((_) => debugPrint('  ✓ readingLogService')),
+        ttsService.init().then((_) => debugPrint('  ✓ ttsService')),
+        ocrService.init().then((_) => debugPrint('  ✓ ocrService')),
+        bookSettingsService.init().then((_) => debugPrint('  ✓ bookSettingsService')),
+        pageNotesService.init().then((_) => debugPrint('  ✓ pageNotesService')),
+        readingQueueService.init().then((_) => debugPrint('  ✓ readingQueueService')),
+        reminderService.init().then((_) => debugPrint('  ✓ reminderService')),
+      ]);
+    } catch (e, stack) {
+      debugPrint('=== INIT FAILED: $e ===');
+      debugPrint('$stack');
+    }
+    debugPrint('=== INIT DONE ===');
     if (settingsService.reminderEnabled) {
+      debugPrint('=== SCHEDULING REMINDER ===');
       reminderService.scheduleDaily(settingsService.reminderHour, settingsService.reminderMinute);
     }
     final thumbnailService = ThumbnailService();
     final highlightService = HighlightService(bookService);
     final streakService = StreakService(readingLogService, bookService);
+    debugPrint('=== RUNNING APP ===');
     runApp(PdfReaderApp(
       bookService: bookService, categoryService: categoryService,
       settingsService: settingsService, readingLogService: readingLogService,

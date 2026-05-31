@@ -49,6 +49,7 @@ class _MainShellState extends State<MainShell> {
           bookId: existing.id,
           initialPage: existing.lastPage,
         );
+        if (mounted) setState(() {}); // Refresh library after returning
       } else {
         // New file — copy to app dir and prompt to add
         final savedPath = await copyPdfToAppDir(path);
@@ -95,6 +96,7 @@ class _MainShellState extends State<MainShell> {
           fileName: title,
           bookId: bookId,
         );
+        if (mounted) setState(() {}); // Refresh library after returning
       }
     } catch (_) {}
   }

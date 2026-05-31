@@ -23,13 +23,15 @@ class ReminderService {
     }
   }
 
-  Future<void> scheduleDaily(int hour, int minute) async {
+  /// Returns true if scheduled successfully, false if permission denied.
+  Future<bool> scheduleDaily(int hour, int minute) async {
     try {
       // Request permission on Android 13+
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (android != null) {
-        await android.requestNotificationsPermission();
+        final granted = await android.requestNotificationsPermission();
+        if (granted != true) return false;
       }
 
       await cancelAll();
@@ -57,7 +59,10 @@ class ReminderService {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-    } catch (_) {}
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> cancelAll() async => _plugin.cancelAll();

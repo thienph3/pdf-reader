@@ -150,12 +150,20 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
   }
 
   Future<void> _toggleReminder(bool enabled) async {
-    await settingsService.setReminderEnabled(enabled);
     if (enabled) {
-      await reminderService!.scheduleDaily(settingsService.reminderHour, settingsService.reminderMinute);
+      final success = await reminderService!.scheduleDaily(settingsService.reminderHour, settingsService.reminderMinute);
+      if (!success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppStrings.of(context).notificationPermissionDenied)),
+          );
+        }
+        return; // Don't save enabled state
+      }
     } else {
       await reminderService!.cancelAll();
     }
+    await settingsService.setReminderEnabled(enabled);
   }
 
   Future<void> _pickReminderTime() async {

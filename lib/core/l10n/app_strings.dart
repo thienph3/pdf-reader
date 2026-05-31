@@ -267,6 +267,7 @@ class AppStrings {
   // Reading reminder
   String get readingReminder => _l.readingReminder;
   String get reminderTime => _l.reminderTime;
+  String get notificationPermissionDenied => _l.localeName == 'vi' ? 'Quyền thông báo bị từ chối' : 'Notification permission denied';
 }
 
 class AppStringsDelegate extends LocalizationsDelegate<AppStrings> {

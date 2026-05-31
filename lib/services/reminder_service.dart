@@ -7,44 +7,50 @@ class ReminderService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    tz_data.initializeTimeZones();
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    await _plugin.initialize(
-      settings: const InitializationSettings(android: android, iOS: ios),
-    );
+    try {
+      tz_data.initializeTimeZones();
+      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const ios = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      await _plugin.initialize(
+        settings: const InitializationSettings(android: android, iOS: ios),
+      );
+    } catch (_) {
+      // Notifications not available — non-critical, app continues
+    }
   }
 
   Future<void> scheduleDaily(int hour, int minute) async {
-    await cancelAll();
-    final now = tz.TZDateTime.now(tz.local);
-    var scheduled =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
-    if (scheduled.isBefore(now)) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
+    try {
+      await cancelAll();
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduled =
+          tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+      if (scheduled.isBefore(now)) {
+        scheduled = scheduled.add(const Duration(days: 1));
+      }
 
-    await _plugin.zonedSchedule(
-      id: 0,
-      title: 'Time to read!',
-      body: 'Your daily reading session awaits.',
-      scheduledDate: scheduled,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'reading_reminder',
-          'Reading Reminders',
-          channelDescription: 'Daily reading reminder',
-          importance: Importance.defaultImportance,
+      await _plugin.zonedSchedule(
+        id: 0,
+        title: 'Time to read!',
+        body: 'Your daily reading session awaits.',
+        scheduledDate: scheduled,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reading_reminder',
+            'Reading Reminders',
+            channelDescription: 'Daily reading reminder',
+            importance: Importance.defaultImportance,
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (_) {}
   }
 
   Future<void> cancelAll() async => _plugin.cancelAll();

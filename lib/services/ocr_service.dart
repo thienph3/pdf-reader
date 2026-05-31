@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
-import '../core/utils/logger.dart';
+import '../core/utils/logger.dart' show log;
 
 /// OCR service for scanned PDF pages.
 /// Results cached in Hive: plain text + markdown.
@@ -84,7 +84,7 @@ class OcrService extends ChangeNotifier {
       try { await tempFile.delete(); } catch (_) {}
       return plainText;
     } catch (e) {
-      AppLogger.error('OCR error page $pageNumber', e);
+      log.e('OCR error page $pageNumber', error: e);
       return '';
     } finally {
       _isProcessing = false;

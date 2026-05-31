@@ -65,5 +65,16 @@ class ReminderService {
     }
   }
 
-  Future<void> cancelAll() async => _plugin.cancelAll();
+  Future<void> cancelAll() async {
+    try { await _plugin.cancelAll(); } catch (_) {}
+  }
+
+  /// Opens the app's notification settings in system settings.
+  Future<void> openNotificationSettings() async {
+    try {
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await android?.requestNotificationsPermission();
+    } catch (_) {}
+  }
 }

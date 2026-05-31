@@ -155,10 +155,16 @@ class _SettingsScreenState extends State<SettingsScreen> with WidgetsBindingObse
       if (!success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppStrings.of(context).notificationPermissionDenied)),
+            SnackBar(
+              content: Text(AppStrings.of(context).notificationPermissionDenied),
+              action: SnackBarAction(
+                label: AppStrings.of(context).openSettings,
+                onPressed: () => reminderService!.openNotificationSettings(),
+              ),
+            ),
           );
         }
-        return; // Don't save enabled state
+        return;
       }
     } else {
       await reminderService!.cancelAll();

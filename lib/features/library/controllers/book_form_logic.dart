@@ -43,12 +43,16 @@ class BookFormLogic {
     return titleCtrl.text != origTitle ||
         authorCtrl.text != origAuthor ||
         notesCtrl.text != origNotes ||
-        format != origFormat ||
         filePath != origFilePath ||
         categoryId != origCategoryId;
   }
 
-  bool get showFilePicker => format == BookFormat.ebook || format == BookFormat.both;
+  bool get showFilePicker => true;
+
+  /// Format is auto-detected: has file = ebook, no file = paper
+  BookFormat get effectiveFormat => filePath != null && filePath!.isNotEmpty
+      ? BookFormat.ebook
+      : BookFormat.paper;
 
   Future<void> pickFile({
     required BuildContext context,
@@ -99,13 +103,14 @@ class BookFormLogic {
   }) async {
     final svc = BookServiceScope.of(context);
     final thumbSvc = ThumbnailServiceScope.of(context);
-    final path = showFilePicker ? filePath : null;
+    final path = filePath;
+    final fmt = effectiveFormat;
 
     if (isEditing) {
       final updated = book!.copyWith(
         title: titleCtrl.text.trim(),
         author: authorCtrl.text.trim(),
-        format: format,
+        format: fmt,
         filePath: () => path,
         categoryId: () => categoryId,
         notes: notesCtrl.text.trim(),
@@ -116,7 +121,7 @@ class BookFormLogic {
       await svc.create(
         title: titleCtrl.text.trim(),
         author: authorCtrl.text.trim(),
-        format: format,
+        format: fmt,
         filePath: path,
         categoryId: categoryId,
         notes: notesCtrl.text.trim(),
@@ -124,7 +129,7 @@ class BookFormLogic {
       onCreate(
         title: titleCtrl.text.trim(),
         author: authorCtrl.text.trim(),
-        format: format,
+        format: fmt,
         filePath: path,
         categoryId: categoryId,
         notes: notesCtrl.text.trim(),

@@ -125,28 +125,18 @@ class _BookFormScreenState extends State<BookFormScreen> {
                 labelText: s.author,
               ),
               const SizedBox(height: 16),
-              BookFormUiBuilder.buildFormatSelector(
-                context: context,
-                format: _logic.format,
-                onChanged: (format) {
-                  setState(() => _logic.format = format);
-                },
-              ),
-              const SizedBox(height: 16),
               BookFormUiBuilder.buildCategoryPicker(
                 context: context,
                 categoryId: _logic.categoryId,
                 onChanged: (v) => setState(() => _logic.categoryId = v),
               ),
-              if (_logic.showFilePicker) ...[
-                const SizedBox(height: 16),
-                BookFormUiBuilder.buildFilePicker(
-                  context: context,
-                  filePath: _logic.filePath,
-                  onPickFile: _pickFile,
-                  fileNameFromPath: _logic.fileNameFromPath,
-                ),
-              ],
+              const SizedBox(height: 16),
+              BookFormUiBuilder.buildFilePicker(
+                context: context,
+                filePath: _logic.filePath,
+                onPickFile: _pickFile,
+                fileNameFromPath: _logic.fileNameFromPath,
+              ),
               const SizedBox(height: 16),
               BookFormUiBuilder.buildNotesField(
                 controller: _notesCtrl,

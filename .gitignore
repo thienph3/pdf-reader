@@ -45,3 +45,4 @@ web/.dart_tool/
 
 # Pub
 pubspec.lock
+.github/workflows/

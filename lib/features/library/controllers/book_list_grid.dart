@@ -26,7 +26,7 @@ class BookListGridBuilder {
       itemCount: books.length,
       itemBuilder: (context, index) {
         final book = books[index];
-        return BookCard(book: book, onTap: () => onTap(book), onEdit: () => onEdit(book), onDelete: () => onDelete(book), onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null, onLongPress: onLongPress != null ? () => onLongPress(book) : null, selected: selectedIds?.contains(book.id) ?? false);
+        return BookCard(book: book, onTap: () => onTap(book), onEdit: () => onEdit(book), onDelete: () => onDelete(book), onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null, onLongPress: onLongPress != null ? () => onLongPress(book) : null, selected: selectedIds?.contains(book.id) ?? false, selectionMode: selectedIds != null);
       },
     );
   }
@@ -52,7 +52,7 @@ class BookListGridBuilder {
         ),
         delegate: SliverChildBuilderDelegate((_, i) {
           final book = books[i];
-          return BookCard(book: book, onTap: () => onTap(book), onEdit: () => onEdit(book), onDelete: () => onDelete(book), onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null, onLongPress: onLongPress != null ? () => onLongPress(book) : null, selected: selectedIds?.contains(book.id) ?? false);
+          return BookCard(book: book, onTap: () => onTap(book), onEdit: () => onEdit(book), onDelete: () => onDelete(book), onExportAnnotations: onExportAnnotations != null ? () => onExportAnnotations(book) : null, onLongPress: onLongPress != null ? () => onLongPress(book) : null, selected: selectedIds?.contains(book.id) ?? false, selectionMode: selectedIds != null);
         }, childCount: books.length),
       ),
     );

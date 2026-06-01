@@ -20,7 +20,7 @@ extension _ReaderOverlays on ReaderScreenBody {
       if (state.pdfLoading && state.provider.error == null &&
           !(state.pdfProvider?.textViewController.textViewMode ?? false))
         const Center(child: CircularProgressIndicator()),
-      Positioned(right: 0, top: 0, bottom: 0, width: 40,
+      Positioned(left: 20, top: 60, bottom: 60, width: 30,
         child: GestureDetector(behavior: HitTestBehavior.translucent,
           onVerticalDragUpdate: (d) {
             final delta = -d.delta.dy / size.height;
@@ -28,7 +28,7 @@ extension _ReaderOverlays on ReaderScreenBody {
           },
           onVerticalDragEnd: (_) => state.hideBrightnessIndicator(),
         )),
-      if (state.showBrightnessIndicator) Positioned(right: 16, top: size.height * 0.3,
+      if (state.showBrightnessIndicator) Positioned(left: 16, top: size.height * 0.3,
         child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
           child: Column(mainAxisSize: MainAxisSize.min, children: [

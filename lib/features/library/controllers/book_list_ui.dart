@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
 import '../../../models/book.dart';
 import '../../../core/l10n/app_strings.dart';
+import '../../../app/main.dart';
 import '../widgets/recent_book_item.dart';
 import './book_list_grid.dart';
 
@@ -15,7 +17,7 @@ class BookListUi {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Card(
         child: ListTile(
-          leading: const Icon(Icons.auto_stories),
+          leading: _ContinueReadingThumbnail(book: book),
           title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text('${s.progress(percent)} ${s.continueReading.toLowerCase()}'),
           trailing: FilledButton(onPressed: onContinue, child: Text(s.continueBtn)),
@@ -129,5 +131,41 @@ class BookListUi {
         }).toList(),
       ),
     );
+  }
+}
+
+class _ContinueReadingThumbnail extends StatefulWidget {
+  final Book book;
+  const _ContinueReadingThumbnail({required this.book});
+  @override
+  State<_ContinueReadingThumbnail> createState() => _ContinueReadingThumbnailState();
+}
+
+class _ContinueReadingThumbnailState extends State<_ContinueReadingThumbnail> {
+  ui.Image? _thumb;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (!widget.book.canRead || widget.book.filePath == null) return;
+    final img = await ThumbnailServiceScope.of(context).getThumbnail(
+      bookId: widget.book.id, filePath: widget.book.filePath!, width: 80,
+    );
+    if (mounted && img != null) setState(() => _thumb = img);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_thumb != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: SizedBox(width: 40, height: 56, child: RawImage(image: _thumb, fit: BoxFit.cover)),
+      );
+    }
+    return const Icon(Icons.auto_stories);
   }
 }

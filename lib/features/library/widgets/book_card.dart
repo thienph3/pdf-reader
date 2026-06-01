@@ -11,6 +11,7 @@ class BookCard extends StatefulWidget {
   final VoidCallback? onExportAnnotations;
   final VoidCallback? onLongPress;
   final bool selected;
+  final bool selectionMode;
 
   const BookCard({
     super.key,
@@ -21,6 +22,7 @@ class BookCard extends StatefulWidget {
     this.onExportAnnotations,
     this.onLongPress,
     this.selected = false,
+    this.selectionMode = false,
   });
 
   @override
@@ -132,6 +134,17 @@ class _BookCardState extends State<BookCard> {
           Positioned(
             top: 4, right: 4,
             child: Icon(Icons.check_circle, color: colorScheme.primary),
+          ),
+        if (widget.selectionMode && !widget.selected)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
           ],
         ),

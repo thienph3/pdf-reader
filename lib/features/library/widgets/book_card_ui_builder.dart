@@ -16,30 +16,25 @@ class BookCardUiBuilder {
     return Container(
       height: 16, color: colorScheme.surfaceContainerHighest,
       child: Stack(children: [
-        FractionallySizedBox(widthFactor: book.progressPercent, child: Container(color: colorScheme.primary.withValues(alpha: 0.3))),
-        Center(child: Text('$percent%', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant))),
+        FractionallySizedBox(widthFactor: book.progressPercent, child: Container(color: colorScheme.primary.withValues(alpha: 0.6))),
+        Center(child: Text('$percent%', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: colorScheme.onSurface))),
       ]),
     );
   }
 
   static Widget buildInfo({required BuildContext context, required Book book, required ColorScheme colorScheme}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(book.title, style: Theme.of(context).textTheme.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
-        if (book.author.isNotEmpty) ...[
-          const SizedBox(height: 2),
-          Text(book.author, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
-        ],
-        if (book.readingSeconds > 0) ...[
-          const SizedBox(height: 4),
-          Row(children: [
-            Icon(Icons.schedule, size: 12, color: colorScheme.onSurfaceVariant),
-            const SizedBox(width: 4),
-            Text(book.readingTimeFormatted, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant)),
-          ]),
-        ],
-      ]),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 72),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text(book.title, style: Theme.of(context).textTheme.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+          if (book.author.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(book.author, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ]),
+      ),
     );
   }
 

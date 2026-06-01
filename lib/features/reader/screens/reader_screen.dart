@@ -144,7 +144,7 @@ class ReaderScreenState extends State<ReaderScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_ttsListenerAdded && !_isEpub) {
+    if (!_ttsListenerAdded) {
       _ttsListenerAdded = true;
       ttsService.addListener(_onTtsStateChanged);
     }
@@ -182,7 +182,7 @@ class ReaderScreenState extends State<ReaderScreen> {
     _saveDebounce?.cancel();
     _readingTimer?.cancel();
     _epubPageController?.dispose();
-    if (!_isEpub) ttsService.removeListener(_onTtsStateChanged);
+    if (_ttsListenerAdded) ttsService.removeListener(_onTtsStateChanged);
     if (!_closed) saveProgress();
     _provider.dispose();
     try { WakelockPlus.disable(); } catch (_) {}

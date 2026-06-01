@@ -183,5 +183,9 @@
   "queueEmpty": "Chưa có sách trong hàng đợi",
   "focusTimer": "Bộ đếm thời gian",
   "readingReminder": "Nhắc nhở đọc sách",
-  "reminderTime": "Thời gian nhắc"
+  "reminderTime": "Thời gian nhắc",
+  "ttsReadPage": "Đọc trang",
+  "ttsPause": "Tạm dừng",
+  "pageNote": "Ghi chú trang",
+  "moreOptions": "Tuỳ chọn khác"
 }

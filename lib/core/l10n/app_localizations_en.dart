@@ -600,4 +600,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reminderTime => 'Reminder time';
+
+  @override
+  String get ttsReadPage => 'Read Page';
+
+  @override
+  String get ttsPause => 'Pause';
+
+  @override
+  String get pageNote => 'Page Note';
+
+  @override
+  String get moreOptions => 'More options';
 }

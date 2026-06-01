@@ -66,15 +66,21 @@ class PdfTtsPanel extends StatelessWidget {
           ]),
           Row(children: [
             const Icon(Icons.speed, size: 16),
-            Expanded(child: Slider(value: ttsService.speed, min: 0.1, max: 1.0, divisions: 9, label: '${(ttsService.speed * 2).toStringAsFixed(1)}x', onChanged: (v) => ttsService.setSpeed(v))),
+            Expanded(child: Slider(value: ttsService.speed, min: 0.1, max: 1.0, divisions: 9, label: '${(ttsService.speed / 0.5).toStringAsFixed(1)}x', onChanged: (v) => ttsService.setSpeed(v))),
           ]),
+          if (ttsService.sentenceCount > 0)
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              IconButton(icon: const Icon(Icons.skip_previous), onPressed: ttsService.currentSentenceIndex > 0 ? () => ttsService.prevSentence() : null),
+              Text('${ttsService.currentSentenceIndex + 1}/${ttsService.sentenceCount}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              IconButton(icon: const Icon(Icons.skip_next), onPressed: ttsService.currentSentenceIndex + 1 < ttsService.sentenceCount ? () => ttsService.nextSentence() : null),
+            ]),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             IconButton(icon: const Icon(Icons.stop), onPressed: ttsService.isStopped ? null : () => ttsService.stop()),
             const SizedBox(width: 16),
             FilledButton.icon(
               onPressed: hasText ? () { if (ttsService.isPlaying) { ttsService.pause(); } else { onPlay(); } } : null,
               icon: Icon(ttsService.isPlaying ? Icons.pause : Icons.play_arrow),
-              label: Text(ttsService.isPlaying ? 'Pause' : 'Read Page'),
+              label: Text(ttsService.isPlaying ? s.ttsPause : s.ttsReadPage),
               style: FilledButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: colorScheme.onPrimary),
             ),
             const SizedBox(width: 16),

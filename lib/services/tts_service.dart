@@ -21,6 +21,18 @@ class TtsService extends ChangeNotifier {
   bool _isAvailable = false;
   bool _languageNotInstalled = false;
 
+  // Sentence queue & word tracking
+  int wordStart = 0;
+  int wordEnd = 0;
+  int currentSentenceIndex = 0;
+  List<String> sentences = [];
+  VoidCallback? _onAllSentencesDone;
+
+  int get sentenceCount => sentences.length;
+  String get currentSentenceText => sentences.isNotEmpty && currentSentenceIndex < sentences.length ? sentences[currentSentenceIndex] : '';
+  double get progress => sentenceCount == 0 ? 0.0 : (currentSentenceIndex + 1) / sentenceCount;
+  String get speedLabel => '${(speed / 0.5).toStringAsFixed(1)}x';
+
   bool get isPlaying => state == TtsState.playing;
   bool get isPaused => state == TtsState.paused;
   bool get isStopped => state == TtsState.stopped;
@@ -30,10 +42,15 @@ class TtsService extends ChangeNotifier {
   Future<void> init() async {
     try {
       _tts.setStartHandler(() { state = TtsState.playing; notifyListeners(); });
-      _tts.setCompletionHandler(() { state = TtsState.stopped; currentText = null; _stopForegroundService(); notifyListeners(); });
+      _tts.setCompletionHandler(() { _onSentenceComplete(); });
       _tts.setCancelHandler(() { state = TtsState.stopped; _stopForegroundService(); notifyListeners(); });
       _tts.setPauseHandler(() { state = TtsState.paused; notifyListeners(); });
       _tts.setContinueHandler(() { state = TtsState.playing; notifyListeners(); });
+      _tts.setProgressHandler((String text, int start, int end, String word) {
+        wordStart = start;
+        wordEnd = end;
+        notifyListeners();
+      });
 
       final langs = await _tts.getLanguages;
       if (langs != null) availableLanguages = List<String>.from(langs)..sort();
@@ -94,6 +111,73 @@ class TtsService extends ChangeNotifier {
 
   Future<void> setSpeed(double value) async { speed = value; await _tts.setSpeechRate(speed); notifyListeners(); }
 
+  void _onSentenceComplete() {
+    if (sentences.isNotEmpty && currentSentenceIndex + 1 < sentences.length) {
+      _speakNextSentence();
+    } else {
+      state = TtsState.stopped;
+      currentText = null;
+      sentences = [];
+      _stopForegroundService();
+      _onAllSentencesDone?.call();
+      notifyListeners();
+    }
+  }
+
+  Future<void> speakSentences(List<String> sentenceList, {int startIndex = 0, VoidCallback? onAllDone}) async {
+    if (sentenceList.isEmpty) return;
+    sentences = sentenceList;
+    currentSentenceIndex = startIndex.clamp(0, sentenceList.length - 1);
+    _onAllSentencesDone = onAllDone;
+    await _speakCurrentSentence();
+  }
+
+  Future<void> _speakNextSentence() async {
+    currentSentenceIndex++;
+    await _speakCurrentSentence();
+  }
+
+  Future<void> _speakCurrentSentence() async {
+    if (currentSentenceIndex >= sentences.length) return;
+    final text = sentences[currentSentenceIndex];
+    wordStart = 0;
+    wordEnd = 0;
+
+    final detected = detectLanguage(text);
+    final targetLang = TtsLanguageDetector.findBestLanguageMatch(detected, availableLanguages);
+    if (targetLang != null && targetLang != currentLanguage) await setLanguage(targetLang);
+
+    currentText = text;
+    state = TtsState.playing;
+    notifyListeners();
+    await _startForegroundService();
+    _updateForegroundNotification();
+    await _tts.speak(text);
+  }
+
+  Future<void> nextSentence() async {
+    if (sentences.isEmpty || currentSentenceIndex + 1 >= sentences.length) return;
+    await _tts.stop();
+    currentSentenceIndex++;
+    await _speakCurrentSentence();
+  }
+
+  Future<void> prevSentence() async {
+    if (sentences.isEmpty || currentSentenceIndex <= 0) return;
+    await _tts.stop();
+    currentSentenceIndex--;
+    await _speakCurrentSentence();
+  }
+
+  void _updateForegroundNotification() {
+    if (Platform.isAndroid) {
+      FlutterForegroundTask.updateService(
+        notificationTitle: 'PDF Reader - ${currentSentenceIndex + 1}/$sentenceCount',
+        notificationText: currentSentenceText.length > 60 ? '${currentSentenceText.substring(0, 60)}...' : currentSentenceText,
+      );
+    }
+  }
+
   Future<void> speak(String text) async {
     if (text.trim().isEmpty) return;
     final cleaned = cleanPdfText(text);
@@ -117,8 +201,19 @@ class TtsService extends ChangeNotifier {
 
   Future<void> pause() async { await _tts.pause(); state = TtsState.paused; notifyListeners(); }
 
+  Future<void> resume() async {
+    if (state == TtsState.paused && sentences.isNotEmpty) {
+      await _speakCurrentSentence();
+    } else {
+      // Legacy: no sentence queue, just resume TTS engine
+      state = TtsState.playing;
+      notifyListeners();
+    }
+  }
+
   Future<void> stop() async {
     await _tts.stop(); state = TtsState.stopped; currentText = null;
+    sentences = []; currentSentenceIndex = 0; _onAllSentencesDone = null;
     await _stopForegroundService(); notifyListeners();
   }
 

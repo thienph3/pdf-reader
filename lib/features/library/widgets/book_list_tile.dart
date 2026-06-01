@@ -133,25 +133,14 @@ class _BookListTileState extends State<BookListTile> {
           ],
         ],
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (book.canRead)
-            IconButton(
-              icon: const Icon(Icons.chrome_reader_mode_outlined),
-              tooltip: s.readBook,
-              onPressed: widget.onTap,
-            ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') widget.onEdit();
-              if (value == 'delete') widget.onDelete();
-            },
-            itemBuilder: (_) => [
-              PopupMenuItem(value: 'edit', child: Text(s.edit)),
-              PopupMenuItem(value: 'delete', child: Text(s.delete)),
-            ],
-          ),
+      trailing: PopupMenuButton<String>(
+        onSelected: (value) {
+          if (value == 'edit') widget.onEdit();
+          if (value == 'delete') widget.onDelete();
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(value: 'edit', child: Text(s.edit)),
+          PopupMenuItem(value: 'delete', child: Text(s.delete)),
         ],
       ),
       onTap: widget.onTap,

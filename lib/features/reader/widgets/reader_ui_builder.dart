@@ -56,37 +56,64 @@ class PdfViewUiBuilder {
       actions: [
         if (totalPages > 0) ...[
           IconButton(
-            icon: Icon(showTimer ? Icons.timer : Icons.timer_outlined,
-                color: showTimer ? Theme.of(context).colorScheme.primary : null),
-            onPressed: onToggleTimer,
-          ),
-          IconButton(
-            icon: Icon(_readingModeIcon()),
-            tooltip: _readingModeLabel(context),
-            onPressed: onCycleReadingMode,
-          ),
-          IconButton(
             icon: Icon(bookmarkManager.isBookmarked(currentPage) ? Icons.bookmark : Icons.bookmark_border, color: bookmarkManager.isBookmarked(currentPage) ? Theme.of(context).colorScheme.primary : null),
             onPressed: () => onToggleBookmark(currentPage),
           ),
-          if (onShowPageNote != null)
-            IconButton(icon: const Icon(Icons.note_add_outlined), onPressed: onShowPageNote),
           IconButton(icon: const Icon(Icons.search), onPressed: onStartSearch),
           IconButton(
             icon: Icon(isTtsActive ? Icons.stop_circle : Icons.record_voice_over, color: isTtsActive ? Theme.of(context).colorScheme.primary : null),
-            tooltip: isTtsActive ? 'Stop Reading' : 'Read Aloud',
+            tooltip: isTtsActive ? AppStrings.of(context).stopReading : AppStrings.of(context).readAloud,
             onPressed: onToggleTts,
           ),
-          if (onToggleTextView != null)
-            IconButton(
-              icon: isTextViewLoading || isOcrRunning
-                  ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary))
-                  : Icon(isTextViewMode ? Icons.picture_as_pdf : Icons.text_snippet_outlined, color: isTextViewMode ? Theme.of(context).colorScheme.primary : null),
-              tooltip: isTextViewMode ? 'PDF View' : 'Text View',
-              onPressed: (isTextViewLoading || isOcrRunning) ? null : onToggleTextView,
-            ),
-          if (onShowThumbnails != null) IconButton(icon: const Icon(Icons.grid_view), tooltip: 'Pages', onPressed: onShowThumbnails),
-          IconButton(icon: const Icon(Icons.more_vert), onPressed: onShowReaderActions),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (v) {
+              switch (v) {
+                case 'timer': onToggleTimer?.call();
+                case 'mode': onCycleReadingMode?.call();
+                case 'note': onShowPageNote?.call();
+                case 'textView': onToggleTextView?.call();
+                case 'thumbnails': onShowThumbnails?.call();
+                case 'ocr': onStartOcr?.call();
+                case 'more': onShowReaderActions();
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'timer', child: Row(children: [
+                Icon(showTimer ? Icons.timer : Icons.timer_outlined, size: 20), const SizedBox(width: 12),
+                Text(AppStrings.of(context).focusTimer),
+              ])),
+              PopupMenuItem(value: 'mode', child: Row(children: [
+                Icon(_readingModeIcon(), size: 20), const SizedBox(width: 12),
+                Text(_readingModeLabel(context)),
+              ])),
+              if (onShowPageNote != null)
+                PopupMenuItem(value: 'note', child: Row(children: [
+                  const Icon(Icons.note_add_outlined, size: 20), const SizedBox(width: 12),
+                  Text(AppStrings.of(context).pageNote),
+                ])),
+              if (onToggleTextView != null)
+                PopupMenuItem(enabled: !(isTextViewLoading || isOcrRunning), value: 'textView', child: Row(children: [
+                  Icon(isTextViewMode ? Icons.picture_as_pdf : Icons.text_snippet_outlined, size: 20), const SizedBox(width: 12),
+                  Text(isTextViewMode ? 'PDF View' : 'Text View'),
+                ])),
+              if (onShowThumbnails != null)
+                PopupMenuItem(value: 'thumbnails', child: Row(children: [
+                  const Icon(Icons.grid_view, size: 20), const SizedBox(width: 12),
+                  Text(AppStrings.of(context).pageThumbnails),
+                ])),
+              if (onStartOcr != null)
+                PopupMenuItem(value: 'ocr', child: Row(children: [
+                  const Icon(Icons.document_scanner_outlined, size: 20), const SizedBox(width: 12),
+                  Text('OCR'),
+                ])),
+              const PopupMenuDivider(),
+              PopupMenuItem(value: 'more', child: Row(children: [
+                const Icon(Icons.tune, size: 20), const SizedBox(width: 12),
+                Text(AppStrings.of(context).moreOptions),
+              ])),
+            ],
+          ),
         ],
       ],
     );

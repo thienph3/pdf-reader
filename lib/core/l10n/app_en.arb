@@ -199,5 +199,9 @@
   "queueEmpty": "Queue is empty",
   "focusTimer": "Focus Timer",
   "readingReminder": "Reading reminder",
-  "reminderTime": "Reminder time"
+  "reminderTime": "Reminder time",
+  "ttsReadPage": "Read Page",
+  "ttsPause": "Pause",
+  "pageNote": "Page Note",
+  "moreOptions": "More options"
 }

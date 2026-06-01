@@ -1201,6 +1201,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reminder time'**
   String get reminderTime;
+
+  /// No description provided for @ttsReadPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Read Page'**
+  String get ttsReadPage;
+
+  /// No description provided for @ttsPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get ttsPause;
+
+  /// No description provided for @pageNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Page Note'**
+  String get pageNote;
+
+  /// No description provided for @moreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get moreOptions;
 }
 
 class _AppLocalizationsDelegate

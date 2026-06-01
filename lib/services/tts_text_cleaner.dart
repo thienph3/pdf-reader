@@ -48,9 +48,18 @@ class TtsTextCleaner {
 
   /// Split text into sentences for per-sentence language detection.
   static List<String> splitSentences(String text) {
-    return text
+    if (text.trim().isEmpty) return [text.trim()];
+    // Protect abbreviations
+    var t = text;
+    const abbrs = ['Mr.', 'Mrs.', 'Dr.', 'Ms.', 'Prof.', 'Sr.', 'Jr.', 'vs.', 'etc.', 'e.g.', 'i.e.', 'TS.', 'PGS.', 'GS.', 'ThS.'];
+    for (final a in abbrs) {
+      t = t.replaceAll(a, a.replaceAll('.', '\u0000'));
+    }
+    final parts = t
         .split(RegExp(r'(?<=[.!?。！？])\s+'))
-        .where((s) => s.trim().isNotEmpty)
+        .map((s) => s.replaceAll('\u0000', '.').trim())
+        .where((s) => s.isNotEmpty)
         .toList();
+    return parts.isEmpty ? [text.trim()] : parts;
   }
 }

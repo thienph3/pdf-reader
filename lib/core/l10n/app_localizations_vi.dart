@@ -595,4 +595,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get reminderTime => 'Thời gian nhắc';
+
+  @override
+  String get ttsReadPage => 'Đọc trang';
+
+  @override
+  String get ttsPause => 'Tạm dừng';
+
+  @override
+  String get pageNote => 'Ghi chú trang';
+
+  @override
+  String get moreOptions => 'Tuỳ chọn khác';
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../../../app/main.dart';
 import '../../../services/tts_service.dart';
+import '../../../services/tts_text_cleaner.dart';
 import '../../../core/utils/pdf_render_utils.dart';
 import './highlight_manager.dart';
 
@@ -23,20 +24,13 @@ class PdfTtsController {
     required this.onStateChanged,
   });
 
+  int get wordStart => ttsService.wordStart;
+  int get wordEnd => ttsService.wordEnd;
+  int get currentSentenceIndex => ttsService.currentSentenceIndex;
+  int get sentenceCount => ttsService.sentenceCount;
+
   void onTtsStateChanged(int currentPage, int totalPages) {
     if (!ttsActive) return;
-    if (ttsService.isStopped && ttsService.currentText == null) {
-      if (currentPage + 1 < totalPages) {
-        _ttsPageAdvancing = true;
-        final targetPage = currentPage + 1;
-        viewerController.goToPage(pageNumber: targetPage + 1);
-        Future.delayed(const Duration(milliseconds: 500), () {
-          _ttsPageAdvancing = false;
-        });
-      } else {
-        ttsActive = false;
-      }
-    }
     onStateChanged();
   }
 
@@ -87,7 +81,31 @@ class PdfTtsController {
     }
 
     if (text != null && text.trim().isNotEmpty) {
-      ttsService.speak(text);
+      final cleaned = TtsTextCleaner.cleanPdfText(text);
+      final sentences = TtsTextCleaner.splitSentences(cleaned);
+      ttsService.speakSentences(sentences, onAllDone: () {
+        _onPageSentencesDone(context, currentPage, pdfDocument, setOcrInProgress);
+      });
+    }
+  }
+
+  void _onPageSentencesDone(BuildContext context, int currentPage,
+      PdfDocument? pdfDocument, void Function(bool) setOcrInProgress) {
+    if (!ttsActive) return;
+    final totalPages = pdfDocument?.pages.length ?? 0;
+    if (currentPage + 1 < totalPages) {
+      _ttsPageAdvancing = true;
+      final targetPage = currentPage + 1;
+      viewerController.goToPage(pageNumber: targetPage + 1);
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _ttsPageAdvancing = false;
+        if (ttsActive && context.mounted) {
+          speakCurrentPage(context, targetPage, pdfDocument, setOcrInProgress);
+        }
+      });
+    } else {
+      ttsActive = false;
+      onStateChanged();
     }
   }
 
@@ -114,4 +132,7 @@ class PdfTtsController {
       });
     }
   }
+
+  void nextSentence() => ttsService.nextSentence();
+  void prevSentence() => ttsService.prevSentence();
 }

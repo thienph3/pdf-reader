@@ -176,6 +176,10 @@ class AppStrings {
   String get readingSpeed => _l.readingSpeed;
   String get stopReading => _l.stopReading;
   String get readAloud => _l.readAloud;
+  String get ttsReadPage => _l.ttsReadPage;
+  String get ttsPause => _l.ttsPause;
+  String get pageNote => _l.pageNote;
+  String get moreOptions => _l.moreOptions;
   String get selectLanguage => _l.selectLanguage;
   String get voiceSettings => _l.voiceSettings;
   String get ttsAvailable => _l.ttsAvailable;

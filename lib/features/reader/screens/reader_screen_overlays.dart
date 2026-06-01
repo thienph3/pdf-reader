@@ -20,7 +20,7 @@ extension _ReaderOverlays on ReaderScreenBody {
       if (state.pdfLoading && state.provider.error == null &&
           !(state.pdfProvider?.textViewController.textViewMode ?? false))
         const Center(child: CircularProgressIndicator()),
-      Positioned(left: 0, top: 0, bottom: 0, width: 40,
+      Positioned(right: 0, top: 0, bottom: 0, width: 40,
         child: GestureDetector(behavior: HitTestBehavior.translucent,
           onVerticalDragUpdate: (d) {
             final delta = -d.delta.dy / size.height;
@@ -28,7 +28,7 @@ extension _ReaderOverlays on ReaderScreenBody {
           },
           onVerticalDragEnd: (_) => state.hideBrightnessIndicator(),
         )),
-      if (state.showBrightnessIndicator) Positioned(left: 16, top: size.height * 0.3,
+      if (state.showBrightnessIndicator) Positioned(right: 16, top: size.height * 0.3,
         child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -41,16 +41,19 @@ extension _ReaderOverlays on ReaderScreenBody {
           child: SearchResultsBar(textSearcher: state.pdfProvider!.textSearcher!)),
       if (!state.fullscreen && state.totalPages > 1 && !state.isSearching)
         Positioned(bottom: bottomPadding, left: 16, right: 16,
-          child: SliderTheme(data: SliderTheme.of(context).copyWith(showValueIndicator: ShowValueIndicator.onDrag),
-            child: Slider(value: state.currentPage.toDouble(), min: 0,
-              max: (state.totalPages - 1).toDouble(),
-              divisions: state.totalPages - 1,
-              label: 'Page ${state.currentPage + 1}',
-              onChanged: (v) {
-                final p = v.round();
-                if (state.isEpub) { state.epubPageController?.jumpToPage(p); }
-                else { state.pdfProvider!.viewerController.goToPage(pageNumber: p + 1); }
-              }))),
+          child: Container(
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85), borderRadius: BorderRadius.circular(24)),
+            child: SliderTheme(data: SliderTheme.of(context).copyWith(showValueIndicator: ShowValueIndicator.onDrag),
+              child: Slider(value: state.currentPage.toDouble(), min: 0,
+                max: (state.totalPages - 1).toDouble(),
+                divisions: state.totalPages - 1,
+                label: 'Page ${state.currentPage + 1}',
+                onChanged: (v) {
+                  final p = v.round();
+                  if (state.isEpub) { state.epubPageController?.jumpToPage(p); }
+                  else { state.pdfProvider!.viewerController.goToPage(pageNumber: p + 1); }
+                })),
+          )),
       if (!state.isEpub) PdfOcrOverlay(
         ocrInProgress: state.pdfProvider!.ocrController.ocrInProgress,
         ocrBatchRunning: state.pdfProvider!.ocrController.ocrBatchRunning,

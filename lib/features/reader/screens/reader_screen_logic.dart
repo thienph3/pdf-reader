@@ -21,16 +21,17 @@ extension ReaderLogic on ReaderScreenState {
   }
 
   void handleTtsStateChanged() {
-    if (_isEpub) return;
-    _pdfProvider!.ttsController.onTtsStateChanged(_currentPage, _totalPages);
-    if (_pdfProvider!.ttsController.ttsActive && ttsService.isStopped &&
-        ttsService.currentText == null && _currentPage + 1 < _totalPages) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted && _pdfProvider!.ttsController.ttsActive) {
-          _pdfProvider!.ttsController.speakCurrentPage(context, _currentPage,
-              _pdfProvider!.pdfDocument, _pdfProvider!.ocrController.setOcrInProgress);
-        }
-      });
+    if (!_isEpub) {
+      _pdfProvider!.ttsController.onTtsStateChanged(_currentPage, _totalPages);
+      if (_pdfProvider!.ttsController.ttsActive && ttsService.isStopped &&
+          ttsService.currentText == null && _currentPage + 1 < _totalPages) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && _pdfProvider!.ttsController.ttsActive) {
+            _pdfProvider!.ttsController.speakCurrentPage(context, _currentPage,
+                _pdfProvider!.pdfDocument, _pdfProvider!.ocrController.setOcrInProgress);
+          }
+        });
+      }
     }
     if (mounted) setState(() {});
   }

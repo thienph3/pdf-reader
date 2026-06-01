@@ -1225,6 +1225,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More options'**
   String get moreOptions;
+
+  /// No description provided for @openFromFilesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Or open a PDF from your file manager'**
+  String get openFromFilesHint;
 }
 
 class _AppLocalizationsDelegate

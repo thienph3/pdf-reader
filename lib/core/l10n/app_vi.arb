@@ -187,5 +187,6 @@
   "ttsReadPage": "Đọc trang",
   "ttsPause": "Tạm dừng",
   "pageNote": "Ghi chú trang",
-  "moreOptions": "Tuỳ chọn khác"
+  "moreOptions": "Tuỳ chọn khác",
+  "openFromFilesHint": "Hoặc mở PDF từ trình quản lý tệp"
 }

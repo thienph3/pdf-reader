@@ -43,27 +43,38 @@ class StatsWeekChart extends StatelessWidget {
       final date = now.subtract(Duration(days: logs.length - 1 - i));
       return ['', ...AppStrings.of(context).weekDays][date.weekday];
     });
+    final goalLineY = maxMinutes > 0 ? (1 - goalMinutes / maxMinutes) * 80 : 0.0;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: List.generate(logs.length, (i) {
-        final minutes = logs[i].seconds ~/ 60;
-        final height = maxMinutes > 0 ? (minutes / maxMinutes) * 80 : 0.0;
-        final isToday = i == logs.length - 1;
-        final reachedGoal = minutes >= goalMinutes;
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-              if (minutes > 0) Text('${minutes}m', style: Theme.of(context).textTheme.labelSmall),
-              const SizedBox(height: 4),
-              Container(height: height.clamp(4.0, 80.0), decoration: BoxDecoration(color: reachedGoal ? colorScheme.primary : isToday ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(4))),
-              const SizedBox(height: 4),
-              Text(dayLabels[i], style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: isToday ? FontWeight.bold : null)),
-            ]),
+    return Stack(
+      children: [
+        // Goal line
+        if (goalMinutes > 0)
+          Positioned(
+            left: 0, right: 0, bottom: 24 + goalLineY.clamp(0.0, 76.0),
+            child: Container(height: 1, color: colorScheme.error.withValues(alpha: 0.5)),
           ),
-        );
-      }),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: List.generate(logs.length, (i) {
+            final minutes = logs[i].seconds ~/ 60;
+            final height = maxMinutes > 0 ? (minutes / maxMinutes) * 80 : 0.0;
+            final isToday = i == logs.length - 1;
+            final reachedGoal = minutes >= goalMinutes;
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Column(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  if (minutes > 0) Text('${minutes}m', style: Theme.of(context).textTheme.labelSmall),
+                  const SizedBox(height: 4),
+                  Container(height: height.clamp(4.0, 80.0), decoration: BoxDecoration(color: reachedGoal ? colorScheme.primary : isToday ? colorScheme.primaryContainer : colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(4))),
+                  const SizedBox(height: 4),
+                  Text(dayLabels[i], style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: isToday ? FontWeight.bold : null)),
+                ]),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }

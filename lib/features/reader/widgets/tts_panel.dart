@@ -75,7 +75,9 @@ class PdfTtsPanel extends StatelessWidget {
           if (ttsService.sentenceCount > 0)
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               IconButton(icon: const Icon(Icons.skip_previous), onPressed: ttsService.currentSentenceIndex > 0 ? () => ttsService.prevSentence() : null),
-              Text('${ttsService.currentSentenceIndex + 1}/${ttsService.sentenceCount}', style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              Text('${ttsService.currentSentenceIndex + 1}/${ttsService.sentenceCount}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              const SizedBox(width: 4),
               IconButton(icon: const Icon(Icons.skip_next), onPressed: ttsService.currentSentenceIndex + 1 < ttsService.sentenceCount ? () => ttsService.nextSentence() : null),
             ]),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [

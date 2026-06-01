@@ -607,4 +607,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get moreOptions => 'Tuỳ chọn khác';
+
+  @override
+  String get openFromFilesHint => 'Hoặc mở PDF từ trình quản lý tệp';
 }

@@ -95,7 +95,7 @@ class PdfViewUiBuilder {
               if (onToggleTextView != null)
                 PopupMenuItem(enabled: !(isTextViewLoading || isOcrRunning), value: 'textView', child: Row(children: [
                   Icon(isTextViewMode ? Icons.picture_as_pdf : Icons.text_snippet_outlined, size: 20), const SizedBox(width: 12),
-                  Text(isTextViewMode ? 'PDF View' : 'Text View'),
+                  Text(isTextViewMode ? AppStrings.of(context).switchToPdfView : AppStrings.of(context).switchToTextView),
                 ])),
               if (onShowThumbnails != null)
                 PopupMenuItem(value: 'thumbnails', child: Row(children: [
@@ -105,7 +105,7 @@ class PdfViewUiBuilder {
               if (onStartOcr != null)
                 PopupMenuItem(value: 'ocr', child: Row(children: [
                   const Icon(Icons.document_scanner_outlined, size: 20), const SizedBox(width: 12),
-                  Text('OCR'),
+                  Text(AppStrings.of(context).ocrProcessing.replaceAll('...', '')),
                 ])),
               const PopupMenuDivider(),
               PopupMenuItem(value: 'more', child: Row(children: [

@@ -66,6 +66,8 @@ class BookListUi {
           if (!hasSearchQuery) ...[
             const SizedBox(height: 8),
             Text(s.addBookHint, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
+            const SizedBox(height: 4),
+            Text(s.openFromFilesHint, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant), textAlign: TextAlign.center),
             const SizedBox(height: 24),
             FilledButton.icon(onPressed: onAddBook, icon: const Icon(Icons.add), label: Text(s.addBook)),
           ],

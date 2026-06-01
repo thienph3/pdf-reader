@@ -203,5 +203,6 @@
   "ttsReadPage": "Read Page",
   "ttsPause": "Pause",
   "pageNote": "Page Note",
-  "moreOptions": "More options"
+  "moreOptions": "More options",
+  "openFromFilesHint": "Or open a PDF from your file manager"
 }

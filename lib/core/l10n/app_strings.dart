@@ -180,6 +180,7 @@ class AppStrings {
   String get ttsPause => _l.ttsPause;
   String get pageNote => _l.pageNote;
   String get moreOptions => _l.moreOptions;
+  String get openFromFilesHint => _l.openFromFilesHint;
   String get selectLanguage => _l.selectLanguage;
   String get voiceSettings => _l.voiceSettings;
   String get ttsAvailable => _l.ttsAvailable;

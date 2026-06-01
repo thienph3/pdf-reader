@@ -612,4 +612,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moreOptions => 'More options';
+
+  @override
+  String get openFromFilesHint => 'Or open a PDF from your file manager';
 }

@@ -4,6 +4,7 @@ part of 'reader_screen_body.dart';
 extension _ReaderOverlays on ReaderScreenBody {
   List<Widget> buildOverlays(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
     return [
       if (!state.isEpub && state.horizontalScroll &&
           !(state.pdfProvider?.textViewController.textViewMode ?? false)) ...[
@@ -36,10 +37,10 @@ extension _ReaderOverlays on ReaderScreenBody {
             Text('${(state.brightness * 100).round()}%', style: const TextStyle(color: Colors.white, fontSize: 12)),
           ]))),
       if (!state.isEpub && state.isSearching && state.pdfProvider?.textSearcher != null)
-        Positioned(bottom: 0, left: 0, right: 0,
+        Positioned(bottom: bottomPadding, left: 0, right: 0,
           child: SearchResultsBar(textSearcher: state.pdfProvider!.textSearcher!)),
       if (!state.fullscreen && state.totalPages > 1 && !state.isSearching)
-        Positioned(bottom: 0, left: 16, right: 16,
+        Positioned(bottom: bottomPadding, left: 16, right: 16,
           child: SliderTheme(data: SliderTheme.of(context).copyWith(showValueIndicator: ShowValueIndicator.onDrag),
             child: Slider(value: state.currentPage.toDouble(), min: 0,
               max: (state.totalPages - 1).toDouble(),
@@ -57,7 +58,7 @@ extension _ReaderOverlays on ReaderScreenBody {
         ocrBatchTotal: state.pdfProvider!.ocrController.ocrBatchTotal,
         onCancelBatch: state.pdfProvider!.ocrController.cancelBatch),
       if (state.totalPages > 0 && state.fullscreen)
-        Positioned(bottom: 0, left: 0, right: 0,
+        Positioned(bottom: bottomPadding, left: 0, right: 0,
           child: LinearProgressIndicator(
             value: (state.currentPage + 1) / state.totalPages,
             minHeight: 2, backgroundColor: Colors.transparent)),

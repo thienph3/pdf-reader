@@ -66,7 +66,11 @@ class PdfTtsPanel extends StatelessWidget {
           ]),
           Row(children: [
             const Icon(Icons.speed, size: 16),
-            Expanded(child: Slider(value: ttsService.speed, min: 0.1, max: 1.0, divisions: 9, label: '${(ttsService.speed / 0.5).toStringAsFixed(1)}x', onChanged: (v) => ttsService.setSpeed(v))),
+            Expanded(child: Slider(value: ttsService.speed, min: 0.1, max: 1.0, divisions: 9, label: ttsService.speedLabel, onChanged: (v) => ttsService.setSpeed(v))),
+            GestureDetector(
+              onTap: () => ttsService.cycleSpeed(),
+              child: Chip(label: Text(ttsService.speedLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)), visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+            ),
           ]),
           if (ttsService.sentenceCount > 0)
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [

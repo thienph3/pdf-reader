@@ -4,6 +4,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'tts_language_detector.dart';
 import 'tts_text_cleaner.dart';
+import 'tts_notification_service.dart';
 
 enum TtsState { stopped, playing, paused }
 
@@ -63,6 +64,7 @@ class TtsService extends ChangeNotifier {
 
       _initForegroundTask();
       _isAvailable = true;
+      _initNotificationControls();
     } catch (e) {
       debugPrint('TTS init error: $e');
       _isAvailable = false;
@@ -87,6 +89,14 @@ class TtsService extends ChangeNotifier {
       iosNotificationOptions: const IOSNotificationOptions(showNotification: true, playSound: false),
       foregroundTaskOptions: ForegroundTaskOptions(eventAction: ForegroundTaskEventAction.nothing(), autoRunOnBoot: false, autoRunOnMyPackageReplaced: false, allowWakeLock: true, allowWifiLock: false),
     );
+  }
+
+  void _initNotificationControls() {
+    TtsNotificationService.onPause = pause;
+    TtsNotificationService.onResume = () => _speakCurrentSentence();
+    TtsNotificationService.onStop = stop;
+    TtsNotificationService.onNext = nextSentence;
+    TtsNotificationService.onPrev = prevSentence;
   }
 
   Future<void> _startForegroundService() async {
@@ -119,6 +129,7 @@ class TtsService extends ChangeNotifier {
       currentText = null;
       sentences = [];
       _stopForegroundService();
+      TtsNotificationService.dismiss();
       _onAllSentencesDone?.call();
       notifyListeners();
     }
@@ -171,10 +182,10 @@ class TtsService extends ChangeNotifier {
 
   void _updateForegroundNotification() {
     if (Platform.isAndroid) {
-      FlutterForegroundTask.updateService(
-        notificationTitle: 'PDF Reader - ${currentSentenceIndex + 1}/$sentenceCount',
-        notificationText: currentSentenceText.length > 60 ? '${currentSentenceText.substring(0, 60)}...' : currentSentenceText,
-      );
+      final title = 'PDF Reader - ${currentSentenceIndex + 1}/$sentenceCount';
+      final body = currentSentenceText.length > 60 ? '${currentSentenceText.substring(0, 60)}...' : currentSentenceText;
+      FlutterForegroundTask.updateService(notificationTitle: title, notificationText: body);
+      TtsNotificationService.show(title: title, body: body, isPlaying: true);
     }
   }
 
@@ -199,7 +210,16 @@ class TtsService extends ChangeNotifier {
     await _tts.speak(cleaned);
   }
 
-  Future<void> pause() async { await _tts.pause(); state = TtsState.paused; notifyListeners(); }
+  Future<void> pause() async {
+    await _tts.pause(); state = TtsState.paused; notifyListeners();
+    if (Platform.isAndroid && sentences.isNotEmpty) {
+      TtsNotificationService.show(
+        title: 'PDF Reader - ${currentSentenceIndex + 1}/$sentenceCount',
+        body: currentSentenceText.length > 60 ? '${currentSentenceText.substring(0, 60)}...' : currentSentenceText,
+        isPlaying: false,
+      );
+    }
+  }
 
   Future<void> resume() async {
     if (state == TtsState.paused && sentences.isNotEmpty) {
@@ -214,7 +234,9 @@ class TtsService extends ChangeNotifier {
   Future<void> stop() async {
     await _tts.stop(); state = TtsState.stopped; currentText = null;
     sentences = []; currentSentenceIndex = 0; _onAllSentencesDone = null;
-    await _stopForegroundService(); notifyListeners();
+    await _stopForegroundService();
+    TtsNotificationService.dismiss();
+    notifyListeners();
   }
 
   // Keep public API compatible - delegate to extracted classes

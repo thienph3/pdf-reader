@@ -18,6 +18,7 @@ import '../services/crash_log_service.dart';
 import '../services/page_notes_service.dart';
 import '../services/reading_queue_service.dart';
 import '../services/reminder_service.dart';
+import '../services/tts_notification_service.dart';
 import './splash_screen.dart';
 
 export 'service_scope.dart';
@@ -61,6 +62,7 @@ void main() async {
         pageNotesService.init().then((_) => debugPrint('  ✓ pageNotesService')),
         readingQueueService.init().then((_) => debugPrint('  ✓ readingQueueService')),
         reminderService.init().then((_) => debugPrint('  ✓ reminderService')),
+        TtsNotificationService.init().then((_) => debugPrint('  ✓ ttsNotification')),
       ]);
     } catch (e, stack) {
       debugPrint('=== INIT FAILED: $e ===');

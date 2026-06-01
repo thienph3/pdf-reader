@@ -97,6 +97,16 @@ class TtsService extends ChangeNotifier {
     TtsNotificationService.onStop = stop;
     TtsNotificationService.onNext = nextSentence;
     TtsNotificationService.onPrev = prevSentence;
+    TtsNotificationService.onSpeed = cycleSpeed;
+  }
+
+  static const _speedSteps = [0.25, 0.375, 0.5, 0.625, 0.75, 1.0];
+
+  Future<void> cycleSpeed() async {
+    final idx = _speedSteps.indexOf(speed);
+    final next = _speedSteps[(idx + 1) % _speedSteps.length];
+    await setSpeed(next);
+    if (state == TtsState.playing) _updateForegroundNotification();
   }
 
   Future<void> _startForegroundService() async {
@@ -185,7 +195,7 @@ class TtsService extends ChangeNotifier {
       final title = 'PDF Reader - ${currentSentenceIndex + 1}/$sentenceCount';
       final body = currentSentenceText.length > 60 ? '${currentSentenceText.substring(0, 60)}...' : currentSentenceText;
       FlutterForegroundTask.updateService(notificationTitle: title, notificationText: body);
-      TtsNotificationService.show(title: title, body: body, isPlaying: true);
+      TtsNotificationService.show(title: title, body: body, isPlaying: true, speedLabel: speedLabel);
     }
   }
 
@@ -217,6 +227,7 @@ class TtsService extends ChangeNotifier {
         title: 'PDF Reader - ${currentSentenceIndex + 1}/$sentenceCount',
         body: currentSentenceText.length > 60 ? '${currentSentenceText.substring(0, 60)}...' : currentSentenceText,
         isPlaying: false,
+        speedLabel: speedLabel,
       );
     }
   }

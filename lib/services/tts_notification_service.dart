@@ -12,6 +12,7 @@ class TtsNotificationService {
   static void Function()? onStop;
   static void Function()? onNext;
   static void Function()? onPrev;
+  static void Function()? onSpeed;
 
   static Future<void> init() async {
     await _plugin.initialize(
@@ -30,6 +31,7 @@ class TtsNotificationService {
       case 'resume': onResume?.call();
       case 'stop': onStop?.call();
       case 'next': onNext?.call();
+      case 'speed': onSpeed?.call();
     }
   }
 
@@ -37,6 +39,7 @@ class TtsNotificationService {
     required String title,
     required String body,
     required bool isPlaying,
+    String speedLabel = '1.0x',
   }) async {
     if (!Platform.isAndroid) return;
     final details = NotificationDetails(
@@ -57,6 +60,7 @@ class TtsNotificationService {
             showsUserInterface: false,
           ),
           const AndroidNotificationAction('next', '⏭', showsUserInterface: false),
+          AndroidNotificationAction('speed', speedLabel, showsUserInterface: false),
           const AndroidNotificationAction('stop', '⏹', showsUserInterface: false, cancelNotification: true),
         ],
       ),
